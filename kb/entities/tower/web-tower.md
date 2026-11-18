@@ -5,7 +5,7 @@
   "summary": "The tower page, the renderer / opens by default: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf.",
   "in": "tower-core",
   "reviewed": "2026-11-18",
-  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/clients.js", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/added.js#drawCount", "hub/renderers/page/regions.js#regions", "hub/renderers/page/stats.js#stats", "hub/renderers/page/extensions-entry.js#extensionsEntry", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster", "hub/src/views/card.ts#mount", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/page.js#markSeen", "hub/renderers/page/menu.js#menu", "hub/renderers/page/fit.js#lineWidth", "hub/renderers/page/page.js#pinIn", "hub/src/shared/adds.ts#rankedActions", "hub/src/shared/viewer.ts#seenOf", "hub/renderers/page/page.js#subjectLeft"]
+  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/clients.js", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/added.js#drawCount", "hub/renderers/page/regions.js#regions", "hub/renderers/page/stats.js#stats", "hub/renderers/page/extensions-entry.js#extensionsEntry", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster", "hub/src/views/card.ts#mount", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/page.js#markSeen", "hub/renderers/page/menu.js#menu", "hub/renderers/page/fit.js#lineWidth", "hub/renderers/page/page.js#pinIn", "hub/src/shared/adds.ts#rankedActions", "hub/src/shared/viewer.ts#seenOf", "hub/renderers/page/page.js#subjectLeft", "hub/renderers/page/subject-menus.js#subjectMenus", "hub/renderers/page/page.js#doMenuPick", "hub/src/shared/spawn-form.ts#spawnFormHtml"]
 }
 ---
 Built to learn from and throw away ([[renderer-is-disposable]]): it draws the board the [[tower-server]] serves and
@@ -44,7 +44,11 @@ a draft starts a worker through the page's new-worker dialog or is submitted to 
 through the same dialog with `kit.spawn` and stays where it is. The dialog draws a choice of runtime only when the
 config runs more than one, Claude first and picked, and redraws its runtime part (commands, model, effort) from
 `board.runtimes[id]` ([`providerHtml`](ref:hub/src/shared/spawn-form.ts#providerHtml)): a runtime whose list may miss
-models it runs takes any id typed, the list as suggestions, with a note when the id isn't in it ([[opencode]]). A
+models it runs takes any id typed, the list as suggestions, with a note when the id isn't in it ([[opencode]]). Its
+choices (from, runtime, command, model, effort, an extension's field with options) are `<tower-combobox>`es
+([[tower-elements]], [`spawnFormHtml`](ref:hub/src/shared/spawn-form.ts#spawnFormHtml)), each named by its own label
+through `labelledby`; a field left to its default is empty, its placeholder saying what the default is. Tower 3D draws
+the same form. A
 worker whose command never started its runtime says why in its gist, as every renderer draws it (`card.startFailure`). A floor's policy offers sit above its workers as its
 other asks do ([[policies]], [[attention-list]]). The shell dock starts a shell in any directory of a floor.
 
@@ -96,6 +100,15 @@ choice another window made for another region stays. The page reads its layout (
 the config's and its `renderer.json`'s) again on every board and every store event. An action is seen once the
 viewer runs it or it is drawn in place in a focused window ([`markSeen`](ref:hub/renderers/page/page.js#markSeen)).
 
+**Subject menus.** Every floor's sign, worker row and shown tab is a `<tower-menu-area>` with a ⋯ button: a
+right-click, the context-menu key, a long press or the ⋯ opens the page's one `<tower-menu>`
+([`subjectMenus`](ref:hub/renderers/page/subject-menus.js#subjectMenus)), filled from `subjectMenu` of `/lib/palette.js`
+as the board and the page's open views stand when it opens ([[command-palette]]); a line chosen runs as a palette pick
+([`doMenuPick`](ref:hub/renderers/page/page.js#doMenuPick)). Their ids follow the id rule: `sign:floor:<p>`,
+`row:card:<id>`, `tab:shown:<card>/<at>`, each ⋯ its place's `/menu`. While the menu is open the sidebar's floors and
+the tab row are not painted, and are painted once as it closes: a ⋯-opened menu is anchored to its button, which the
+SDK closes it on losing, and both are drawn by innerHTML until the morph reaches them.
+
 **Frames** that run a floor's own page (a shelf `html` or `renderer` entry, an `html` item, a shown file) are
 sandboxed at an opaque origin and granted `clipboard-write`, so a copy button inside works framed; a `url` frame may
 also read the clipboard. Keys pressed in any frame but a `url` one reach the page's keymap, its global commands alone
@@ -104,7 +117,7 @@ also read the clipboard. Keys pressed in any frame but a `url` one reach the pag
 **Accessibility.** The page is the tower's accessible renderer: Tower 3D's pointer-lock walk can't be. Every worker is
 a link to `#<id>`, the selected one `aria-current`. The pane tabs are an ARIA tablist, the terminal is `inert` while
 another pane lies over it, and redraws give focus back to the control that had it
-([`keepingFocus`](ref:hub/src/shared/panel-kit.ts#keepingFocus)). Presses that ask the tower something stay busy until
+([`keepingFocus`](ref:hub/src/shared/panel-kit.ts#keepingFocus)), one inside a `tower-*` element by the element's id. Presses that ask the tower something stay busy until
 the reply ([[press-feedback]]); the toast stack is a polite live region, and another says a line for each wait that
 begins ([`waitsBeganLine`](ref:hub/src/shared/waits.ts#waitsBeganLine)). It holds at 200% zoom and at the largest
 text size: narrow, the sidebar becomes a rail ([[design-system]]).
