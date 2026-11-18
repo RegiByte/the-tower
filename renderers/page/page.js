@@ -131,7 +131,7 @@ function render() {
   drawSideView()
   morphPanel($('rail'), railHtml(waiting))
   extensionsFoot.paint()
-  $('side-foot').innerHTML = board().config ? `<span>config</span><code data-tip="${esc(board().config)}"><bdi>${esc(board().config)}</bdi></code>${fileButtonsHtml(board().config)}` : ''
+  morphPanel($('side-foot'), board().config ? `<span>config</span><code data-tip="${esc(board().config)}"><bdi>${esc(board().config)}</bdi></code>${fileButtonsHtml(board().config)}` : '')
   mainRegion.update()
   renderDock()
   drawSettings()
