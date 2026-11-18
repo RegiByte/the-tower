@@ -1,6 +1,7 @@
 import { DISMISS_ASK_TITLE } from '/lib/cards.js'
 import { actionWords, badgesOf, glyphOf } from '/lib/layout.js'
 import { ICON } from '/lib/view.js'
+import { domId } from '/lib/morph.js'
 import { esc, plural, span } from '/lib/words.js'
 
 /**
@@ -105,14 +106,14 @@ export const iconButtonsHtml = (board, subject, actions) =>
 
 /**
  * Asks as rows: what is asked and by whom, which opens its subject and says its hint on hover, its actions on its
- * subject, and ✕ to dismiss it.
+ * subject, and ✕ to dismiss it, each by its key (`domId('ask', key)`).
  * @param {Board} board @param {BoardAsk[]} asks @param {number} now
  */
 export const asksHtml = (board, asks, now) =>
   asks.length
     ? `<div class="offers">${asks
         .map(
-          (a) => `<div class="offer-row ask-row ${a.sound === 'wait' ? 'needs' : 'offered'}" data-hold="ask:${esc(a.key)}"><button class="what" data-open-view="${esc(JSON.stringify({ subject: a.subject }))}"${a.hint ? ` data-tip="${esc(a.hint)}"` : ''}><b>${esc(a.title)}</b> <span>${esc(a.cap)} asks · ${esc(span(now - a.since))} ago</span></button>
+          (a) => `<div class="offer-row ask-row ${a.sound === 'wait' ? 'needs' : 'offered'}" id="${esc(domId('ask', a.key))}" data-hold="ask:${esc(a.key)}"><button class="what" data-open-view="${esc(JSON.stringify({ subject: a.subject }))}"${a.hint ? ` data-tip="${esc(a.hint)}"` : ''}><b>${esc(a.title)}</b> <span>${esc(a.cap)} asks · ${esc(span(now - a.since))} ago</span></button>
     <span class="acts">${a.actions.map((action) => actionHtml(board, a.subject, action)).join('')}</span>
     <button class="icon-btn" data-dismiss="${esc(a.key)}" aria-label="${DISMISS_ASK_TITLE}" data-tip="${DISMISS_ASK_TITLE}">${ICON.close}</button></div>`,
         )

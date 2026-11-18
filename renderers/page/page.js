@@ -114,7 +114,7 @@ function render() {
   const host = lostAt() ? 'unknown' : hostState(board())
   morphPanel($('host'), `<span class="host-state ${HOST_ATTENTION[host]}" tabindex="0" data-tip="${esc(HOST_MEANS[host])}"><span class="lamp"></span>${HOST_NAME[host]}</span>`)
   paintStrip()
-  $('notes').innerHTML = `${untestedHtml(board()) ?? ''}${layoutNoteHtml()}${asksHtml(board(), heededAsks(board(), heed()).filter((a) => !projectOfKey(board(), a.subject)), pageNow())}`
+  morphPanel($('notes'), `${untestedHtml(board()) ?? ''}${layoutNoteHtml()}${asksHtml(board(), heededAsks(board(), heed()).filter((a) => !projectOfKey(board(), a.subject)), pageNow())}`)
   paintKeys()
   morphPanel($('board-sign'), boardSignHtml())
   paintLimits()
