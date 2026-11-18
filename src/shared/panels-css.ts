@@ -1,7 +1,7 @@
 import { highlightCss } from './highlight.ts'
 
 /**
- * The panels' look, under `.changes-panel` and `.stats-panel`: the renderer places and sizes the element
+ * The panels' look, under `.changes-panel`, `.stats-panel`, `.extensions-panel` and `.extensions-list`: the renderer places and sizes the element
  * they're painted in.
  *
  * Also a worker's `.tab-row`, on one line: its tabs (any of them in a `.tab-set`, which lays out as if absent), its
@@ -185,4 +185,30 @@ ${highlightCss('.changes-panel')}
 .stats-panel .spreads th { color: var(--muted); font-weight: 400; } .stats-panel .spreads tr > th:first-child { text-align: left; color: var(--ink); }
 .stats-panel .spreads tr:first-child th { color: var(--faint); font-size: var(--fs-xs); }
 .stats-panel .as-of { margin: var(--sp-l) 0 0; color: var(--faint); font-size: var(--fs-xs); }
+.extensions-panel { display: grid; gap: var(--sp-m); font: var(--fs-m)/1.4 var(--ui); color: var(--ink); }
+.extensions-panel .none, .extensions-list .none { margin: var(--sp-s) 0; color: var(--faint); font-style: italic; }
+.extension-entry { padding: var(--sp-m) var(--sp-l); border: 1px solid var(--line); border-left: 3px solid var(--c); border-radius: var(--radius); background: var(--panel); scroll-margin: var(--sp-m); }
+.extension-entry.quiet { border-left-color: var(--line); }
+.extension-entry:target, .extension-entry.spot { outline: 2px solid var(--accent); outline-offset: -1px; }
+.extension-entry .head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-xs) var(--sp-m); }
+.extension-entry .title { font-weight: 700; }
+.extension-entry .version, .extension-entry .whose { color: var(--faint); font-size: var(--fs-s); }
+.extension-entry .whose { margin-left: auto; }
+.extension-entry .state, .extension-row .state { color: var(--c-text); font-size: var(--fs-s); }
+.extension-entry .ids, .extension-entry .declared { margin-top: var(--sp-2xs); color: var(--faint); font-size: var(--fs-s); }
+.extension-entry .ids code { font: var(--fs-s) var(--mono); color: var(--muted); }
+.extension-entry .brief { margin: var(--sp-xs) 0 0; color: var(--muted); }
+.extension-entry .problems { margin: var(--sp-s) 0 0; padding: 0; list-style: none; display: grid; gap: var(--sp-xs); }
+.extension-entry .problem { padding-left: var(--sp-m); border-left: 2px solid var(--c); color: var(--c-text); overflow-wrap: anywhere; }
+.extension-entry .problem .fix { display: block; color: var(--muted); }
+.extension-entry .times, .extension-row .times { color: var(--faint); }
+.extensions-list { display: grid; gap: var(--sp-2xs); }
+.extension-row { display: grid; gap: var(--sp-2xs); width: 100%; padding: var(--sp-xs) var(--sp-s); border: 0; border-radius: var(--radius); background: none; color: var(--muted); font: var(--fs-s)/1.35 var(--ui); text-align: left; cursor: pointer; }
+.extension-row:hover, .extension-row:focus-visible { background: var(--panel-2); color: var(--ink); }
+.extension-row .line { display: flex; align-items: center; gap: var(--sp-s); }
+.extension-row .line b { color: var(--ink); font-weight: 600; }
+.extension-row .lamp { width: 7px; height: 7px; }
+.extension-row .state { margin-left: auto; }
+.extension-row .problems { display: grid; gap: var(--sp-2xs); padding-left: calc(7px + var(--sp-s)); }
+.extension-row .problem { color: var(--c-text); overflow-wrap: anywhere; }
 `

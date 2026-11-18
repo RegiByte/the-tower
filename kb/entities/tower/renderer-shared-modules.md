@@ -33,11 +33,11 @@ behavior ([[renderer-is-disposable]]):
   seen), round-robin through waits, dismissals and the ring
   setting kept in `tower.store`, the sounds as scores, who a review's notes can be sent to, the hiring limits
   ([[hire]]), crews ([[crews]]) and the past by crew.
-- `panels.ts`: the Changes and Stats panels, as pure views (view model in, html out), the line-picking logic,
+- `panels.ts`: the Changes, Stats and Extensions panels, as pure views (view model in, html out), the line-picking logic,
   one stylesheet and the data attributes each renderer wires ([[shared-panels]]), with code highlighted by
   `highlight.ts` (highlight.js, whose core and languages it registers are each served once under `/vendor/`). It gathers a module per concern (`changes-reads.ts`, `changes-lines.ts`,
-  `changes-panel.ts`, `stats-panel.ts`, `file-acts.ts`, `panel-html.ts`, `panel-kit.ts`, `panels-css.ts`), whose
-  names the library's `/lib/changes.js`, `/lib/stats.js` and `/lib/view.js` re-export. No core module holds review threads:
+  `changes-panel.ts`, `stats-panel.ts`, `extensions-panel.ts`, `file-acts.ts`, `panel-html.ts`, `panel-kit.ts`, `panels-css.ts`), whose
+  names the library's `/lib/changes.js`, `/lib/stats.js`, `/lib/extensions-panel.js` and `/lib/view.js` re-export. No core module holds review threads:
   their format, their anchors and the Reviews panel are the reviews extension's client, `/x/reviews/reviews.js`,
   `/x/reviews/anchors.js` and `/x/reviews/panel.js` ([[review-threads]]).
 - `brief.ts`: a worker's brief by session, the current one in full and the earlier ones folded, each turn with

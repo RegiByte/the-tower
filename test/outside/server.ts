@@ -5,6 +5,7 @@ import { tipsOf } from '/lib/capabilities.js'
 import { BLOCKED_TEXT } from '/lib/cards.js'
 import { palettes } from '/lib/design.js'
 import { apiError, spawnProblems, type Start } from '/lib/extension.js'
+import { extensionsSummary } from '/lib/extensions-panel.js'
 import { repoName } from '/lib/files.js'
 import { loop } from '/lib/machine.js'
 import { markdownHtml } from '/lib/markdown.js'
@@ -16,7 +17,7 @@ import { esc } from '/lib/words.js'
 type Typed<T> = 0 extends 1 & T ? never : T
 const typed = <T>(value: Typed<T>) => value
 
-export const reach = [boardSubject, tipsOf, BLOCKED_TEXT, palettes, repoName, loop, markdownHtml, hours, nextSlot]
+export const reach = [boardSubject, tipsOf, BLOCKED_TEXT, palettes, repoName, loop, markdownHtml, hours, extensionsSummary, nextSlot]
 
 const start: Start = (ctx) => {
   const board: Board = typed(ctx.board())

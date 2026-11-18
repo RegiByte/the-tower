@@ -1638,6 +1638,33 @@
         }
       }
     },
+    "/lib/extensions-panel.js": {
+      "runtime": "generic",
+      "values": {
+        "brokenExtensions": {
+          "since": "2.9"
+        },
+        "extensionAnchor": {
+          "since": "2.9"
+        },
+        "extensionsAttention": {
+          "since": "2.9"
+        },
+        "extensionsInOrder": {
+          "since": "2.9"
+        },
+        "extensionsListHtml": {
+          "since": "2.9"
+        },
+        "extensionsPanelHtml": {
+          "since": "2.9"
+        },
+        "extensionsSummary": {
+          "since": "2.9"
+        }
+      },
+      "types": {}
+    },
     "/lib/files.js": {
       "runtime": "generic",
       "values": {

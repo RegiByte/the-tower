@@ -474,6 +474,7 @@ joins as a minor the day something uses it.
 | `/lib/brief.js` | browser | renderers | a worker's brief |
 | `/lib/changes.js` | browser | renderers | the Changes panel, its reads and its line picking |
 | `/lib/stats.js` | generic | renderers | the Stats panel and its words |
+| `/lib/extensions-panel.js` | generic | renderers | the Extensions panel: every extension the tower found, its state and problems |
 | `/lib/terminal.js` | browser | renderers | a browser terminal: face, size, keys, the view machine, a shell's stream |
 | `/lib/spawn.js` | browser | renderers | the new-worker dialog and its form |
 | `/lib/attend.js` | browser | renderers | what a viewer is told about waits |
