@@ -253,15 +253,15 @@ const labelHtml = (name: string, optional = false, hint?: string) => `<span clas
  * A field chosen from `options` in a `<tower-combobox>` submitting `name`, `value` chosen as it opens: its label drawn
  * beside it and naming it by id (`labelledby`), since a `<label>` around it would take a press in its list for one on
  * the box. A field left to its default opens empty, `none` saying what the default is, and is emptied to go back to it.
- * `wide` spans the form.
+ * `wide` spans the form; `custom` takes text typed that matches no option too.
  */
 const choiceFieldHtml = (
-  { name, label, optional = false, hint, wide = false }: { name: string; label: string; optional?: boolean; hint?: string; wide?: boolean },
+  { name, label, optional = false, hint, wide = false, custom = false }: { name: string; label: string; optional?: boolean; hint?: string; wide?: boolean; custom?: boolean },
   options: ComboboxOption[],
   chosen: { value: string } | { none: string },
 ) =>
   `<div class="field${wide ? ' wide' : ''}"><span class="lbl eyebrow" id="${esc(domId('spawn/label', name))}">${labelWordsHtml(label, optional, hint)}</span>` +
-  `${comboboxHtml({ place: 'spawn', name, labelledby: domId('spawn/label', name), options, empty: 'Nothing matches', ...('value' in chosen ? { value: chosen.value } : { placeholder: chosen.none }) })}</div>`
+  `${comboboxHtml({ place: 'spawn', name, labelledby: domId('spawn/label', name), options, empty: 'Nothing matches', custom, ...('value' in chosen ? { value: chosen.value } : { placeholder: chosen.none }) })}</div>`
 
 /** Values that are their own words, as options. */
 const plain = (values: string[]): ComboboxOption[] => values.map((v) => ({ value: v, label: v }))
@@ -278,9 +278,10 @@ const formFieldHtml = ({ cap, name, words, options }: FormField) =>
 
 /**
  * The form's part drawn from the runtime `id`'s declaration (`runtime`): its commands when there are several, then a
- * model and its effort, each saying the default seen beside it. A runtime whose list holds every model it runs picks
- * from it; one whose list may miss some (`modelList` absent) takes any id typed, the list offered as suggestions, with
- * `[data-model-note]` to fill from `modelNote` and `#spawn-efforts` from `effortsOn` as the model changes.
+ * model and its effort, each saying the default seen beside it, the efforts to redraw from `effortChoices` as the
+ * model changes. A runtime whose list holds every model it runs picks from it; one whose list may miss some
+ * (`modelList` absent) takes any model and effort typed too, the lists offered as suggestions, with
+ * `[data-model-note]` to fill from `modelNote`.
  */
 export function providerHtml(f: Floor, id: string, runtime: BoardRuntime): string {
   const { label, defaults, commands, models } = runtime
@@ -289,20 +290,20 @@ export function providerHtml(f: Floor, id: string, runtime: BoardRuntime): strin
     commands && commands.length > 1
       ? choiceFieldHtml({ name: 'command', label: esc(label), optional: true, hint: `The command run in the terminal to start ${label}. Named commands are configured in config.json.`, wide: true }, plain(commands), { value: command })
       : ''
-  const choose = runtime.absent.includes('modelList')
-    ? `<label>${labelHtml('Model', true)}<input name="model" list="spawn-models" autocomplete="off" spellcheck="false" placeholder="${esc(models.length ? defaultOption(label, defaults.model) : 'provider/model, typed')}"><datalist id="spawn-models">${models.map((m) => `<option value="${esc(m.id)}"></option>`).join('')}</datalist></label>
-        <label>${labelHtml('Effort', true)}<input name="effort" list="spawn-efforts" autocomplete="off" spellcheck="false" placeholder="${esc(defaultOption(label, defaults.effort))}"><datalist id="spawn-efforts">${effortOptions(runtime, '')}</datalist></label>
-        <small class="note wide" data-model-note></small>`
-    : choiceFieldHtml({ name: 'model', label: 'Model', optional: true }, plain(models.map((m) => m.id)), { none: defaultOption(label, modelName(defaults.model)) }) +
-      choiceFieldHtml({ name: 'effort', label: 'Effort', optional: true }, plain(effortsOn(runtime, '')), { none: defaultOption(label, defaults.effort) })
+  const custom = runtime.absent.includes('modelList')
+  const model = custom ? (models.length ? defaultOption(label, defaults.model) : 'provider/model, typed') : defaultOption(label, modelName(defaults.model))
+  const choose =
+    choiceFieldHtml({ name: 'model', label: 'Model', optional: true, custom }, plain(models.map((m) => m.id)), { none: model }) +
+    choiceFieldHtml({ name: 'effort', label: 'Effort', optional: true, custom }, effortChoices(runtime, ''), { none: defaultOption(label, defaults.effort) }) +
+    (custom ? '<small class="note wide" data-model-note></small>' : '')
   return `<div class="provider" data-provider="${esc(id)}">${commandHtml}${choose}</div>`
 }
 
 /** What the first prompt's field says while empty, for the runtime `label`. */
 export const promptPlaceholder = (label: string) => `What should it work on? Left empty, ${label} boots to an idle prompt.`
 
-/** The suggestions of `#spawn-efforts` on `model` (`effortsOn`). */
-export const effortOptions = (runtime: BoardRuntime, model: string): string => effortsOn(runtime, model).map((e) => `<option value="${esc(e)}"></option>`).join('')
+/** The options of the form's effort on `model` (`effortsOn`). */
+export const effortChoices = (runtime: BoardRuntime, model: string): ComboboxOption[] => plain(effortsOn(runtime, model))
 
 /**
  * The new-worker form both renderers put in their dialog: the first prompt beside where and how the worker starts,

@@ -15,7 +15,8 @@ export type ComboboxOption =
 /**
  * What a `<tower-combobox>` draws: its options, the value chosen (none when absent) and its words. Its id is
  * `domId(place, name)`, `name` the field it submits. It is named by its own `label`, or by the element drawn apart
- * whose id is `labelledby`, when the label around it holds more than words.
+ * whose id is `labelledby`, when the label around it holds more than words. `custom`: text typed that matches no
+ * option is chosen by Enter too.
  */
 export type Combobox = {
   place: string
@@ -26,6 +27,7 @@ export type Combobox = {
   options: ComboboxOption[]
   disabled?: boolean
   required?: boolean
+  custom?: boolean
 } & ({ label: string; labelledby?: never } | { labelledby: string; label?: never })
 
 /** One attribute, or nothing for an absent value; `true` writes a bare one. */
@@ -36,7 +38,7 @@ const attribute = (name: string, value: string | boolean | null | undefined) =>
 export const comboboxHtml = (c: Combobox): string =>
   `<tower-combobox${attribute('id', domId(c.place, c.name))}${attribute('name', c.name)}${attribute('label', c.label)}${attribute('labelledby', c.labelledby)}${attribute('placeholder', c.placeholder)}` +
   `${attribute('empty', c.empty)}${attribute('value', c.value)}${attribute('options', JSON.stringify(c.options))}` +
-  `${attribute('disabled', c.disabled)}${attribute('required', c.required)} data-owned="children"></tower-combobox>`
+  `${attribute('disabled', c.disabled)}${attribute('required', c.required)}${attribute('custom', c.custom)} data-owned="children"></tower-combobox>`
 
 /** The id of the one subject menu a page holds: every subject's area and button open it. */
 export const SUBJECT_MENU = 'subject-menu'

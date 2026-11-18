@@ -8,7 +8,8 @@
  * match; Enter, with any modifier (⌘↵ too), chooses the highlighted option and closes the list, or does nothing when
  * none is highlighted, and goes no further: the form never sees it, so a submit key doesn't submit. Closed, the keys
  * pass on as from any field. Leaving without choosing (Escape, Tab, a press outside) shows the chosen option's label
- * again, or the empty box: text typed but not chosen is never a value.
+ * again, or the empty box: text typed but not chosen is never a value. With `custom`, Enter with no option highlighted
+ * chooses the text typed; leaving still restores what was chosen.
  */
 import type { ListData } from '@ui-sdk/web/combobox'
 import { relay, type ElementContract } from './sdk.ts'
@@ -26,6 +27,7 @@ export const elements = {
       empty: 'What the list says when no option matches.',
       disabled: 'It can be neither focused nor changed, and submits nothing.',
       required: 'A form will not submit until an option is chosen.',
+      custom: 'Text that matches no option is chosen too, by Enter (⌘↵ too) with no option highlighted; leaving the box without choosing still shows what was chosen.',
     },
     properties: {
       value: 'The value of the option chosen, or null.',
@@ -45,6 +47,10 @@ const PARTS =
   '<ui-combobox-input><input></ui-combobox-input>' +
   '<ui-combobox-content hidden><ui-combobox-empty></ui-combobox-empty><ui-combobox-list></ui-combobox-list></ui-combobox-content>'
 
+/** Every option's value in `data`, its groups' included. */
+const valuesOf = (data: readonly (ListData<string>[number] | string)[]): string[] =>
+  data.flatMap((item) => (typeof item === 'string' ? [item] : 'items' in item ? valuesOf(item.items) : 'value' in item ? [item.value] : []))
+
 class TowerCombobox extends HTMLElement {
   static observedAttributes = Object.keys(elements['tower-combobox'].attributes)
   #inner?: HTMLElementTagNameMap['ui-combobox']
@@ -57,9 +63,24 @@ class TowerCombobox extends HTMLElement {
     this.append(inner)
     this.#inner = inner
     for (const name of TowerCombobox.observedAttributes) this.#sync(inner, name)
+    inner.addEventListener('valuechange', (change) => this.#typed(change as CustomEvent<{ value: unknown; event?: Event }>), { capture: true })
     relay(inner, this, Object.keys(elements['tower-combobox'].events))
     this.addEventListener('keydown', () => (this.#openAtKey = this.open), { capture: true })
     this.addEventListener('keydown', (key) => key.key === 'Enter' && this.#openAtKey && key.stopPropagation())
+  }
+
+  /**
+   * A `custom` value the SDK takes as the list closes, refused: only an Enter chooses typed text, so leaving restores
+   * the value chosen.
+   */
+  #typed(change: CustomEvent<{ value: unknown; event?: Event }>) {
+    const { value, event } = change.detail
+    const enter = event instanceof KeyboardEvent && event.key === 'Enter'
+    if (typeof value === 'string' && !enter && !this.#isOption(value)) change.preventDefault()
+  }
+
+  #isOption(value: string) {
+    return valuesOf((this.#inner?.items ?? []) as ListData<string>).includes(value)
   }
 
   /** Whether the list was open as the key now going through reached the element, before the SDK's own handling closed it. */
@@ -76,6 +97,7 @@ class TowerCombobox extends HTMLElement {
     else if (name === 'label' || name === 'labelledby') this.#label(inner)
     else if (name === 'empty') inner.querySelector('ui-combobox-empty')!.textContent = value ?? ''
     else if (name === 'placeholder') inner.querySelector<HTMLInputElement>('input')!.placeholder = value ?? ''
+    else if (name === 'custom') inner.toggleAttribute('allow-custom-value', value !== null)
     else if (value === null) inner.removeAttribute(name)
     else inner.setAttribute(name, value)
   }
