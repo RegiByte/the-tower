@@ -51,13 +51,13 @@ kbd { font: 700 var(--fs-xs)/1 var(--mono); padding: var(--sp-2xs) var(--sp-xs);
 .limits .command { color: var(--ink); }
 .limits .account:has(.asof.stale) > div { opacity: .5; }
 .limits .asof.stale { color: var(--ink); }
-.limits :is(.probe, .extension) { display: flex; align-items: center; gap: var(--sp-xs); margin-top: calc(-1 * var(--sp-s)); color: var(--faint); }
-.limits :is(.probe, .extension) .lamp { width: 7px; height: 7px; }
+.limits .probe { display: flex; align-items: center; gap: var(--sp-xs); margin-top: calc(-1 * var(--sp-s)); color: var(--faint); }
+.limits .probe .lamp { width: 7px; height: 7px; }
 .limits .probe-run { flex: none; margin-left: auto; padding: 0 var(--sp-xs); border: 0; background: none; color: var(--muted); font-size: inherit; text-decoration: underline dotted; cursor: pointer; }
 .limits .probe-run:hover { color: var(--ink); }
 .limits .extra { margin-top: calc(-1 * var(--sp-s)); color: var(--faint); }
 .limits .extra.spent { color: var(--broken-text); }
-.limits :is(.probe, .extension):is(.working, .broken) { color: var(--muted); }
+.limits .probe:is(.working, .broken) { color: var(--muted); }
 .side-views { display: flex; gap: var(--sp-xs); padding: var(--sp-m) var(--sp-xl); border-bottom: 1px solid var(--line); }
 .side-views button { min-height: var(--control); padding: 0 var(--sp-m); border-color: transparent; background: none; color: var(--muted); }
 .side-views .board-sign { margin-left: auto; display: flex; gap: var(--sp-xs); }
@@ -224,6 +224,14 @@ body:has(.crew-group.dragged) .tower-tip { visibility: hidden; }
 .past button:not(.icon-btn) { min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-s); }
 .said { color: var(--faint); }
 .side-foot { display: flex; align-items: center; gap: var(--sp-s); margin-top: auto; padding: var(--sp-s) var(--sp-xl); border-top: 1px solid var(--line); color: var(--faint); font-size: var(--fs-xs); }
+.side-extensions { margin-top: auto; padding: var(--sp-xs) var(--sp-xl) 0; border-top: 1px solid var(--line); }
+.side-extensions + .side-foot { margin-top: 0; border-top: 0; }
+.extensions-open { display: inline-flex; align-items: center; gap: var(--sp-xs); padding: var(--sp-2xs) var(--sp-xs); margin-left: calc(-1 * var(--sp-xs)); border: 0; border-radius: var(--radius); background: none; color: var(--muted); font: var(--fs-xs) var(--ui); cursor: pointer; }
+.extensions-open:hover, .extensions-open:focus-visible, .extensions-open.on { color: var(--ink); background: var(--panel-2); }
+.extensions-open .lamp { width: 7px; height: 7px; }
+.extensions-open.broken { color: var(--c-text); }
+.extensions-pop:popover-open { display: grid; } .settings-pop.extensions-pop { width: min(22rem, calc(100vw - 16px)); max-height: min(28rem, 70vh); overflow-y: auto; gap: var(--sp-xs); padding: var(--sp-m); }
+.extensions-pop .more { color: var(--faint); font-size: var(--fs-xs); padding: 0 var(--sp-s); }
 .side-renderers { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-xs) var(--sp-l); padding: 0 var(--sp-xl) var(--sp-m); color: var(--faint); font-size: var(--fs-xs); }
 .side-renderers b { color: var(--ink); }
 .side-renderers a { color: var(--muted); text-decoration: none; }
@@ -443,6 +451,7 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, [data-view="tow
   <div class="side-views"><button class="eyebrow" data-side-view="floors">Floors</button><button class="eyebrow" data-side-view="stats" data-tip="spend, work and waits, from the logs">Stats</button><span class="board-sign" id="board-sign"></span></div>
   <nav class="floors" id="floors" aria-label="floors"></nav>
   <div class="stats-side" id="stats"></div>
+  <div class="side-extensions"><button class="extensions-open" id="extensions-open"></button><div class="settings-pop extensions-pop" id="extensions-pop" popover="manual" aria-label="extensions"></div></div>
   <div class="side-foot" id="side-foot"></div>
   <div class="side-renderers" id="renderers"></div>
   <div class="rail" id="rail"></div>
