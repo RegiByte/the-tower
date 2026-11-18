@@ -1546,38 +1546,30 @@
       "runtime": "generic",
       "values": {
         "SUBJECT_MENU": {
-          "since": "2.15",
-          "stability": "provisional"
+          "since": "2.15"
         },
         "comboboxHtml": {
-          "since": "2.15",
-          "stability": "provisional"
+          "since": "2.15"
         },
         "subjectAreaHtml": {
-          "since": "2.16",
-          "stability": "provisional"
+          "since": "2.16"
         },
         "subjectButtonHtml": {
-          "since": "2.16",
-          "stability": "provisional"
+          "since": "2.16"
         },
         "subjectHtml": {
-          "since": "2.15",
-          "stability": "provisional"
+          "since": "2.15"
         },
         "subjectMenuHtml": {
-          "since": "2.15",
-          "stability": "provisional"
+          "since": "2.15"
         }
       },
       "types": {
         "Combobox": {
-          "since": "2.15",
-          "stability": "provisional"
+          "since": "2.15"
         },
         "ComboboxOption": {
-          "since": "2.15",
-          "stability": "provisional"
+          "since": "2.15"
         }
       }
     },
