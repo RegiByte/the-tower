@@ -12,6 +12,7 @@
 import type { Attention } from '../bridge/life.ts'
 import type { ExtensionProblem, ExtensionView } from './extensions.ts'
 import { EXTENSION_ATTENTION, EXTENSION_STATE_NAME, PROBLEM_FIX, problemLine } from './extension-words.ts'
+import { domId } from './dom-id.ts'
 import { esc, plural } from './format.ts'
 
 const ATTENTION_RANK: Record<Attention, number> = { broken: 0, needs: 1, working: 2, ready: 3, quiet: 4 }
@@ -86,12 +87,12 @@ const entryHtml = (e: ExtensionView) => {
 export const extensionsPanelHtml = (extensions: readonly ExtensionView[]): string =>
   `<div class="extensions-panel">${extensions.length ? extensionsInOrder(extensions).map(entryHtml).join('') : '<p class="none">The tower runs no extension.</p>'}</div>`
 
-/** The short list: each extension in a line, its problems under it without their fixes, each row a button to its entry. */
+/** The short list: each extension in a line, its problems under it without their fixes, each row a button to its entry, its id `domId('ext', id)`. */
 export const extensionsListHtml = (extensions: readonly ExtensionView[]): string =>
   `<div class="extensions-list">${extensionsInOrder(extensions)
     .map((e) => {
       const problems = shownProblems(e)
-      return `<button class="extension-row ${EXTENSION_ATTENTION[e.state]}" data-extension="${esc(e.id)}"><span class="line"><span class="lamp"></span><b>${esc(e.title)}</b>${stateHtml(e)}</span>${
+      return `<button class="extension-row ${EXTENSION_ATTENTION[e.state]}" id="${esc(domId('ext', e.id))}" data-extension="${esc(e.id)}"><span class="line"><span class="lamp"></span><b>${esc(e.title)}</b>${stateHtml(e)}</span>${
         problems.length ? `<span class="problems">${problems.map(problemLineHtml).join('')}</span>` : ''
       }</button>`
     })
