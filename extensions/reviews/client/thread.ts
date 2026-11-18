@@ -2,7 +2,7 @@ import { type Board, type Card, type Floor, type Subject, linesSubject, noLonger
 import { CHANGES_POLL_MS } from '/lib/changes.js'
 import { commandOf } from '/lib/keys.js'
 import { heldHandlers, loop, noReads, reading, valueOf } from '/lib/machine.js'
-import { type Mount, type Tab, copyTelling, drawPanel, fileCall, panelsCss, pressing } from '/lib/view.js'
+import { type Mount, type Tab, copyTelling, fileCall, morphPanel, panelsCss, pressing } from '/lib/view.js'
 import { plural } from '/lib/words.js'
 import { anchorOf } from './anchors.ts'
 import type { FloorThread, NoteCall } from '../threads.ts'
@@ -44,7 +44,7 @@ export const tab: Tab = (board, subject) => {
 }
 
 /** A thread's view on the subject it is mounted on, its place read from the board and the subject as they are now. */
-const threadMount = (placeOf: (board: Board, subject: Subject) => ThreadPlace): Mount => (host, { tower, board: first, subject: firstSubject, kit }) => {
+const threadMount = (placeOf: (board: Board, subject: Subject) => ThreadPlace): Mount => (host, { tower, board: first, subject: firstSubject, kit, scope }) => {
   let board = first
   let subject = firstSubject
   const place = () => placeOf(board, subject)
@@ -96,9 +96,13 @@ const threadMount = (placeOf: (board: Board, subject: Subject) => ThreadPlace): 
     const at = place()
     const thread = threadOf()
     const view = threadViewAt(board, at, {
-      thread, failed: thread ? undefined : threadFailure(threadReads.state(), at), states: at.reader && valueOf(stateReads.state().held[at.reader.id]), picked: picked(), re,
+      thread, failed: thread ? undefined : threadFailure(threadReads.state(), at), states: at.reader && valueOf(stateReads.state().held[at.reader.id]), picked: picked(), re, scope,
     })
-    drawPanel(el, reviewsHtml(view), { 'note-text': noteDrafts.get(draftKey(at)) ?? '' })
+    morphPanel(el, reviewsHtml(view))
+    /** The box shows its thread's draft, which every view of the thread shares: a box made anew, or one another view typed into, takes it. */
+    const box = el.querySelector<HTMLTextAreaElement>('[data-note-text]')
+    const draft = noteDrafts.get(draftKey(at)) ?? ''
+    if (box && box.value !== draft) box.value = draft
   }
 
   const note = ([verb, input]: NoteCall, fields: Partial<AppendInput>) => tower.call(verb as never, { ...input, ...fields } as never) as Promise<Appended>
