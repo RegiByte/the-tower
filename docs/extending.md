@@ -582,7 +582,8 @@ element by setting one of them on it: `--ui-background` (`--panel`), `--ui-foreg
 `--ui-ring` (`--accent`), `--ui-destructive` (`--broken-text`), `--ui-radius` (`--radius`), `--ui-spacing`
 (`--sp-xs`), `--ui-font-size` (`--fs-s`), `--ui-font-sans` (`--ui`), `--ui-shadow` (`--shadow-pop`),
 `--ui-icon-chevron` and `--ui-icon-check`. The ⋯ button also reads `--control`. The outer elements are yours to lay
-out: `<tower-combobox>` is a block, the rest keep the browser's defaults.
+out: `<tower-combobox>` is a block, `<tower-menu-area>` turns off iOS's long-press callout, and the rest keep the
+browser's defaults.
 
 **Versioning.** `test/served-exports.json`'s `libUi` lists each module's tags, each attribute, property, event and state
 with the minor it arrived in, read from the module's `elements` export; the table above is generated from the same

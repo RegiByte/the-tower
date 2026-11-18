@@ -153,6 +153,17 @@ class TowerMenuButton extends HTMLElement {
 /** How long a touch is held before it opens the menu, as a long press does on a touch screen. */
 const HOLD_MS = 500
 
+/** How far a finger may move and still hold: a finger resting on glass moves a little. */
+const HOLD_SLOP = 10
+
+/** Eats the click a released hold makes, so the row or item under the finger isn't pressed too; the next press ends the watch. */
+function swallowClick(doc: Document) {
+  const watch = new AbortController()
+  const options = { capture: true, signal: watch.signal }
+  doc.addEventListener('click', (click) => (click.preventDefault(), click.stopPropagation(), watch.abort()), options)
+  doc.addEventListener('pointerdown', () => watch.abort(), options)
+}
+
 class TowerMenuArea extends HTMLElement {
   #internals = this.attachInternals()
 
@@ -185,16 +196,36 @@ class TowerMenuArea extends HTMLElement {
   #onContext = (event: MouseEvent) => {
     if (event.defaultPrevented) return
     event.preventDefault()
-    const keyboard = event.button !== 2 && !event.ctrlKey
+    const pointer = (event as PointerEvent).pointerType
+    const keyboard = event.button !== 2 && !event.ctrlKey && pointer !== 'touch' && pointer !== 'pen'
     this.#open(keyboard ? (event.target as Element) : { x: event.clientX, y: event.clientY })
   }
 
-  #onPress = (event: PointerEvent) => {
-    if (event.pointerType !== 'touch') return
-    const held = new AbortController()
-    const timer = setTimeout(() => (held.abort(), this.#open({ x: event.clientX, y: event.clientY })), HOLD_MS)
-    const cancel = () => (clearTimeout(timer), held.abort())
-    for (const type of ['pointerup', 'pointercancel', 'pointermove']) this.addEventListener(type, cancel, { signal: held.signal })
+  /**
+   * A long press opens the menu where the finger rests, as the SDK's own context trigger does, without binding its
+   * hold to the area, which would write on the area. While the finger is down the browser's own long-press
+   * `contextmenu` (Android's) is refused, and the click its release makes after a hold is eaten.
+   */
+  #onPress = (down: PointerEvent) => {
+    if (down.pointerType !== 'touch' || !down.isPrimary) return
+    const doc = this.ownerDocument
+    const press = new AbortController()
+    const on = (type: string, listener: (event: Event) => void) => doc.addEventListener(type, listener, { capture: true, signal: press.signal })
+    const ours = (event: Event) => (event as PointerEvent).pointerId === down.pointerId
+    let held = false
+    const timer = setTimeout(() => ((held = true), this.#open({ x: down.clientX, y: down.clientY })), HOLD_MS)
+    const end = () => (clearTimeout(timer), press.abort())
+    on('pointermove', (move) => {
+      const { clientX, clientY } = move as PointerEvent
+      if (ours(move) && !held && Math.hypot(clientX - down.clientX, clientY - down.clientY) > HOLD_SLOP) end()
+    })
+    on('pointercancel', (cancel) => ours(cancel) && end())
+    on('contextmenu', (menu) => menu.preventDefault())
+    on('pointerup', (up) => {
+      if (!ours(up)) return
+      end()
+      if (held) swallowClick(doc)
+    })
   }
 }
 
