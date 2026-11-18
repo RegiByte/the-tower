@@ -106,6 +106,12 @@ func run(_ i: Int) {
     web.mouseDown(with: mouse(.leftMouseDown, at: NSPoint(x: xy[0], y: xy[1])))
     web.mouseUp(with: mouse(.leftMouseUp, at: NSPoint(x: xy[0], y: xy[1])))
     next()
+  case "--rclick":
+    let xy = value.split(separator: ",").compactMap { Double($0) }
+    guard xy.count == 2 else { fail("--rclick takes x,y in the page's CSS pixels") }
+    web.rightMouseDown(with: mouse(.rightMouseDown, at: NSPoint(x: xy[0], y: xy[1])))
+    web.rightMouseUp(with: mouse(.rightMouseUp, at: NSPoint(x: xy[0], y: xy[1])))
+    next()
   case "--drag":
     let xy = value.split(separator: ",").compactMap { Double($0) }
     guard xy.count == 4 else { fail("--drag takes x,y,x2,y2 in the page's CSS pixels") }

@@ -7,6 +7,7 @@
  *   npm run tool:webkit -- <url> [--size 1280x800] step…
  *     --eval '<js>'   evaluate in the page, awaited; prints the result as JSON (fails the run on a throw)
  *     --click <x,y>   press and release the left button at the page's CSS pixels x,y: a real click, with user activation
+ *     --rclick <x,y>  press and release the right button there: the page gets the `contextmenu` a right-click sends
  *     --drag <x,y,x2,y2>  press the left button at x,y, move to x2,y2 and release there: a real drag, which selects text
  *     --wheel <x,y,notches[,lines[,times]]>  turn a mouse wheel at the page's CSS pixels x,y: one discrete event, as a
  *                     physical wheel sends it, negative scrolls up; lines is the size of the accelerated delta macOS
