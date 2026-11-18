@@ -1,0 +1,15 @@
+{
+  "provides": "guides",
+  "major": 1,
+  "names": [
+    "collections.guides",
+    "client.center.js#mount",
+    "client.commands.js#openCenter",
+    "client.guide.js#GUIDES",
+    "client.guide.js#TOWER_WIDE",
+    "client.guide.js#byCategory",
+    "client.guide.js#guideOf",
+    "client.guide.js#isGuide",
+    "client.guide.js#matches"
+  ]
+}
