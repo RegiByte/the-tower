@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-11-17",
+  "reviewed": "2026-11-18",
   "refs": [
     "hub/src/bridge/turns.ts#turnsByConversation",
     "hub/src/bridge/turns.ts#turnsOf",
@@ -89,8 +89,8 @@ renderer can draw the brief alike, inline.
   terminal's output, most of a log's bytes, is skipped unparsed, so a read stays cheap on a long session.
   [`wholeConversation`](ref:hub/src/bridge/turns.ts#wholeConversation) gives every turn of one conversation, at
   `GET /conversations/<id>/<conversation>` ([`conversation`](ref:hub/src/tower/http.ts#conversation)). `tower agent`
-  prints the brief, and where a conversation's `earlier` is set, the exact `tower agent <CALLSIGN> <conversation>` that
-  prints every turn, oldest first: a reviewer takes a worker's goal from it, and the goal is often before the last
+  prints the brief, and where a conversation's `earlier` is set, the exact `tower agent <session> <conversation>` that
+  prints every turn, oldest first (by session, which a later holder of the callsign never takes over): a reviewer takes a worker's goal from it, and the goal is often before the last
   turns. An earlier session's conversations each get that command, since it shows none of their turns. The prompt
   opening a hired worker's first conversation is named as its hirer's: `promptBy` covers only a latest prompt.
 - *Steps, since 1.133.* A turn carries `steps` ([`Step`](ref:hub/src/bridge/turns.ts#Step)), what Claude did between

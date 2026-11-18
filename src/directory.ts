@@ -14,7 +14,7 @@
  */
 import { existsSync, fstatSync, readFileSync, realpathSync } from 'node:fs'
 import path from 'node:path'
-import type { Board, Card, Floor, FloorCollection, FloorItem } from './bridge/board.ts'
+import type { Board, Card, Floor, FloorCollection, FloorItem, KeptBy } from './bridge/board.ts'
 import type { Brief, Turn } from './bridge/turns.ts'
 import type { Shown } from './bridge/facts.ts'
 import { callerHeaders, type Replies } from './shared/api.ts'
@@ -25,7 +25,7 @@ import { helpLines, jsonArgument, jsonRefusal, missingLine, parseWord, printedOf
 import { renderersOf } from './renderers.ts'
 import { layoutOf } from './shared/views.ts'
 import type { BoardMsg, Reads } from './shared/shelf-page.ts'
-import { ago, CLI_REGIONS, exemptionWords, landing, landingLine, linesOf, sizeOf, hiresBy, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, hireBlocked, modelNote, runtimeRefusal, spawnCall, spawnForm, shelfSource, statusName, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
+import { ago, CLI_REGIONS, exemptionWords, landing, landingLine, linesOf, sizeOf, hiresBy, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, holdersOf, workerAt, modelName, hireBlocked, modelNote, runtimeRefusal, spawnCall, spawnForm, shelfSource, statusName, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { RUNTIMES, towerUrl, type Renderer, type ShelfEntry } from './shared/model.ts'
 import { tagOf } from './shared/tags.ts'
 import { titled, titleIn } from './shared/titles.ts'
@@ -34,7 +34,7 @@ import { configPath } from './shared/paths.ts'
 import { readConfig } from './system.ts'
 import { CliError } from './cli-error.ts'
 import { checkFolder, freezeFolder } from './extension-check.ts'
-import { plural } from './shared/format.ts'
+import { plural, when } from './shared/format.ts'
 import { usageLine, type Run, type VerbOf, type WordOwner } from './cli-verbs.ts'
 import { SHELF_KINDS } from './shelf.ts'
 import { recentJobs, type Job } from './bridge/jobs.ts'
@@ -224,11 +224,14 @@ const everyCard = async (board: Board): Promise<Card[]> => [
   ...(await Promise.all(board.floors.filter((f) => f.archived).map((f) => readArchive(f.id)))).flat(),
 ]
 
-/** A callsign can come back: a worker on duty wins over past ones, and past ones by the latest start, archived or not. */
-const cardNamed = async (board: Board, name: string): Promise<Card> => {
-  const onBoard = workerNamed(board.floors.flatMap((f) => f.cards), name)
-  const card = onBoard?.onDuty ? onBoard : workerNamed(await everyCard(board), name)
-  if (!card) throw new CliError(`No worker is called "${name}". \`tower agents --all\` lists who is on duty.`)
+/**
+ * A worker by its session's id, or by callsign: a callsign can come back, so a worker on duty wins over past ones, and
+ * past ones by the latest start, archived or not. A session id names one worker for good.
+ */
+const cardAt = async (board: Board, key: string): Promise<Card> => {
+  const onBoard = workerAt(board.floors.flatMap((f) => f.cards), key)
+  const card = onBoard && (onBoard.id === key || onBoard.onDuty) ? onBoard : workerAt(await everyCard(board), key)
+  if (!card) throw new CliError(`No worker is called "${key}", nor runs as a session of that id. \`tower agents --all\` lists who is on duty, \`tower callsign <CALLSIGN>\` every worker that carried a callsign.`)
   return card
 }
 
@@ -270,20 +273,23 @@ const wholeLines = (thread: Brief, hirer: string | undefined): string[] => [
   ]),
 ]
 
-/** What `tower agent` left out of a conversation: the exact command that reads all of it. */
-const leftOutLine = (callsign: string, thread: Brief): string =>
-  `Earlier turns of this conversation are left out, and they may hold its goal: \`tower agent ${callsign} ${thread.id}\` prints every turn.`
+/**
+ * What `tower agent` left out of a conversation: the exact command that reads all of it. `session`: the worker's, which
+ * keeps naming it once its callsign names a later worker.
+ */
+const leftOutLine = (session: string, thread: Brief): string =>
+  `Earlier turns of this conversation are left out, and they may hold its goal: \`tower agent ${session} ${thread.id}\` prints every turn.`
 
 /** An earlier session of the worker: `tower agent` shows none of its turns, so each conversation names the command that reads it. */
-const earlierLines = (callsign: string, p: BriefPart): string[] => [
+const earlierLines = (p: BriefPart): string[] => [
   `  ${sessionLabel(p.n, p.of, p.session.startedAt)}, session ${p.session.id}:`,
-  ...p.threads.map((t) => `    \`tower agent ${callsign} ${t.id}\``),
+  ...p.threads.map((t) => `    \`tower agent ${p.session.id} ${t.id}\``),
 ]
 
 /** Every turn of one of a worker's conversations, read from the session that holds it. `briefs`: the worker's, as `readThreads` gives them. */
 const wholeThread = async (card: Card, briefs: Brief[], conversation: string): Promise<Brief> => {
   const held = briefs.find((t) => t.id === conversation)
-  if (!held) throw new CliError(`${card.callsign} has no conversation "${conversation}"`, `\`tower agent ${card.callsign}\` names its conversations`)
+  if (!held) throw new CliError(`${card.callsign} has no conversation "${conversation}"`, `\`tower agent ${card.id}\` names its conversations`)
   const res = await fetch(`${towerAt()}/conversations/${held.session.id}/${conversation}`)
   if (!res.ok) throw new CliError(`The tower answered ${res.status} for conversation ${conversation}: ${await res.text()}`)
   return res.json()
@@ -299,12 +305,41 @@ const agent = (board: Board, card: Card, cards: Card[], briefs: Brief[], now: nu
     `  ${[statusName(card), `for ${ago(now - card.enteredAt)}`, reachWords(board.runtimes, card), modelName(card.model)].filter(Boolean).join('  ·  ')}`,
     `  in ${card.cwd}`,
     ...(card.unresumable ? [`  ${UNRESUMABLE_TITLE[card.unresumable]}`] : []),
+    ...(card.continuedBy ? [`  carried on by session ${card.continuedBy.id}: \`tower agent ${card.continuedBy.id}\``] : []),
     ...(card.hiredBy ? [`  hired by ${hirerName(card.hiredBy, card.project)}`] : []),
     ...(card.crew ? [`  in ${card.crew.callsign}'s crew, by ${card.crew.by}`] : []),
     ...(card.exempt ?? []).map((e) => `  ${exemptionWords(e)}`),
     ...(hires.length ? [`  under it: ${hires.map((h) => `${h.callsign} (${[statusName(h), ...(h.project === card.project ? [] : [`on ${h.project}`])].join(', ')})`).join(', ')}`] : []),
-    ...(current ? current.threads.flatMap((t) => ['', ...threadLines(t, card.conversations.find((conv) => conv.id === t.id)?.promptBy), ...(t.earlier ? ['', leftOutLine(card.callsign, t)] : [])]) : ['', 'No saved conversation yet.']),
-    ...(earlier.length ? ['', `Earlier sessions of ${card.callsign}, each conversation's command printing every turn:`, ...earlier.flatMap((p) => earlierLines(card.callsign, p))] : []),
+    ...(current ? current.threads.flatMap((t) => ['', ...threadLines(t, card.conversations.find((conv) => conv.id === t.id)?.promptBy), ...(t.earlier ? ['', leftOutLine(card.id, t)] : [])]) : ['', 'No saved conversation yet.']),
+    ...(earlier.length ? ['', `Earlier sessions of ${card.callsign}, each conversation's command printing every turn:`, ...earlier.flatMap(earlierLines)] : []),
+  ]
+}
+
+/** The prompt a worker first ran on: the opening turn of its first session's first conversation. */
+const firstPrompt = async (card: Card): Promise<string | undefined> => {
+  const briefs = await readThreads(card.id)
+  const opening = briefParts(briefs).at(-1)?.threads[0]
+  if (!opening) return undefined
+  const thread = opening.earlier ? await wholeThread(card, briefs, opening.id) : opening
+  return thread.turns[0]?.prompt
+}
+
+const FIRST_PROMPT_CHARS = 200
+
+const cutTo = (text: string, chars: number) => (text.length > chars ? `${text.slice(0, chars - 1)}…` : text)
+
+/** A worker that carried a callsign: its session, floor and span on one line, its first prompt cut to one line under it. */
+const holderLines = (board: Board, card: Card, prompt: string | undefined): string[] => {
+  const floor = board.floors.find((f) => f.id === card.project)
+  const sessions = card.lineage.length
+  return [
+    `  session ${card.id}  ·  ${[
+      floor ? floorTitle(floor) : `floor ${card.project}`,
+      `${when(card.lineage[0]!.startedAt)} to ${card.onDuty ? 'now' : when(card.enteredAt)}`,
+      statusName(card),
+      ...(sessions > 1 ? [`${sessions} sessions`] : []),
+    ].join('  ·  ')}`,
+    `    ${GIST_MARK.prompt} ${prompt ? cutTo(prompt.replace(/\s+/g, ' ').trim(), FIRST_PROMPT_CHARS) : '(no prompt saved)'}`,
   ]
 }
 
@@ -440,9 +475,13 @@ const readItem = async (floor: Floor, collection: string, id: string): Promise<s
   return res.text()
 }
 
+/** The command that reads the conversation an item was kept in, by the keeper's session: its callsign may name a later worker. */
+const keptInLine = ({ session, conversation }: KeptBy) => `    kept in \`tower agent ${session}${conversation ? ` ${conversation}` : ''}\``
+
 const itemLines = (collection: FloorCollection, item: FloorItem, title: string | undefined, now: number) => [
   `  ${item.tag}  ·  ${[title?.slice(0, 80) ?? '(untitled)', `edited ${ago(now - item.modifiedAt)} ago`, sizeOf(item.size), `kept by ${item.keptBy?.callsign ?? 'unknown'}`].join('  ·  ')}`,
   `    ${collection.dir}/${item.id}`,
+  ...(item.keptBy ? [keptInLine(item.keptBy)] : []),
 ]
 
 /** A collection in a list of them: its id, label and what it is for. */
@@ -727,7 +766,7 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
   agent: async ([callsign, conversation]) => {
     if (!callsign) throw new CliError(usageLine('agent'))
     const board = await readBoard()
-    const card = await cardNamed(board, callsign)
+    const card = await cardAt(board, callsign)
     if (conversation) {
       const briefs = await readThreads(card.id)
       const whole = await wholeThread(card, briefs, conversation)
@@ -739,6 +778,19 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     const onBoard = board.floors.flatMap((f) => f.cards)
     const cards = floor.cards.includes(card) ? onBoard : [...onBoard, ...(await readArchive(floor.id))]
     console.log(agent(board, card, cards, await readThreads(card.id), now).join('\n'))
+  },
+  callsign: async ([name]) => {
+    if (!name) throw new CliError(usageLine('callsign'))
+    const board = await readBoard()
+    const holders = holdersOf(await everyCard(board), name)
+    if (!holders.length) throw new CliError(`No worker ever carried "${name.toUpperCase()}"`, '`tower agents --all` lists who is on duty')
+    const prompts = await Promise.all(holders.map(firstPrompt))
+    console.log(
+      [
+        `${holders.length === 1 ? 'One worker' : `${holders.length} workers`} carried ${holders[0]!.callsign}, the first first; \`tower agent <session>\` reads one:`,
+        ...holders.flatMap((c, n) => holderLines(board, c, prompts[n])),
+      ].join('\n'),
+    )
   },
   extensions: async ([sub, arg, ...rest]) => {
     if (!sub) {
@@ -918,7 +970,7 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
   home: async ([callsign]) => {
     if (!callsign) throw new CliError(usageLine('home'))
     const board = await readBoard()
-    const card = await cardNamed(board, callsign)
+    const card = await cardAt(board, callsign)
     if (card.id === me) {
       await command('fact', { name: 'leave' })
       const crew = crewOf(board.floors.flatMap((f) => f.cards), card).filter((c) => c.live)
@@ -933,7 +985,7 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
   },
   'let-go': async ([callsign]) => {
     if (!callsign) throw new CliError(usageLine('let-go'))
-    const card = await cardNamed(await readBoard(), callsign)
+    const card = await cardAt(await readBoard(), callsign)
     const call = callOf(card, 'let-go')
     if (!call) throw new CliError(`${card.callsign} is ${statusName(card)}: only a stranded worker (stopped, killed or lost), on duty until it is resumed, is let go`)
     await command(...call)

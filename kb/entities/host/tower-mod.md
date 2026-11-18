@@ -4,7 +4,7 @@
   "name": "tower mod",
   "summary": "The Claude Code mod loaded into every Claude session, and its opencode plugin loaded into every opencode session, posting the runtime's events and a few derived ones to the host, and teaching the session the tower: the tower command on its PATH and two skills, tower:handbook and tower:guide.",
   "in": "host",
-  "reviewed": "2026-11-15",
+  "reviewed": "2026-11-18",
   "refs": ["hub/src/mod/hooks/register.js#register", "hub/src/mod/hooks/register.js#forward", "hub/src/mod/hooks/hooks.json", "hub/src/mod/.claude-plugin/plugin.json", "hub/src/mod/bin/tower", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/mod/skills/guide/SKILL.md", "hub/src/mod/opencode/index.js", "hub/src/mod/opencode/tui.ts", "hub/src/shared/launch-opencode.ts#configOf"],
   "links": [
     { "to": "host-daemon", "verb": "sends", "carries": "from the opencode plugin: opencode's bus events under their own types (tool output left out, a child session's lines with its parentID, a step's end with its model, a subagent call's first progress with the child it spawned, a session's usage with the total of it and its subagents), plugin.started (release, reloaded, models), tool.execute.before, mcp.status and plugin.failed, POST /hooks/<id> on hooks.sock" },

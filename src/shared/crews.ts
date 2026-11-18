@@ -111,6 +111,16 @@ export const workerNamed = (cards: Card[], name: string): Card | undefined => {
   return named.find((c) => c.onDuty) ?? named.sort((a, b) => b.id.localeCompare(a.id))[0]
 }
 
+/** A card by its session's id, else a worker's current card by callsign (`workerNamed`). */
+export const workerAt = (cards: Card[], key: string): Card | undefined => cards.find((c) => c.id === key) ?? workerNamed(cards, key)
+
+/**
+ * Every worker that carried a callsign, by its card as it ran last (one a resume carried on is the continuing session's),
+ * the first to start first. A callsign comes back once its holder is off duty, so it names several workers over time.
+ */
+export const holdersOf = (cards: Card[], name: string): Card[] =>
+  cards.filter((c) => c.callsign === name.toUpperCase() && !c.continuedBy).sort((a, b) => a.lineage[0]!.startedAt - b.lineage[0]!.startedAt)
+
 /**
  * Workers on duty in the order every renderer steps through them: the top floor first, each floor's crews in the
  * viewer's `order` (`crewTreeIn`). @since 1.143

@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-05",
-  "reviewed": "2026-11-17",
+  "reviewed": "2026-11-18",
   "refs": [
     "hub/src/directory.ts#keepContent",
     "hub/src/directory.ts#keepArgs",
@@ -48,7 +48,8 @@ versions of one idea with nothing saying which was current.
   project, collection, id}` in the worker's own log, as `tower.show` goes ([[agent-show]]). Two acts: a link that
   guards what is kept wraps `collection/create`; one that refuses the fact leaves the item kept and unannounced. The bridge folds it into `facts.kept` with the conversation the worker was in, and the board joins
   every session's `kept` onto the floor's items: an item carries `keptBy {session, callsign, conversation?}`. An item
-  made any other way (the tower, an editor, a shell) has none. Both renderers name the keeper.
+  made any other way (the tower, an editor, a shell) has none. Both renderers name the keeper, and `tower kept` prints
+  under each item the `tower agent <session> <conversation>` that reads the conversation it was kept in.
 - Titles are derived where they are shown: a markdown or text item's first line, an html item's `<title>`. Nothing
   about an item is stored beside it.
 - To change a kept item, a worker edits its file in place and never keeps a second copy. Throwing an item away is

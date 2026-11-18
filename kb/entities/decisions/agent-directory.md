@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-11-17",
-  "refs": ["hub/src/cli-verbs.ts#CLI_VERBS", "hub/src/directory.ts#cardNamed", "hub/src/mod/bin/tower", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/bridge/resources.ts#peers", "hub/src/machine.ts#peersIn", "hub/src/bridge/board.ts#board", "hub/src/shared/launches.ts#resumeRequest", "hub/src/bridge/chains.ts#resumeName", "hub/src/shared/callsign.ts#callsigns", "hub/src/shared/launches.ts#spawnRequest", "hub/src/shared/spawn-form.ts#spawnCall"]
+  "reviewed": "2026-11-18",
+  "refs": ["hub/src/cli-verbs.ts#CLI_VERBS", "hub/src/directory.ts#cardAt", "hub/src/shared/crews.ts#workerAt", "hub/src/shared/crews.ts#holdersOf", "hub/src/mod/bin/tower", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/bridge/resources.ts#peers", "hub/src/machine.ts#peersIn", "hub/src/bridge/board.ts#board", "hub/src/shared/launches.ts#resumeRequest", "hub/src/bridge/chains.ts#resumeName", "hub/src/shared/callsign.ts#callsigns", "hub/src/shared/launches.ts#spawnRequest", "hub/src/shared/spawn-form.ts#spawnCall"]
 }
 ---
 **Problem.** The user names workers by [[callsign]] ("reach out to DAEDALUS-88"), but a worker knew neither its
@@ -23,8 +23,14 @@ name belongs to which callsign, floor or task.
 - Every Claude spawn and resume passes the worker's [[callsign]] as Claude's `--name` ([[host-owns-ptys]]), so a worker's
   peer name is its callsign, across resumes too: a resume that carries a worker on runs under its callsign
   ([`resumeName`](ref:hub/src/bridge/chains.ts#resumeName)), a fork under its own.
-  [`cardNamed`](ref:hub/src/directory.ts#cardNamed) finds a callsign on several cards (a worker on duty wins over past
-  ones), reading the floors' archives when no worker on duty has it ([[board-archive]]).
+  [`cardAt`](ref:hub/src/directory.ts#cardAt) finds a callsign on several cards (a worker on duty wins over past
+  ones), reading the floors' archives when no worker on duty has it ([[board-archive]]); it takes a session id as well
+  ([`workerAt`](ref:hub/src/shared/crews.ts#workerAt)), which names one worker for good, so the commands `tower agent`
+  prints to read further name the session, not the callsign. `tower callsign <CALLSIGN>` lists every worker that
+  carried one ([`holdersOf`](ref:hub/src/shared/crews.ts#holdersOf): each by its last card, a resume chain once), with
+  its floor, span and first prompt, composed from the board, the archives and `/conversations` with no read of its
+  own. The handbook says to read a past conversation with these, never a session's log, which fills a worker's context
+  long before it says what was said.
 - The tower mod ships `bin/tower` (`src/directory.ts`), which Claude Code puts on the Bash tool's PATH. Its verbs are
   the workers' entries of the command's one table, [`CLI_VERBS`](ref:hub/src/cli-verbs.ts#CLI_VERBS) ([[tower-cli]]:
   `tower --help`, `tower <verb> --help`, and listed when a verb is unknown), each run by its handler in
