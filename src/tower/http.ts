@@ -84,10 +84,12 @@ import { createHash, randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
+import type { Writable } from 'node:stream'
 import { z } from 'zod'
 import { accountsOf } from '../bridge/rate-limits.ts'
 import { bucketStart, outsideIn, stats, weeklyBudget, weeklyRead, type Stats, type WeeklyBudget } from '../bridge/stats.ts'
 import { pace } from '../shared/limits.ts'
+import { eventStream, sendBody } from './encoding.ts'
 import { withLiveness } from '../bridge/status.ts'
 import { briefOf, toolCallOf, wholeConversation } from '../bridge/turns.ts'
 import { isLive } from '../bridge/verbs.ts'
@@ -204,7 +206,7 @@ export const httpServer = defineResource({
       const etag = `"${createHash('sha256').update(body).digest('base64url').slice(0, 22)}"`
       const headers = { 'cache-control': 'no-cache', etag, ...ANY_ORIGIN }
       if (req.headers['if-none-match'] === etag) return res.writeHead(304, headers).end()
-      res.writeHead(200, { 'content-type': type, ...headers }).end(body)
+      return sendBody(req, res, 200, { 'content-type': type, ...headers }, body)
     }
 
     function design(req: http.IncomingMessage, res: http.ServerResponse, url: string) {
@@ -245,8 +247,8 @@ export const httpServer = defineResource({
       }
       const text = await now
       const kept = hashedUrl(base!, text) === url ? text : named.get(url)
-      if (kept === undefined) return res.writeHead(200, { 'content-type': 'text/javascript', ...FRESH, ...ANY_ORIGIN }).end(text)
-      res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'max-age=31536000, immutable', ...ANY_ORIGIN }).end(kept)
+      if (kept === undefined) return sendBody(req, res, 200, { 'content-type': 'text/javascript', ...FRESH, ...ANY_ORIGIN }, text)
+      return sendBody(req, res, 200, { 'content-type': 'text/javascript', 'cache-control': 'max-age=31536000, immutable', ...ANY_ORIGIN }, kept)
     }
 
     /**
@@ -284,21 +286,21 @@ export const httpServer = defineResource({
     const STALL_MS = 30_000
     const MAX_BEHIND = 64 * 1024 * 1024
 
-    /** Each stream response with writes waiting, and the timer that closes it unless they drain first. */
-    const stalls = new Map<http.ServerResponse, NodeJS.Timeout>()
+    /** Each event stream with writes waiting, and the timer that closes it unless they drain first. */
+    const stalls = new Map<Writable, NodeJS.Timeout>()
 
-    const unstall = (res: http.ServerResponse) => {
-      clearTimeout(stalls.get(res))
-      stalls.delete(res)
+    const unstall = (out: Writable) => {
+      clearTimeout(stalls.get(out))
+      stalls.delete(out)
     }
 
-    const sse = (res: http.ServerResponse, data: unknown) => {
-      if (res.writableEnded || res.destroyed) return
-      res.write(`data: ${JSON.stringify(data)}\n\n`)
-      if (res.writableLength > MAX_BEHIND) return void res.destroy()
-      if (!res.writableNeedDrain || stalls.has(res)) return
-      stalls.set(res, setTimeout(() => res.destroy(), STALL_MS))
-      res.once('drain', () => unstall(res))
+    const sse = (out: Writable, data: unknown) => {
+      if (out.writableEnded || out.destroyed) return
+      out.write(`data: ${JSON.stringify(data)}\n\n`)
+      if (out.writableLength > MAX_BEHIND) return void out.destroy()
+      if (!out.writableNeedDrain || stalls.has(out)) return
+      stalls.set(out, setTimeout(() => out.destroy(), STALL_MS))
+      out.once('drain', () => unstall(out))
     }
 
     function archive(project: string): ReadReply {
@@ -473,25 +475,27 @@ export const httpServer = defineResource({
       return held && new Set(held.map((j) => j.id))
     }
 
-    const openSse = (res: http.ServerResponse) =>
-      res.on('close', () => unstall(res)).writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store' })
+    const openSse = (req: http.IncomingMessage, res: http.ServerResponse) => {
+      const out = eventStream(req, res)
+      return out.on('close', () => unstall(out))
+    }
 
     async function streamScreen(id: string, req: http.IncomingMessage, res: http.ServerResponse) {
       if (!system.session(id)) return fail(res, 'not_found', `No session "${id}"`)
-      openSse(res)
+      const out = openSse(req, res)
       let gone = false
       let stop: Stop | undefined
       req.on('close', () => ((gone = true), stop?.()))
-      stop = await screenStream(id, (msg) => sse(res, msg))
+      stop = await screenStream(id, (msg) => sse(out, msg))
       if (gone) stop?.()
     }
 
     /** A daemon's stream of a PTY, a shell's or a job's, until its end or an error, which close the response. */
     function streamPty<M extends { t: string }>(stream: (id: string, send: (msg: M) => void) => Stop, id: string, req: http.IncomingMessage, res: http.ServerResponse) {
-      openSse(res)
+      const out = openSse(req, res)
       const stop = stream(id, (msg) => {
-        sse(res, msg)
-        if (msg.t === 'x' || msg.t === 'error') res.end()
+        sse(out, msg)
+        if (msg.t === 'x' || msg.t === 'error') out.end()
       })
       req.on('close', stop)
     }
@@ -502,15 +506,14 @@ export const httpServer = defineResource({
      * then adds and drops streams by `POST /mux/watch {mux, key, path}` and `/mux/unwatch {mux, key}`. Each event
      * arrives as `{key, data}`, `data` being a message of the stream at `path` (src/shared/shelf-page.ts `Streams`).
      */
-    type Mux = { res: http.ServerResponse; streams: Map<string, Promise<Stop | undefined>> }
+    type Mux = { out: Writable; streams: Map<string, Promise<Stop | undefined>> }
     const muxes = new Map<string, Mux>()
 
     function openMux(req: http.IncomingMessage, res: http.ServerResponse) {
       const id = randomUUID()
-      const mux: Mux = { res, streams: new Map() }
+      const mux: Mux = { out: openSse(req, res), streams: new Map() }
       muxes.set(id, mux)
-      openSse(res)
-      sse(res, { t: 'mux', id })
+      sse(mux.out, { t: 'mux', id })
       req.on('close', () => {
         muxes.delete(id)
         for (const stream of mux.streams.values()) void stream.then((stop) => stop?.())
@@ -554,7 +557,7 @@ export const httpServer = defineResource({
       const mux = muxes.get(muxId)
       if (!mux) return apiError('not_found', `No mux "${muxId}"`)
       void mux.streams.get(key)?.then((stop) => stop?.())
-      const stream = streamAt(path, (data) => sse(mux.res, { key, data }), caller)
+      const stream = streamAt(path, (data) => sse(mux.out, { key, data }), caller)
       /** A stream that fails to open answers its watch with the failure, and the mux holds it as one with nothing to stop. */
       mux.streams.set(key, stream.then((opened) => (typeof opened === 'function' ? opened : undefined), () => undefined))
       const opened = await stream
@@ -666,25 +669,23 @@ export const httpServer = defineResource({
      * A file of the client folder of the extension providing `cap`: the running one's, else the bundled one's, so a
      * renderer built on a bundled client keeps loading while that extension is off. A `.ts` source is served bundled.
      */
-    async function clientFile(res: http.ServerResponse, cap: string, file: string) {
-      if (cap === 'tower') return coreViewFile(res, file)
+    async function clientFile(req: http.IncomingMessage, res: http.ServerResponse, cap: string, file: string) {
+      if (cap === 'tower') return coreViewFile(req, res, file)
       const dir = clientDirOf(cap)
       if (!dir) return fail(res, 'not_found', `No running extension provides ${cap} with a client folder`)
       const source = clientSource(dir, file)
       if (!source) return fail(res, 'not_found', `${cap}'s client serves no "${file}"`)
       if (path.extname(source) === '.ts') {
-        const text = await clientModule(source)
-        return res.writeHead(200, { 'content-type': 'text/javascript', ...FRESH, ...ANY_ORIGIN }).end(text)
+        return sendBody(req, res, 200, { 'content-type': 'text/javascript', ...FRESH, ...ANY_ORIGIN }, await clientModule(source))
       }
       serveFile(res, source, ANY_ORIGIN)
     }
 
     /** A module of the core's views (`CORE_VIEWS`, `views.ts`), served from `src/views/` as a client is. */
-    async function coreViewFile(res: http.ServerResponse, file: string) {
+    async function coreViewFile(req: http.IncomingMessage, res: http.ServerResponse, file: string) {
       const source = clientSource(CORE_VIEWS_DIR, file)
       if (!source) return fail(res, 'not_found', `The core serves no view module "${file}"`)
-      const text = await clientModule(source)
-      res.writeHead(200, { 'content-type': 'text/javascript', ...FRESH, ...ANY_ORIGIN }).end(text)
+      return sendBody(req, res, 200, { 'content-type': 'text/javascript', ...FRESH, ...ANY_ORIGIN }, await clientModule(source))
     }
 
     /** Every renderer, and the one `/` opens. */
@@ -981,7 +982,7 @@ export const httpServer = defineResource({
       apiRead('shelf/<project>/<n>/<file>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)\/(?<file>.+)$/, answer: ({ params }) => shelf(params.project!, Number(params.n), params.file) }),
       plain('page', { path: /^\/run\/(?<project>[\w-]+)\/(?<n>\d+)(?:\/(?<file>.+))?$/, serve: ({ res, params, search }) => run(res, params.project!, Number(params.n), params.file, search) }),
       plain('page', { path: /^\/r\/(?<name>[\w-]+)(?:\/(?<file>.*))?$/, serve: ({ res, params, search }) => rendered(res, params.name!, params.file, search) }),
-      plain('page', { path: /^\/x\/(?<cap>[a-z][a-z0-9-]*)\/(?<file>.+)$/, serve: ({ res, params }) => clientFile(res, params.cap!, params.file!) }),
+      plain('page', { path: /^\/x\/(?<cap>[a-z][a-z0-9-]*)\/(?<file>.+)$/, serve: ({ req, res, params }) => clientFile(req, res, params.cap!, params.file!) }),
       apiRead('shown/<id>/<path>', { path: /^\/shown\/(?<id>[\w-]+)(?<path>\/.+)$/, answer: ({ params }) => shownFile(params.id!, params.path!) }),
     ] as const satisfies readonly Read[]
 
