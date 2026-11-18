@@ -519,7 +519,7 @@ export type StartCtx = {
   /** Logs `tower.x.<cap>.<name>` in a session's log, its value checked against the fact's schema. @since 1.83 */
   facts: { append(session: string, name: string, value: unknown): Promise<void> }
   /**
-   * Its own collections, on floors where it is on, and its tower-wide ones with the project `_tower` (since 2.12):
+   * Its own collections, on floors where it is on, and its tower-wide ones with the project `_tower` (since 2.13):
    * the only writer of those it owns. @since 1.83
    */
   collections: {
@@ -709,7 +709,7 @@ const sinceAt =
   <T extends z.ZodType>(schema: T) =>
     schema.meta({ 'x-since': version })
 const since = sinceAt(SINCE)
-const since212 = sinceAt('2.12')
+const since213 = sinceAt('2.13')
 
 const Name = z
   .string()
@@ -815,7 +815,7 @@ const Collection = z
     description: since(z.string()),
     owned: since(z.boolean().optional().describe('Only its owner writes it: the generic writes are refused, naming the create door.')),
     doors: since(Doors.optional().describe('How others reach it: each a verb or read, or why the domain has none. An owned collection declares all five.')),
-    scope: since212(
+    scope: since213(
       z
         .literal('system')
         .optional()
@@ -1040,7 +1040,7 @@ export const Manifest = z
         .describe("The verbs and hooks it wraps, qualified: tower/spawn, chime/ring. Each one's capability is its own, the core's or one it requires or wants."),
     ),
     collections: since(z.record(Word, Collection).optional().describe('Its collections, each named `<provides>` or `<provides>.<name>`.')),
-    items: since212(
+    items: since213(
       z
         .record(Word, Path)
         .optional()
@@ -1048,7 +1048,7 @@ export const Manifest = z
           "Items it contributes, by collection: a folder of its own whose files join the collection, read in place and never written. The collection is its own, the config's, or one of a capability it requires or wants; one another capability owns is refused.",
         ),
     ),
-    renderers: since212(
+    renderers: since213(
       z
         .record(
           Word,
@@ -1063,7 +1063,7 @@ export const Manifest = z
           "Renderers it contributes, each named `<provides>` or `<provides>.<name>`, as the config's renderers declares one: served at /r/<name>/ while it is accepted. The config's renderers.<name> overrides its fields; a built-in's name is refused.",
         ),
     ),
-    shelf: since212(
+    shelf: since213(
       z
         .array(
           z.union([

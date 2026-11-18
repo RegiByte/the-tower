@@ -36,7 +36,7 @@ shelf only needs to point at one.
   more. [`shelfPage`](ref:hub/src/shared/shelf-words.ts#shelfPage) names the file a framed entry opens and
   [`shelfSource`](ref:hub/src/shared/shelf-words.ts#shelfSource) where an entry comes from, for both renderers.
 - *Live.* The file is read on every request, so an item edited in place shows on the next load.
-- *Contributed by an extension* (since 2.12, [[extensions]]). A manifest's `shelf` takes entries of the kinds that
+- *Contributed by an extension* (since 2.13, [[extensions]]). A manifest's `shelf` takes entries of the kinds that
   name no path: `renderer`, `item`, `url` and `link`. A page an extension ships is a renderer of its own or an item
   it contributes ([[renderers-in-config]], [[collections]]), so no second base directory exists for `html` or `md`.
   [`floorShelf`](ref:hub/src/bridge/stores.ts#floorShelf) puts the config's entries first, then each extension's on
