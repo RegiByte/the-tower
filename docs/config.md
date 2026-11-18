@@ -288,7 +288,9 @@ runs on a schedule, keeps the collection only where a config entry declares it, 
 waiting to start a worker or be sent to one, is declared by the bundled drafts extension, on every floor where its
 capability is on: a `drafts` entry here overrides its `label` and `description`, and a floor with
 `capabilities.drafts.off` keeps the collection only where a config entry declares it, as a plain one. A floor keeping `games` shows each item as an arcade cabinet in
-Tower 3D.
+Tower 3D. An extension may also declare a tower-wide collection, kept for every floor alike under
+`collections/_tower/<collection>/` (which is why `_tower` is never a floor's id): a config entry of the same id, for
+every floor or for one, is refused.
 
 ## Worktrees
 

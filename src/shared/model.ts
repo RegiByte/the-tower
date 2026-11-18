@@ -54,6 +54,12 @@ export type CapabilityConfig = { off?: boolean }
  */
 export type CollectionType = { label: string; description?: string }
 
+/**
+ * The folder under the collections root that holds the tower-wide collections, those of no one floor. It is never a
+ * floor's id: a floor named so would share the folder with them.
+ */
+export const TOWER_WIDE = '_tower'
+
 /** A file in a collection. Its id is its file name, the extension included; `modifiedAt` is epoch ms. */
 export type CollectionItem = { project: string; collection: string; id: string; size: number; modifiedAt: number }
 

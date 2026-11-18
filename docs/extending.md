@@ -592,6 +592,9 @@ lists them on the board (metadata only), reads them (`tower.text('collection/<p>
 deletes them (`collection/create`, `collection/write`, `collection/delete`), and puts a deleted one back under its id
 (`collection/restore`, an undo). What a file means is your renderer's
 business: the tower page reads `drafts` as prompts and Tower 3D plays `games` in an arcade, over the same verbs.
+A tower-wide collection, one of no floor, is declared by an extension with `"scope": "system"`: its items are at
+`collections/_tower/<collection>/<item>`, the board carries it in `board.collections`, and the verbs and reads name its
+project `_tower` (since 2.12).
 `drafts` itself is declared by the bundled drafts extension; a config line of that name overrides its label and
 description.
 `/lib/view.js` draws any collection's items as rows and trays and reads one by its type, without a meaning, as `tower/tray`, the tower page's tray of a collection, does ([Views](#views)).
@@ -785,7 +788,8 @@ added to `within`; past 8 deep a call is refused. `ctx.cards()` is every card th
 leaves out included, as the core builds them.
 
 **Stores** are declared in the manifest and named by the capability. `collections` join the floors the
-extension is on, each named `<cap>` or `<cap>.<name>`; one marked `owned` declares five `doors` (`list`, `read`,
+extension is on, each named `<cap>` or `<cap>.<name>`, or with `"scope": "system"` (since 2.12) are one tower-wide
+collection under `_tower/`, which `ctx.collections` reaches with the project `_tower`; one marked `owned` declares five `doors` (`list`, `read`,
 `create`, `edit`, `delete`, each a verb or read of its own manifest, not deprecated, or a read of the core's such as
 `tower/board`, or `{ "none": "<why the domain has no such act>" }`), and the generic writes (`collection/*`, `tower
 keep`) are refused there, naming its create door. `streams` live at `streams/{system|projects/<p>}/<cap>.<name>/`,

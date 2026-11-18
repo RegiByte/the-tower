@@ -26,7 +26,7 @@ import { renderersOf } from './renderers.ts'
 import { layoutOf } from './shared/views.ts'
 import type { BoardMsg, Reads } from './shared/shelf-page.ts'
 import { ago, CLI_REGIONS, exemptionWords, landing, landingLine, linesOf, sizeOf, hiresBy, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, holdersOf, workerAt, modelName, hireBlocked, modelNote, runtimeRefusal, spawnCall, spawnForm, shelfSource, statusName, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
-import { RUNTIMES, towerUrl, type Renderer, type ShelfEntry } from './shared/model.ts'
+import { RUNTIMES, TOWER_WIDE, towerUrl, type Renderer, type ShelfEntry } from './shared/model.ts'
 import { tagOf } from './shared/tags.ts'
 import { titled, titleIn } from './shared/titles.ts'
 import { briefParts, sessionLabel, type BriefPart } from './shared/brief.ts'
@@ -177,6 +177,7 @@ const whoami = (board: Board, me: string | undefined): string[] => {
     `The tower answers at ${towerAt()}: the user's page, and the API (\`tower api\` lists it).`,
     shelfLine(floor),
     ...collectionsLines(floor),
+    ...towerCollectionsLines(board),
     ...guidanceLines(board, floor),
     `The tower's config is ${board.config}: \`tower config check\` checks it.`,
   ]
@@ -196,6 +197,18 @@ const collectionsLines = (floor: Floor): string[] =>
   floor.collections.length
     ? ["The floor's collections, files kept for later (`tower kept` counts them and shows the latest of each):", ...floor.collections.map(collectionLine)]
     : ['The floor keeps no collections.']
+
+const towerCollectionsLines = (board: Board): string[] =>
+  board.collections.length ? ['The tower-wide collections, kept for every floor alike (`tower keep`, `kept`, `read` and `unkeep` reach them too):', ...board.collections.map(collectionLine)] : []
+
+/** A collection a worker keeps in, with where its items are: `project` is its floor's id, or `_tower` for a tower-wide one. */
+type KeptIn = FloorCollection & { project: string }
+
+/** The collections a worker on `floor` keeps in: the floor's, then the tower-wide ones. */
+const keptIn = (board: Board, floor: Floor): KeptIn[] => [
+  ...floor.collections.map((c) => ({ ...c, project: floor.id })),
+  ...board.collections.map((c) => ({ ...c, project: TOWER_WIDE })),
+]
 
 /** The brief of each running extension on the floor that guides the workers, one line each. */
 const guidanceLines = (board: Board, floor: Floor): string[] => {
@@ -459,18 +472,18 @@ const command = async <T>(verb: string, body: unknown): Promise<T> => {
 
 const ownFloor = (board: Board, me: string | undefined): Floor => board.floors.find((f) => f.id === ownCard(board, me).project)!
 
-const collectionOf = (floor: Floor, name: string): FloorCollection => {
-  const collection = floor.collections.find((c) => c.id === name)
+const collectionOf = (board: Board, floor: Floor, name: string): KeptIn => {
+  const collection = keptIn(board, floor).find((c) => c.id === name)
   if (!collection)
     throw new CliError(
-      [`${floorTitle(floor)} keeps no collection "${name}".`, ...collectionsLines(floor)].join('\n'),
+      [`${floorTitle(floor)} keeps no collection "${name}".`, ...collectionsLines(floor), ...towerCollectionsLines(board)].join('\n'),
       `a collection is declared under projects.${floor.id}.collections (this floor) or collections (every floor) in the tower's config, the file \`tower whoami\` names; \`tower config check\` checks the edit`,
     )
   return collection
 }
 
-const readItem = async (floor: Floor, collection: string, id: string): Promise<string> => {
-  const res = await fetch(`${towerAt()}/collection/${floor.id}/${collection}/${encodeURIComponent(id)}`)
+const readItem = async ({ project, id: collection }: KeptIn, id: string): Promise<string> => {
+  const res = await fetch(`${towerAt()}/collection/${project}/${collection}/${encodeURIComponent(id)}`)
   if (!res.ok) throw new CliError(`The tower answered ${res.status} for ${collection}/${id}: ${await res.text()}`)
   return res.text()
 }
@@ -491,10 +504,10 @@ export const collectionLine = (collection: FloorCollection): string =>
 const LATEST_KEPT = 5
 
 /** A collection's heading and the lines of `items`, the ones of it to show. */
-const collectionLines = async (floor: Floor, collection: FloorCollection, items: FloorItem[], now: number): Promise<string[]> => {
-  const titles = await Promise.all(items.map(async (i) => (titled(i.id) ? titleIn(i.id, await readItem(floor, collection.id, i.id)) : undefined)))
+const collectionLines = async (collection: KeptIn, items: FloorItem[], now: number): Promise<string[]> => {
+  const titles = await Promise.all(items.map(async (i) => (titled(i.id) ? titleIn(i.id, await readItem(collection, i.id)) : undefined)))
   return [
-    `${collection.label} ("${collection.id}"): ${collection.items.length} item${collection.items.length === 1 ? '' : 's'}`,
+    `${collection.label} ("${collection.id}"${collection.project === TOWER_WIDE ? ', tower-wide' : ''}): ${collection.items.length} item${collection.items.length === 1 ? '' : 's'}`,
     ...(collection.description ? [`  ${collection.description}`] : []),
     ...items.flatMap((item, n) => itemLines(collection, item, titles[n], now)),
   ]
@@ -503,20 +516,20 @@ const collectionLines = async (floor: Floor, collection: FloorCollection, items:
 const latestFirst = (items: FloorItem[]): FloorItem[] => [...items].sort((a, b) => b.modifiedAt - a.modifiedAt)
 
 /** Every collection with its count and its latest items, and how to list the rest of one. */
-const overviewLines = async (floor: Floor, now: number): Promise<string[]> => {
-  const sections = await Promise.all(floor.collections.map((c) => collectionLines(floor, c, latestFirst(c.items).slice(0, LATEST_KEPT), now)))
-  const more = floor.collections.filter((c) => c.items.length > LATEST_KEPT)
+const overviewLines = async (kept: KeptIn[], now: number): Promise<string[]> => {
+  const sections = await Promise.all(kept.map((c) => collectionLines(c, latestFirst(c.items).slice(0, LATEST_KEPT), now)))
+  const more = kept.filter((c) => c.items.length > LATEST_KEPT)
   return [
     sections.map((lines) => lines.join('\n')).join('\n\n'),
     ...(more.length ? ['', `The latest ${LATEST_KEPT} of each. \`tower kept <collection>\` lists every item of one: ${more.map((c) => `${c.id} has ${c.items.length}`).join(', ')}.`] : []),
   ]
 }
 
-type NamedItem = { collection: FloorCollection; item: FloorItem }
+type NamedItem = { collection: KeptIn; item: FloorItem }
 
 /** Every item whose tag or id is `name`. */
-const itemsCalled = (floor: Floor, name: string): NamedItem[] =>
-  floor.collections.flatMap((collection) => collection.items.filter((i) => i.id === name || i.tag === name).map((item) => ({ collection, item })))
+const itemsCalled = (kept: KeptIn[], name: string): NamedItem[] =>
+  kept.flatMap((collection) => collection.items.filter((i) => i.id === name || i.tag === name).map((item) => ({ collection, item })))
 
 /** Why `name` names no one item: none has it, or it is the tag two items share. */
 const unnamedWhy = (floor: Floor, name: string, found: NamedItem[]): string | undefined =>
@@ -527,8 +540,8 @@ const unnamedWhy = (floor: Floor, name: string, found: NamedItem[]): string | un
       : undefined
 
 /** An item by its tag or its id. A tag two items share names neither. */
-const itemNamed = (floor: Floor, name: string): NamedItem => {
-  const found = itemsCalled(floor, name)
+const itemNamed = (floor: Floor, kept: KeptIn[], name: string): NamedItem => {
+  const found = itemsCalled(kept, name)
   const why = unnamedWhy(floor, name, found)
   if (why) throw new CliError(why)
   return found[0]
@@ -542,8 +555,8 @@ const unkeepRefusal = ({ id, owner, doors }: FloorCollection): string | undefine
 }
 
 /** The items `names` call, each once, all of them deletable: any name that isn't refuses the whole call, saying each. */
-const unkeepable = (floor: Floor, names: string[]): NamedItem[] => {
-  const called = names.map((name) => ({ name, found: itemsCalled(floor, name) }))
+const unkeepable = (floor: Floor, kept: KeptIn[], names: string[]): NamedItem[] => {
+  const called = names.map((name) => ({ name, found: itemsCalled(kept, name) }))
   const named = [...new Map(called.flatMap(({ found }) => (found.length === 1 ? found : [])).map((f) => [`${f.collection.id}/${f.item.id}`, f])).values()]
   const refused = [
     ...called.flatMap(({ name, found }) => unnamedWhy(floor, name, found) ?? []),
@@ -881,18 +894,19 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
   },
   keep: async ([collectionName, ...rest]) => {
     if (!me) throw new CliError('TOWER_SESSION_ID is not set: this Claude was not started by the tower')
-    const floor = ownFloor(await readBoard(), me)
+    const board = await readBoard()
+    const floor = ownFloor(board, me)
     if (!collectionName) {
-      console.log([`${floorTitle(floor)} keeps ${floor.collections.length ? 'these collections:' : 'no collections.'}`, ...floor.collections.map(collectionLine), KEEP_USAGE].join('\n'))
+      console.log([`${floorTitle(floor)} keeps ${floor.collections.length ? 'these collections:' : 'no collections.'}`, ...floor.collections.map(collectionLine), ...towerCollectionsLines(board), KEEP_USAGE].join('\n'))
       return
     }
-    const collection = collectionOf(floor, collectionName)
+    const collection = collectionOf(board, floor, collectionName)
     const args = keepArgs(rest)
     const { ext, content, name } = await keepContent(args.file)
-    const { id } = await command<{ id: string }>('collection/create', { project: floor.id, collection: collection.id, name: args.name ?? name, ext, content })
-    const announced = await ask('fact', { name: 'keep', value: { project: floor.id, collection: collection.id, id } })
+    const { id } = await command<{ id: string }>('collection/create', { project: collection.project, collection: collection.id, name: args.name ?? name, ext, content })
+    const announced = await ask('fact', { name: 'keep', value: { project: collection.project, collection: collection.id, id } })
     const title = titleIn(id, content)
-    console.log(`Kept ${title ? `"${title}" ` : ''}in ${collection.label} on ${floorTitle(floor)} as ${tagOf(id)}: ${collection.dir}/${id}`)
+    console.log(`Kept ${title ? `"${title}" ` : ''}in ${collection.label} ${collection.project === TOWER_WIDE ? '(tower-wide)' : `on ${floorTitle(floor)}`} as ${tagOf(id)}: ${collection.dir}/${id}`)
     if (isFailure(announced)) throw new CliError(`The item is kept, but its card won't name you as its keeper: ${refusedLine('fact', announced)}`, 'it needs no second keep: `tower kept` lists it')
   },
   job: async ([sub, ...rest]) => {
@@ -909,27 +923,31 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     console.log(jobs.length ? jobs.map(jobLine).join('\n') : rest.length ? 'The jobs log holds no job.' : 'No job ran within the last day: --all lists every job the log holds.')
   },
   kept: async ([collectionName]) => {
-    const floor = ownFloor(await readBoard(), me)
-    if (!floor.collections.length) throw new CliError(`${floorTitle(floor)} keeps no collections`)
+    const board = await readBoard()
+    const floor = ownFloor(board, me)
+    const kept = keptIn(board, floor)
+    if (!kept.length) throw new CliError(`${floorTitle(floor)} keeps no collections`)
     if (collectionName) {
-      const collection = collectionOf(floor, collectionName)
-      console.log((await collectionLines(floor, collection, collection.items, now)).join('\n'))
-    } else console.log((await overviewLines(floor, now)).join('\n'))
+      const collection = collectionOf(board, floor, collectionName)
+      console.log((await collectionLines(collection, collection.items, now)).join('\n'))
+    } else console.log((await overviewLines(kept, now)).join('\n'))
   },
   read: async ([tagOrId]) => {
     if (!tagOrId) throw new CliError(usageLine('read'))
-    const floor = ownFloor(await readBoard(), me)
-    const { collection, item } = itemNamed(floor, tagOrId)
-    process.stdout.write(await readItem(floor, collection.id, item.id))
+    const board = await readBoard()
+    const floor = ownFloor(board, me)
+    const { collection, item } = itemNamed(floor, keptIn(board, floor), tagOrId)
+    process.stdout.write(await readItem(collection, item.id))
   },
   unkeep: async (names) => {
     if (!names.length) throw new CliError(usageLine('unkeep'))
-    const floor = ownFloor(await readBoard(), me)
-    const items = unkeepable(floor, names)
-    const titles = await Promise.all(items.map(async ({ collection, item }) => (titled(item.id) ? titleIn(item.id, await readItem(floor, collection.id, item.id)) : undefined)))
+    const board = await readBoard()
+    const floor = ownFloor(board, me)
+    const items = unkeepable(floor, keptIn(board, floor), names)
+    const titles = await Promise.all(items.map(async ({ collection, item }) => (titled(item.id) ? titleIn(item.id, await readItem(collection, item.id)) : undefined)))
     const deleted: string[] = []
     for (const [n, { collection, item }] of items.entries()) {
-      const reply = await ask('collection/delete', { project: floor.id, collection: collection.id, id: item.id })
+      const reply = await ask('collection/delete', { project: collection.project, collection: collection.id, id: item.id })
       if (isFailure(reply)) {
         const left = items.slice(n + 1).map((i) => i.item.tag)
         throw new CliError(
@@ -951,8 +969,8 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     if (!can(floor, 'spawn')) throw new CliError('The tower offers no spawn: its host is down. The user starts it with `tower up`.')
     const blocked = hireBlocked(floor)
     if (blocked) throw new CliError(blocked)
-    const named = hire.item ? itemNamed(own, hire.item) : undefined
-    const prompt = named ? await readItem(own, named.collection.id, named.item.id) : await readStdin()
+    const named = hire.item ? itemNamed(own, keptIn(board, own), hire.item) : undefined
+    const prompt = named ? await readItem(named.collection, named.item.id) : await readStdin()
     if (!prompt.trim()) throw new CliError(`The prompt is empty: a hired worker starts on one. ${HIRE_USAGE}`)
     const form = spawnForm(floor, [['prompt', prompt], ...hire.fields])
     const unrun = runtimeRefusal(board, form.runtime, RUNTIMES)

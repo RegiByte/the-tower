@@ -99,6 +99,13 @@
             "$ref": "#/definitions/Floor"
           }
         },
+        "collections": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FloorCollection"
+          },
+          "description": "The tower-wide collections, those of no one floor, kept under the collections root's `_tower/`: the verbs and reads name their project `_tower`."
+        },
         "waiting": {
           "type": "array",
           "items": {
@@ -233,6 +240,7 @@
         "config",
         "keys",
         "floors",
+        "collections",
         "waiting",
         "archiveAt",
         "limits",

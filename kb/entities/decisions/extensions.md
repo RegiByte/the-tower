@@ -160,7 +160,8 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   `tower.x.<cap>.<name>`. An owned collection declares five doors, each a read (of its owner's or the core's) to read
   or a verb of its owner's to act. An accepted extension's collections join the floors it is on
   ([`floorCollections`](ref:hub/src/bridge/stores.ts#floorCollections), [[collections]]); an owned one refuses the
-  generic writes, naming its create door ([`ownedRefusal`](ref:hub/src/bridge/stores.ts#ownedRefusal)). A stream is
+  generic writes, naming its create door ([`ownedRefusal`](ref:hub/src/bridge/stores.ts#ownedRefusal)); one with
+  `scope: "system"` is tower-wide, kept under `_tower/` and on no floor ([[collections]]). A stream is
   always its extension's: only its ctx appends, each fact checked by its code's schema, and its closed months are
   archived as the core's are ([[log-retention]]). ctx carries `streams`, `facts` (logged through the host's `fact`,
   [[let-go]]), `collections` and `own` ([`storesOf`](ref:hub/src/tower/stores.ts#storesOf)): each `reduce` folded by

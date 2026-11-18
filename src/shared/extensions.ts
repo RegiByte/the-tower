@@ -518,7 +518,10 @@ export type StartCtx = {
   }
   /** Logs `tower.x.<cap>.<name>` in a session's log, its value checked against the fact's schema. @since 1.83 */
   facts: { append(session: string, name: string, value: unknown): Promise<void> }
-  /** Its own collections, on floors where it is on: the only writer of those it owns. @since 1.83 */
+  /**
+   * Its own collections, on floors where it is on, and its tower-wide ones with the project `_tower` (since 2.12):
+   * the only writer of those it owns. @since 1.83
+   */
   collections: {
     list(project: string, name: string): Item[]
     read(project: string, name: string, id: string): Promise<string>
@@ -706,6 +709,7 @@ const sinceAt =
   <T extends z.ZodType>(schema: T) =>
     schema.meta({ 'x-since': version })
 const since = sinceAt(SINCE)
+const since212 = sinceAt('2.12')
 
 const Name = z
   .string()
@@ -811,6 +815,12 @@ const Collection = z
     description: since(z.string()),
     owned: since(z.boolean().optional().describe('Only its owner writes it: the generic writes are refused, naming the create door.')),
     doors: since(Doors.optional().describe('How others reach it: each a verb or read, or why the domain has none. An owned collection declares all five.')),
+    scope: since212(
+      z
+        .literal('system')
+        .optional()
+        .describe("`system`: one tower-wide collection, kept under the collections root's `_tower/`, on no floor. Unset, it joins each floor the extension is on."),
+    ),
   })
   .refine((c) => !c.owned || c.doors !== undefined, { message: 'an owned collection declares its doors: list, read, create, edit, delete', path: ['doors'] })
   .meta({ if: { properties: { owned: { const: true } }, required: ['owned'] }, then: { required: ['doors'] } })

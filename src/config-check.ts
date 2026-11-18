@@ -37,6 +37,7 @@ import {
   RETENTION_KEYS,
   towerHosts,
   towerPort,
+  TOWER_WIDE,
   USER_KEYS,
   WORKTREES_KEYS,
   type Config,
@@ -45,7 +46,6 @@ import {
   type Renderer,
 } from './shared/model.ts'
 import { keysProblems } from './shared/keymap.ts'
-import { TOWER_WIDE } from './shared/paths.ts'
 import { isObject, probesGone, readConfig, validArgv } from './system.ts'
 import { movedKeys, movedLine } from './moved-keys.ts'
 
@@ -185,6 +185,18 @@ const folderProblems = (at: string, found: Found, dir: unknown): ConfigProblem[]
 }
 
 /** The system's extensions by id: a new one's folder, and each one's settings by its manifest. */
+/** A collection the config declares that an accepted extension keeps tower-wide: the two would name one id twice. */
+const towerClashes = (config: Config, { resolved }: Extensions): ConfigProblem[] => {
+  const wide = new Map([...resolved.accepted.values()].flatMap((a) => Object.entries(a.manifest.collections ?? {}).flatMap(([id, c]) => (c.scope === 'system' ? [[id, a.provides] as const] : []))))
+  const declared = [
+    ...Object.keys(isObject(config.collections) ? config.collections : {}).map((id) => ({ id, at: `collections.${id}` })),
+    ...Object.entries(isObject(config.projects) ? config.projects : {}).flatMap(([p, project]) =>
+      Object.keys(isObject(project) && isObject(project.collections) ? project.collections : {}).map((id) => ({ id, at: `projects.${p}.collections.${id}` })),
+    ),
+  ]
+  return declared.flatMap(({ id, at }) => (wide.has(id) ? [fail(at, `"${id}" is ${wide.get(id)}'s tower-wide collection, kept for every floor alike: drop this one`)] : []))
+}
+
 const extensionEntries = (config: Config, { found }: Extensions): ConfigProblem[] => {
   if (config.extensions === undefined) return []
   if (!isObject(config.extensions)) return [fail('extensions', 'takes an object of extensions by id, such as { "roles": { "path": "/an/absolute/folder" } }')]
@@ -348,6 +360,7 @@ export const configProblems = (config: Config): ConfigProblem[] => {
     ...counts('retention', config.retention, RETENTION_KEYS),
     ...(config.keys === undefined ? [] : keysProblems(config.keys, addedIds(extensions.resolved)).map(({ level, at, problem }) => ({ level, key: `keys${at}`, problem }))),
     ...extensionEntries(config, extensions),
+    ...towerClashes(config, extensions),
     ...projects.flatMap(([id, project]) => projectProblems(config, id, project, renderers, extensions)),
   ].filter((p) => !isMoved(p))
 }

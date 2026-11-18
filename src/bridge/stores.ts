@@ -3,7 +3,7 @@
  * those of the extensions on there, who owns each, and an extension's session facts over a worker's lineage.
  */
 import type { Collection, Doors, SessionFact } from '../shared/extensions.ts'
-import { projectCollections, type CollectionType, type Config } from '../shared/model.ts'
+import { projectCollections, TOWER_WIDE, type CollectionType, type Config } from '../shared/model.ts'
 import { EXTENSION_FACTS, type Session } from './facts.ts'
 
 /**
@@ -26,8 +26,20 @@ export const offOn = (config: Config, project: string, chain: string[]): boolean
  */
 export type FloorCollectionType = CollectionType & { by?: string; owner?: string; doors?: Doors }
 
+/** A collection as an extension declares it on the board: by its capability, owned and with doors when it says so. */
+const declaredBy = (provides: string, c: Collection, words: CollectionType): FloorCollectionType => ({
+  label: words.label,
+  description: words.description,
+  by: provides,
+  ...(c.owned && { owner: provides }),
+  ...(c.doors && { doors: c.doors }),
+})
+
+/** Whether a collection is one tower-wide collection rather than one on each floor. */
+const towerWide = (c: Collection): boolean => c.scope === 'system'
+
 /**
- * A floor's collections: the config's, then each of the extensions on that floor. A collection both declare takes the
+ * A floor's collections: the config's, then each of the extensions on that floor, tower-wide ones aside. A collection both declare takes the
  * config's label and description, and stays the extension's, owned when it says so; on a floor where the extension
  * is off, it is the config's alone, open, and one only the extension declares isn't there.
  */
@@ -36,19 +48,16 @@ export const floorCollections = (config: Config, project: string, extensions: Ex
   const added = extensions
     .filter((x) => !offOn(config, project, x.chain))
     .flatMap((x) =>
-      Object.entries(x.collections).map(([id, c]): [string, FloorCollectionType] => [
-        id,
-        {
-          label: declared[id]?.label ?? c.label,
-          description: declared[id]?.description ?? c.description,
-          by: x.provides,
-          ...(c.owned && { owner: x.provides }),
-          ...(c.doors && { doors: c.doors }),
-        },
-      ]),
+      Object.entries(x.collections)
+        .filter(([, c]) => !towerWide(c))
+        .map(([id, c]): [string, FloorCollectionType] => [id, declaredBy(x.provides, c, { label: declared[id]?.label ?? c.label, description: declared[id]?.description ?? c.description })]),
     )
   return { ...declared, ...Object.fromEntries(added) }
 }
+
+/** The tower-wide collections, kept under `_tower/`: those the accepted extensions declare with `scope: "system"`. */
+export const towerCollections = (extensions: ExtensionStores[]): Record<string, FloorCollectionType> =>
+  Object.fromEntries(extensions.flatMap((x) => Object.entries(x.collections).flatMap(([id, c]) => (towerWide(c) ? [[id, declaredBy(x.provides, c, c)]] : []))))
 
 /** Why a generic write to `collection` is refused: it is owned, and its owner's create door says how to add to it. */
 export const ownedRefusal = (collection: string, { owner, doors }: FloorCollectionType): string | undefined => {
@@ -66,6 +75,11 @@ export const sessionFacts = (cap: string, lineage: Session[]): SessionFact[] =>
     s.facts.extensionFacts.flatMap(([at, of, name, value]) => (of === cap ? [{ name, value, at, session: s.header.id }] : [])),
   )
 
-/** A floor's collection by id: `undefined` when the floor keeps none of that name, or there is no such floor. */
-export const collectionOn = (config: Config, project: string, collection: string, extensions: ExtensionStores[]): FloorCollectionType | undefined =>
-  Object.hasOwn(config.projects, project) ? Object.entries(floorCollections(config, project, extensions)).find(([id]) => id === collection)?.[1] : undefined
+/**
+ * A floor's collection by id, or with `project` `_tower` a tower-wide one: `undefined` when there is none of that
+ * name there, or no such floor.
+ */
+export const collectionOn = (config: Config, project: string, collection: string, extensions: ExtensionStores[]): FloorCollectionType | undefined => {
+  const kept = project === TOWER_WIDE ? towerCollections(extensions) : Object.hasOwn(config.projects, project) ? floorCollections(config, project, extensions) : {}
+  return Object.entries(kept).find(([id]) => id === collection)?.[1]
+}

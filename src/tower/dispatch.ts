@@ -60,7 +60,7 @@ import {
   type Project,
   type Runtime,
 } from '../shared/model.ts'
-import { projectCollectionsPath } from '../shared/paths.ts'
+import { keptPaths } from '../shared/paths.ts'
 import { HOST_PROTOCOL, promptPastes, sessionKeys, type FromHost, type ToHost } from '../shared/protocol.ts'
 import { STATUS_NAME } from '../shared/status-words.ts'
 import { SHELL_SIZE, type FromTerms, type ToTerms } from '../shared/terms.ts'
@@ -506,7 +506,7 @@ export const dispatch = defineResource({
               dirs: sessionDirs(project, cwd),
               user: configuredUser(config),
               worktree: await briefFor(project, links, cwd),
-              kept: projectCollectionsPath(paths, projectId),
+              kept: keptPaths(paths, projectId),
               plugins: [...runtimePlugins(config, projectId, runtime), ...holder.plugins(projectId, runtime)],
               contributed: merged.contributed,
               facts: [...(kind === 'fork' ? forkFacts(worker) : []), resumesFact(conversation)],
@@ -639,7 +639,7 @@ export const dispatch = defineResource({
         project: projectId,
         ...at,
         user: configuredUser(config),
-        kept: projectCollectionsPath(paths, projectId),
+        kept: keptPaths(paths, projectId),
         plugins: [...runtimePlugins(config, projectId, runtime), ...holder.plugins(projectId, runtime)],
         contributed: merged.contributed,
         facts: [...spawn.facts, ...fieldFacts(Object.fromEntries(merged.fields)), ...coreFacts(merged, lead?.id), ...promptedFacts(spawn.prompt, spawn.by), askedFact(launched)],
