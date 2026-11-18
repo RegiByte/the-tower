@@ -15,7 +15,7 @@
     "hub/src/bridge/stats.ts#weeklyRead",
     "hub/src/bridge/stats.ts#outsideUse",
     "hub/src/bridge/stats.ts#outsideIn",
-    "hub/src/bridge/stats.ts#pace",
+    "hub/src/shared/limits.ts#pace",
     "hub/src/bridge/stats.ts#today",
     "hub/src/bridge/rate-limits.ts#limitsStep",
     "hub/src/shared/api.ts#QUERIES",
@@ -52,7 +52,8 @@ and they are computable from the logs, so they are computed ([[logs-are-facts]])
   the default command's sessions' readings and its readings of kind `tower/rate-limits`, the quota probe's ([[probes]]); it is an account's, so `/stats?project=` filters the
   stats and never the budget, and a second `argv` command's budget is not computed. The spend from the week's first reading to its latest, over the percent it climbed, is
   what 1% buys; [`weeklyRead`](ref:hub/src/bridge/stats.ts#weeklyRead) gives a past window's last reading, and
-  [`pace`](ref:hub/src/bridge/stats.ts#pace) whether today's rate lasts to the reset.
+  [`pace`](ref:hub/src/shared/limits.ts#pace) whether today's rate lasts to the reset, from the budget's `day` (the
+  account's spend since the day's start) at the reader's clock: `/stats` adds it at the read.
 - *Use from outside the tower.* claude.ai, the desktop app or another machine move the same limit, which would make
   1% look cheaper than it is. [`outsideUse`](ref:hub/src/bridge/stats.ts#outsideUse) sums climbs between two
   consecutive probe answers while no session used the API; only probe answers are compared with each other, since a
@@ -68,12 +69,16 @@ and they are computable from the logs, so they are computed ([[logs-are-facts]])
 - *A read, not the board.* `GET /stats?from&to&bucket&project` ([`statsRead`](ref:hub/src/tower/http.ts#statsRead)),
   its query a schema in [`QUERIES`](ref:hub/src/shared/api.ts#QUERIES); `tower.stats(query)` reads it.
 - *Today on the board.* `board.today` ([`today`](ref:hub/src/bridge/stats.ts#today)): today's spend, agent-hours,
-  waits answered and the weekly budget with its pace. They move only with readings, turns and prompts, which already
-  change the board, so they add no pushes; a day that turns while nothing happens shows within a minute, as the tower
+  waits answered and the weekly budget. They move only with readings, turns and prompts, which already change the
+  board, so they add no pushes. The budget's pace moves with the clock, so it is not on the board since API 2.12: each
+  renderer computes it at its own `now` with `pace(budget, budget.day, now)` (`/lib/cards.js`), and a board equal to
+  the last one sent is not sent again; a day that turns while nothing happens shows within a minute, as the tower
   rebuilds the board on a clock ([`CLOCK_PUBLISH_MS`](ref:hub/src/tower/publisher.ts#CLOCK_PUBLISH_MS)), and
   `today.since` says which day it is.
 
 **Alternatives considered.**
+- *The pace on the board, at the board's `now`.* Every rebuild then differed, so every change anywhere (a keystroke,
+  a screen redraw) resent the whole board, about a second apart while workers ran.
 - *Sum each card's `costUsd`.* Resumes carry it, so it overstates.
 - *Only deltas between readings, a drop counted in full.* A `/clear` with no reading between its two conversations
   shows no drop, and the new conversation's cost is lost.

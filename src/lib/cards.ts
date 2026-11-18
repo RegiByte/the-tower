@@ -34,6 +34,7 @@ export {
   extraUsageLine,
   LIMITS_STALE_MS,
   limitsFromTitle,
+  pace,
   paceLine,
   /** @provisional */ paceWords,
   resetLine,
@@ -153,6 +154,9 @@ export {
 export type {
   DaemonVerb,
 } from '../shared/health.ts'
+export type {
+  Pace,
+} from '../shared/limits.ts'
 export type {
   ArchiveReads,
   PastCrew,

@@ -6,6 +6,7 @@ import { addTokens, type LimitReading, type Session, type Tokens } from './facts
 import { extensionOf, type RepoLanded } from './landed.ts'
 import type { LimitFacts, Rise } from './rate-limits.ts'
 import { STUCK_MS } from './prunable.ts'
+import type { Pace } from '../shared/limits.ts'
 
 export type Bucket = 'hour' | 'day'
 
@@ -88,19 +89,9 @@ export type WeeklyBudget = {
   /** What 1% buys, from the climb less `outside`. */
   usdPerPercent?: number
   usdLeft?: number
-  pace?: Pace
+  /** This account's spend today, since the local day's start (`since`, epoch ms): its pace at any moment is `pace` (src/shared/limits.ts). @since 2.12 */
+  day: { since: number; spend: number }
 }
-
-/**
- * Whether the day's spending lasts: `perDay`, the even daily spend that spends what is left exactly at the reset (all of
- * it in the reset's last day), and
- * `runsOutAt` (epoch ms), when what is left runs out at today's rate, only when that is before the reset.
- */
-export type Pace = { perDay: number; runsOutAt?: number }
-
-const DAY = 86400_000
-const HOUR = 3600_000
-const MIN_RATE_WINDOW = HOUR
 
 /** Something that lasted `seconds` from `at` (epoch ms). */
 export type Lasted = { at: number; seconds: number }
@@ -121,7 +112,8 @@ export type Stats = StatsQuery & {
   projects: Record<string, ScopeStats>
   /** By session id, every session that ran a turn, spent or was answered in the window. */
   sessions: Record<string, SessionShare>
-  budget?: WeeklyBudget
+  /** The weekly budget, with its pace at the read. */
+  budget?: WeeklyBudget & { pace?: Pace }
   weekly?: WeeklyRead
   /** Points of the weekly limit used outside the tower in the window (`outsideUse`), of any week it spans. */
   outside: number
@@ -339,21 +331,7 @@ export const weeklyBudget = (sessions: Session[], streams: LimitFacts[], now: nu
   const usdLeft = usdPerPercent && (100 - percentUsed) * usdPerPercent
   const from = bucketStart(now, 'day')
   const daySpend = sum(sessions.flatMap((s) => s.facts.spend.filter(([t]) => t >= from && t <= now).map(([, usd]) => usd)))
-  const budget = { percentUsed, resetsAt, since: first[0], spent, outside, usdPerPercent, usdLeft }
-  return { ...budget, pace: pace(budget, { since: from, spend: daySpend }, now) }
-}
-
-/**
- * The pace of the weekly budget at `now`, from today's spend since the day's start. Today's rate is measured over at
- * least an hour, so the first minutes of a day do not extrapolate. None while what is left is unknown.
- */
-export const pace = (budget: Pick<WeeklyBudget, 'resetsAt' | 'usdLeft'>, day: { since: number; spend: number }, now: number): Pace | undefined => {
-  if (budget.usdLeft === undefined) return undefined
-  const resetsAt = Date.parse(budget.resetsAt)
-  const perDay = budget.usdLeft / (Math.max(resetsAt - now, DAY) / DAY)
-  const perMs = day.spend / Math.max(now - day.since, MIN_RATE_WINDOW)
-  const runsOutAt = perMs > 0 ? now + budget.usdLeft / perMs : undefined
-  return { perDay, runsOutAt: runsOutAt !== undefined && runsOutAt < resetsAt ? runsOutAt : undefined }
+  return { percentUsed, resetsAt, since: first[0], spent, outside, usdPerPercent, usdLeft, day: { since: from, spend: daySpend } }
 }
 
 /**
@@ -376,7 +354,14 @@ export const stats = (sessions: Session[], landed: Record<string, RepoLanded[]>,
  * Today so far, as the board carries it: spend, agent-hours and the waits answered since `since`, the local day's
  * start (epoch ms), and `budget`, the weekly budget.
  */
-export type Today = { since: number; spend: number; agentHours: number; waits: Pick<Spread, 'n' | 'p50'>; budget?: WeeklyBudget }
+export type Today = { since: number; spend: number; agentHours: number; waits: Pick<Spread, 'n' | 'p50'>; budget?: BoardBudget }
+
+/**
+ * The weekly budget as the board carries it: the facts, which change only with the logs. `pace` has not been on the
+ * board since API 2.12, so the board stays put while nothing happens: a renderer computes it at its own clock with
+ * `pace(budget, budget.day, now)` from /lib/cards.js. It stays in the type so an older renderer still reads it as absent.
+ */
+export type BoardBudget = WeeklyBudget & { pace?: Pace }
 
 export const today = (sessions: Session[], budget: WeeklyBudget | undefined, now: number): Today => {
   const from = bucketStart(now, 'day')

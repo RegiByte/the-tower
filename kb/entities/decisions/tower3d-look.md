@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-10",
-  "reviewed": "2026-11-17",
+  "reviewed": "2026-11-18",
   "refs": [
     "hub/renderers/tower3d/src/system.ts",
     "hub/renderers/tower3d/src/toon.ts#lightRamp",
