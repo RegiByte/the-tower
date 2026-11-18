@@ -12,6 +12,32 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.12.0
+
+The tower's own elements, built on the UI SDK, and the page's first use of them: a subject menu on every floor,
+worker and showing, and a searchable model picker in the spawn form (#673, #674, #675). API 2.16. Nothing to restart
+beyond the tower (`tower update` does it).
+
+- **The tower's elements, at `/lib-ui/`.** `tower-combobox`, `tower-menu`, `tower-menu-button` and `tower-menu-area`
+  are custom elements any renderer or extension can use by importing `/lib-ui/<module>.js` and writing the tag. Each
+  wraps the UI SDK's parts (`@ui-sdk/web`, pinned at `0.1.0-beta.10`, bundled once), so keyboard, focus, ARIA and
+  touch come from the SDK and the look from the tower's tokens. The contract is each `tower-*` tag with its
+  attributes, properties and events; the `ui-*` elements built inside are implementation that any SDK pin may change,
+  styling them included. An element writes no attribute on itself, so a page that morphs its html keeps it intact.
+  `/lib/elements.js` builds their html for views that draw strings, and `/lib/morph.js` gains `domId(place, key)`,
+  an element's id from a place and a data key (provisional). The standard for adding the next element is in
+  docs/extending.md and the kb (`tower-elements`).
+- **The subject menu.** Right-click (or long press, or ⋯) a floor's sign, a worker's row or a showing's tab: one menu
+  lists the subject's verbs and its contents (kept collections, shelf, repos, showings), with a tick on what is open.
+  `subjectMenu(board, key)` in `/lib/palette.js` builds it from the board, so any renderer can offer the same menu.
+  The page's buttons stay; the menu is a second way in. While the menu is open, the sidebar and the tab row hold
+  their redraw and catch up when it closes.
+- **The spawn form's pickers are searchable,** on the page and in Tower 3D. Typing filters and highlights the first
+  match; Enter or ⌘↵ chooses it without starting the worker; leaving the box without choosing shows the chosen value
+  again; ⌘↵ with the box closed starts the worker, as before.
+- **`tool:webkit` takes `--rclick x,y`,** a real right-click, and `tool:lib-ui` checks the elements under 100 ms
+  morphs in Chrome and WebKit.
+
 ## v2.11.0
 
 Extensions contribute surfaces, the tower gets a learning center, past conversations are reachable by session, and
