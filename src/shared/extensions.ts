@@ -1040,6 +1040,14 @@ export const Manifest = z
         .describe("The verbs and hooks it wraps, qualified: tower/spawn, chime/ring. Each one's capability is its own, the core's or one it requires or wants."),
     ),
     collections: since(z.record(Word, Collection).optional().describe('Its collections, each named `<provides>` or `<provides>.<name>`.')),
+    items: since212(
+      z
+        .record(Word, Path)
+        .optional()
+        .describe(
+          "Items it contributes, by collection: a folder of its own whose files join the collection, read in place and never written. The collection is its own, the config's, or one of a capability it requires or wants; one another capability owns is refused.",
+        ),
+    ),
     streams: since(z.record(Word, Stream).optional().describe('Its streams, `streams/{system|projects/<p>}/<provides>.<name>/`: always its own to write.')),
     facts: since(z.record(Word, Fact).optional().describe('Its session facts, logged as `tower.x.<provides>.<name>`.')),
     client: since(Path.optional().describe('Its folder of files served at /x/<capability>/: its commands\' modules.')),

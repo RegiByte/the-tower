@@ -3,14 +3,20 @@
  * those of the extensions on there, who owns each, and an extension's session facts over a worker's lineage.
  */
 import type { Collection, Doors, SessionFact } from '../shared/extensions.ts'
-import { projectCollections, TOWER_WIDE, type CollectionType, type Config } from '../shared/model.ts'
+import { projectCollections, TOWER_WIDE, type CollectionItem, type CollectionType, type Config } from '../shared/model.ts'
 import { EXTENSION_FACTS, type Session } from './facts.ts'
+
+/** A file an extension contributes to a collection, as discovery read it: `modifiedAt` epoch ms. */
+export type ItemRead = { id: string; size: number; modifiedAt: number }
+
+/** The items an extension contributes, by collection: the folder each is read from (absolute), and its files. Only folders that exist are read. */
+export type ContributedItems = Record<string, { dir: string; items: ItemRead[] }>
 
 /**
  * What an accepted extension declares of its collections, the capabilities it is off with (`Accepted.chain`), and the
  * hooks it answers while it runs.
  */
-export type ExtensionStores = { provides: string; chain: string[]; collections: Record<string, Collection>; answers: string[] }
+export type ExtensionStores = { provides: string; chain: string[]; collections: Record<string, Collection>; contributed: ContributedItems; answers: string[] }
 
 /** Whether a running extension on the floor answers `hook`: a discard is offered only where one records it. */
 export const answeredOn = (config: Config, project: string, extensions: ExtensionStores[], hook: string): boolean =>
@@ -58,6 +64,36 @@ export const floorCollections = (config: Config, project: string, extensions: Ex
 /** The tower-wide collections, kept under `_tower/`: those the accepted extensions declare with `scope: "system"`. */
 export const towerCollections = (extensions: ExtensionStores[]): Record<string, FloorCollectionType> =>
   Object.fromEntries(extensions.flatMap((x) => Object.entries(x.collections).flatMap(([id, c]) => (towerWide(c) ? [[id, declaredBy(x.provides, c, c)]] : []))))
+
+/**
+ * What the extensions contribute to `collection` where `project` keeps it (a floor's id, or `_tower`): each item with
+ * its `file` in the folder it is read from, by those on that floor (any, tower-wide), the first to contribute an id
+ * keeping it, in id order.
+ */
+export const contributedTo = (config: Config, project: string, collection: string, extensions: ExtensionStores[]): CollectionItem[] => {
+  const on = project === TOWER_WIDE ? extensions : extensions.filter((x) => !offOn(config, project, x.chain))
+  const items = on.flatMap((x) => {
+    const folder = x.contributed[collection]
+    return folder ? folder.items.map((i) => ({ project, collection, ...i, from: x.provides, file: `${folder.dir}/${i.id}` })) : []
+  })
+  return [...new Map(items.toReversed().map((i) => [i.id, i])).values()].sort((a, b) => (a.id < b.id ? -1 : 1))
+}
+
+/**
+ * One collection's items: the user's, `own`, and the extensions', `contributed`, in id order. A user's item shadows
+ * a contributed item of its id, and says whose it shadows.
+ */
+export const collectionItems = (own: CollectionItem[], contributed: CollectionItem[]): CollectionItem[] => {
+  const shadowed = new Map(contributed.map((i) => [i.id, i.from!]))
+  const ids = new Set(own.map((i) => i.id))
+  return [...own.map((i) => (shadowed.has(i.id) ? { ...i, shadows: shadowed.get(i.id) } : i)), ...contributed.filter((i) => !ids.has(i.id))].sort((a, b) =>
+    a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
+  )
+}
+
+/** Why an item an extension contributes is never deleted, and how to stop showing it where `project` keeps it (a floor, or `_tower`). */
+export const contributedRefusal = (from: string, project: string): string =>
+  `${from}'s, read in place from its folder: ${project === TOWER_WIDE ? `turn ${from} off (extensions.${from}.off)` : `turn ${from} off on the floor (projects.${project}.capabilities.${from}.off)`} to stop showing it`
 
 /** Why a generic write to `collection` is refused: it is owned, and its owner's create door says how to add to it. */
 export const ownedRefusal = (collection: string, { owner, doors }: FloorCollectionType): string | undefined => {

@@ -1535,6 +1535,13 @@
         "dir": {
           "type": "string"
         },
+        "sources": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Where each contributing extension's items are, by capability: a contributed item's file is `<sources[from]>/<id>`."
+        },
         "items": {
           "type": "array",
           "items": {
@@ -1608,6 +1615,14 @@
         },
         "keptBy": {
           "$ref": "#/definitions/KeptBy"
+        },
+        "from": {
+          "type": "string",
+          "description": "The capability of the extension that contributes it: read in place from its folder (`sources`), never written. A write makes the user's copy, which shadows it."
+        },
+        "shadows": {
+          "type": "string",
+          "description": "On a user's item, the capability whose contributed item of its id it shadows: deleting it shows that one again."
         },
         "x": {
           "type": "object",

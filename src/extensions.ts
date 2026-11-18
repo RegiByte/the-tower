@@ -6,6 +6,7 @@ import { buildSync } from 'esbuild'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import type { ClientRead, Found } from './bridge/extensions.ts'
+import type { ContributedItems } from './bridge/stores.ts'
 import { fileBelow } from './renderers.ts'
 import { BUNDLED } from './shared/extensions.ts'
 import type { Config } from './shared/model.ts'
@@ -64,7 +65,7 @@ const clientRead = (dir: string): ClientRead => {
 }
 
 /** A manifest's keys, only peeked at here: one that isn't JSON has none, and the read of the manifest says why it is refused. */
-const peeked = (text: string | undefined): { client?: unknown; runtimes?: { claude?: { plugins?: unknown } } } => {
+const peeked = (text: string | undefined): { client?: unknown; items?: unknown; runtimes?: { claude?: { plugins?: unknown } } } => {
   try {
     return text === undefined ? {} : (JSON.parse(text) ?? {})
   } catch {
@@ -73,11 +74,34 @@ const peeked = (text: string | undefined): { client?: unknown; runtimes?: { clau
 }
 
 /** The client folder a manifest names, inside `dir`, when it names one there. */
-const clientDir = (dir: string, text: string | undefined): string | undefined => {
-  const { client } = peeked(text)
-  if (typeof client !== 'string') return undefined
-  const full = path.resolve(dir, client)
+const clientDir = (dir: string, text: string | undefined): string | undefined => folderIn(dir, peeked(text).client)
+
+/** A folder inside `dir` the manifest names, when it is one there. */
+const folderIn = (dir: string, rel: unknown): string | undefined => {
+  if (typeof rel !== 'string') return undefined
+  const full = path.resolve(dir, rel)
   return full.startsWith(path.resolve(dir) + path.sep) && statSync(full, { throwIfNoEntry: false })?.isDirectory() ? full : undefined
+}
+
+/** The files of each items folder the manifest names that exists, dot files aside, in id order: read in place, never written. */
+const itemsRead = (dir: string, text: string | undefined): ContributedItems | undefined => {
+  const { items } = peeked(text)
+  if (typeof items !== 'object' || items === null) return undefined
+  return Object.fromEntries(
+    Object.entries(items).flatMap(([collection, rel]) => {
+      const folder = folderIn(dir, rel)
+      if (!folder) return []
+      const files = readdirSync(folder, { withFileTypes: true })
+        .filter((entry) => entry.isFile() && !entry.name.startsWith('.'))
+        .map((entry) => entry.name)
+        .sort()
+        .map((id) => {
+          const stat = statSync(path.join(folder, id))
+          return { id, size: stat.size, modifiedAt: Math.floor(stat.mtimeMs) }
+        })
+      return [[collection, { dir: folder, items: files }]]
+    }),
+  )
 }
 
 /** What the Claude plugin a manifest names lacks, when it lacks anything: the folder, or the file that makes it a plugin. */
@@ -94,7 +118,8 @@ export const foundIn = (id: string, bundled: boolean, dir: string): Found => {
   const text = fileIn(dir, MANIFEST_FILE)
   const client = clientDir(dir, text)
   const lack = claudePluginLack(dir, text)
-  return { id, bundled, dir, text, ...(contract !== undefined && { contract }), ...(client && { client: clientRead(client) }), ...(lack && { claudePluginLack: lack }) }
+  const items = itemsRead(dir, text)
+  return { id, bundled, dir, text, ...(contract !== undefined && { contract }), ...(client && { client: clientRead(client) }), ...(lack && { claudePluginLack: lack }), ...(items && { items }) }
 }
 
 /** The client folder of the bundled extension that provides `cap`, when one does and has a client folder. */

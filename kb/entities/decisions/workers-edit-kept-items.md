@@ -64,6 +64,10 @@ versions of one idea with nothing saying which was current.
   permission. The grant is the client's: no host change. A project that has kept nothing yet has no directory; Claude
   starts anyway. Until Claude Code 2.1.326 it was `--add-dir`, which since then asks to trust a directory outside a
   trusted one at every session start ([[repos-file-access-only]]).
+- An item an extension contributes ([[collections]]) is read-only: `tower kept` marks it and prints its file in the
+  extension's folder. `tower own <tag>` copies it into the collection with `collection/write` and logs the keep fact,
+  so the worker edits its copy in place; the copy shadows the extension's and doesn't get its updates, and unkeeping
+  it brings the extension's back. No API verb: the word composes over the write.
 - `tower unkeep <tag|id>...` deletes items with the renderer API's `collection/delete`. Every name is resolved
   first ([`unkeepable`](ref:hub/src/directory.ts#unkeepable)), and one unknown, shared by two items or in an owned
   collection refuses the whole call, so a batch never stops halfway on a typo. The owned refusal reads the

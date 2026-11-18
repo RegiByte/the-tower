@@ -8,11 +8,11 @@ import path from 'node:path'
 import type { z } from 'zod'
 import type { Accepted } from '../bridge/extensions.ts'
 import { chainsOf, continuations, lineage } from '../bridge/chains.ts'
-import { extensionFactName, sessionFacts } from '../bridge/stores.ts'
+import { collectionItems, contributedTo, extensionFactName, sessionFacts, type ExtensionStores } from '../bridge/stores.ts'
 import { towerFact } from '../bridge/events.ts'
 import { streamFacts } from '../bridge/streams.ts'
 import { frozen } from '../bridge/frozen.ts'
-import { createItem, deleteItem, itemPath, itemsIn, putItem, readItem, renameItem, writeItem } from '../collections.ts'
+import { createItem, deleteItem, itemPath, itemsIn, itemText, putItem, renameItem, writeItem } from '../collections.ts'
 import { hostRequest } from '../machine.ts'
 import { streamFolder, type FoldCtx, type Item, type ParsedItem, type StartCtx, type Started, type StreamAt, type StreamFact } from '../shared/extensions.ts'
 import type { OwnAt } from '../bridge/folds.ts'
@@ -42,7 +42,7 @@ type HeldParse = { modifiedAt: number; parsed: unknown }
  * The store members of an extension's ctx, and `attach`, which folds the streams `start` returned a `reduce` for; `stop`
  * ends those folds.
  */
-export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResource, on: (project: string) => boolean) => {
+export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResource, on: (project: string) => boolean, stores: () => ExtensionStores[]) => {
   const { paths } = config
   const { manifest, provides } = a
   const folds = new Map<string, ReturnType<SystemResource['foldStream']>>()
@@ -74,10 +74,24 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
     if (!on(project)) throw new Error(`${provides} is off on ${project}`)
   }
 
+  /** One collection's items: the store's, and those the extensions contribute to it. */
+  const unionIn = (project: string, name: string): CollectionItem[] => collectionItems(itemsIn(paths, project, name), contributedTo(config.read(), project, name, stores()))
+
+  const found = (project: string, name: string, id: string): CollectionItem => {
+    const item = unionIn(project, name).find((i) => i.id === id)
+    if (!item) throw new Error(`${project}/${name} holds no item "${id}"`)
+    return item
+  }
+
   const itemOf = (project: string, name: string, id: string): Item => {
-    const found = itemsIn(paths, project, name).find((i) => i.id === id)
-    if (!found) throw new Error(`${project}/${name} holds no item "${id}"`)
-    return { id, tag: tagOf(id), size: found.size, modifiedAt: found.modifiedAt }
+    const { size, modifiedAt } = found(project, name, id)
+    return { id, tag: tagOf(id), size, modifiedAt }
+  }
+
+  /** An item it may delete or rename: one of the store's, never one an extension contributes. */
+  const storeItem = (project: string, name: string, id: string): void => {
+    const { from } = found(project, name, id)
+    if (from) throw new Error(`${project}/${name}/${id} is ${from}'s, read in place from its folder: write it to make the store's own copy`)
   }
 
   /** An item's parse, frozen; one that throws costs that item only, its `parsed` undefined until its file changes. */
@@ -92,22 +106,27 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
 
   /** A collection's items on a floor, parsed and frozen, listed once per `live.items()`: every fold of a build reads the same list. */
   let listed = new WeakMap<CollectionItem[], Map<string, ParsedItem[]>>()
+  let listedWith: ExtensionStores[] | undefined
   const parsedItems = (project: string, name: string): ParsedItem[] => {
     const items = live.items()
+    const contributors = stores()
+    if (contributors !== listedWith) [listed, listedWith] = [new WeakMap(), contributors]
     if (!listed.has(items)) listed.set(items, new Map())
     const lists = listed.get(items)!
     const at = `${project}/${name}`
     if (lists.has(at)) return lists.get(at)!
     const parseOne = parse?.[name]
-    const list = items
-      .filter((i) => i.project === project && i.collection === name)
-      .flatMap(({ id, size, modifiedAt }) => {
+    const list = collectionItems(
+      items.filter((i) => i.project === project && i.collection === name),
+      contributedTo(config.read(), project, name, contributors),
+    ).flatMap((listedItem) => {
+        const { id, size, modifiedAt, from } = listedItem
         const item = { id, tag: tagOf(id), size, modifiedAt }
         if (!parseOne) return [{ ...item, parsed: undefined }]
-        const key = `${at}/${id}`
+        const key = `${at}/${from ?? ''}/${id}`
         const held = parsedBy.get(key)
         if (held?.modifiedAt === modifiedAt) return [{ ...item, parsed: held.parsed }]
-        const text = readItem(paths, project, name, id)
+        const text = itemText(paths, listedItem)
         if (text === undefined) return []
         const parsed = parsedOf(parseOne, text, item, key)
         parsedBy.set(key, { modifiedAt, parsed })
@@ -158,11 +177,12 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
     collections: {
       list: (project, name) => {
         collectionOf(project, name)
-        return itemsIn(paths, project, name).map(({ id, size, modifiedAt }) => ({ id, tag: tagOf(id), size, modifiedAt }))
+        return unionIn(project, name).map(({ id, size, modifiedAt }) => ({ id, tag: tagOf(id), size, modifiedAt }))
       },
       read: async (project, name, id) => {
         collectionOf(project, name)
-        const text = readItem(paths, project, name, id)
+        const item = unionIn(project, name).find((i) => i.id === id)
+        const text = item && itemText(paths, item)
         if (text === undefined) throw new Error(`${project}/${name} holds no item "${id}"`)
         return text
       },
@@ -172,8 +192,10 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
       },
       write: async (project, name, id, content, modifiedAt) => {
         collectionOf(project, name)
-        if (itemOf(project, name, id).modifiedAt !== modifiedAt) throw new Error(`${project}/${name}/${id} changed since version ${modifiedAt}`)
-        writeItem(paths, project, name, id, content)
+        const item = found(project, name, id)
+        if (item.modifiedAt !== modifiedAt) throw new Error(`${project}/${name}/${id} changed since version ${modifiedAt}`)
+        if (item.from) putItem(paths, project, name, id, content)
+        else writeItem(paths, project, name, id, content)
         return itemOf(project, name, id)
       },
       put: async (project, name, id, content) => {
@@ -183,14 +205,14 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
       },
       rename: async (project, name, id, to) => {
         collectionOf(project, name)
-        itemOf(project, name, id)
+        storeItem(project, name, id)
         if (existsSync(itemPath(paths, project, name, to))) throw new Error(`${project}/${name} holds an item "${to}" already`)
         renameItem(paths, project, name, id, to)
         return itemOf(project, name, to)
       },
       delete: async (project, name, id) => {
         collectionOf(project, name)
-        itemOf(project, name, id)
+        storeItem(project, name, id)
         deleteItem(paths, project, name, id)
       },
     },

@@ -98,6 +98,11 @@ export const CLI_VERBS = {
     help: "the floor's collections with their item counts and latest items, or every item of one: tag, title, age, size, keeper and file",
   },
   read: { of: 'worker', usage: 'read <tag|id>', help: "one item of the floor's collections, in full" },
+  own: {
+    of: 'worker',
+    usage: 'own <tag|id>',
+    help: "copy an item an extension contributes into its collection, to edit in place: your copy shadows the extension's from then on and doesn't get its updates; unkeep your copy to get the extension's back",
+  },
   unkeep: {
     of: 'worker',
     usage: 'unkeep <tag|id>...',

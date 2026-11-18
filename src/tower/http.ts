@@ -124,7 +124,7 @@ import { hookEvents, logFileOf, readLog } from '../tail.ts'
 import { landingOf, WorktreeError } from '../worktrees.ts'
 import { errorOf, OK, type Answer } from './answers.ts'
 import { DispatchResource } from './dispatch.ts'
-import { collectionOn } from '../bridge/stores.ts'
+import { collectionOn, contributedTo } from '../bridge/stores.ts'
 import type { ExtensionsResource } from './extensions.ts'
 import type { PublisherResource } from './publisher.ts'
 import { lastFrames, screenMirrors } from './screens.ts'
@@ -589,8 +589,8 @@ export const httpServer = defineResource({
       const { collection, id } = shelfItem(entry)
       if (!entry.item.includes('/') || !ITEM_ID.test(id)) return { message: `The shelf entry names "${entry.item}": an item is named "<collection>/<id>", the id its file name` }
       if (!isDeclared(projectId, collection)) return { message: `The shelf entry names "${entry.item}", and "${projectId}" keeps no collection "${collection}"` }
-      const found = itemPath(paths, projectId, collection, id)
-      return existsSync(found) ? { file: found } : { message: `The shelf entry names "${entry.item}", and ${projectId}/${collection} holds no item "${id}"` }
+      const found = itemFile(projectId, collection, id)
+      return found ? { file: found } : { message: `The shelf entry names "${entry.item}", and ${projectId}/${collection} holds no item "${id}"` }
     }
 
     const htmlPage = (res: http.ServerResponse, status: number, page: string) => res.writeHead(status, { 'content-type': 'text/html; charset=utf-8', ...FRESH }).end(page)
@@ -713,9 +713,8 @@ export const httpServer = defineResource({
     function collectionItem(project: string, collection: string, id: string): ReadReply {
       if (!isDeclared(project, collection)) return failed('not_found', `"${project}" has no collection "${collection}"`)
       if (!ITEM_ID.test(id)) return failed('invalid', `"${id}" is not an item id`)
-      const file = itemPath(paths, project, collection, id)
-      if (!existsSync(file)) return failed('not_found', `${project}/${collection} holds no item "${id}"`)
-      return { t: 'file', file }
+      const file = itemFile(project, collection, id)
+      return file ? { t: 'file', file } : failed('not_found', `${project}/${collection} holds no item "${id}"`)
     }
 
     /** A file a worker showed, sandboxed like a shelf's. */
@@ -725,6 +724,12 @@ export const httpServer = defineResource({
       if (!shownServes(session.facts.shown, file)) return failed('not_found', `${id} showed no "${file}"`)
       if (!existsSync(file)) return failed('not_found', `"${file}" is gone`)
       return { t: 'file', file }
+    }
+
+    /** An item's file: the store's, or else the one an extension contributes under its id; `undefined` with neither. */
+    const itemFile = (project: string, collection: string, id: string): string | undefined => {
+      const own = itemPath(paths, project, collection, id)
+      return existsSync(own) ? own : contributedTo(readConfig(), project, collection, extensions.registry().stores).find((i) => i.id === id)?.file
     }
 
     const isDeclared = (project: string, collection: string) => collectionOn(readConfig(), project, collection, extensions.registry().stores) !== undefined

@@ -20,9 +20,9 @@ import type { Status } from '../bridge/status.ts'
 import { askedFact, coreFacts, fieldFacts, forkFacts, resumesFact, mergeParts, parsedFields, placeable, promptedFacts, takenEnv, takenFlags, withFields, type Contribution, type Merged } from '../bridge/launch.ts'
 import type { Prune } from '../bridge/prunable.ts'
 import type { Resource } from '../bridge/resources.ts'
-import { collectionOn, ownedRefusal, sessionFacts, type FloorCollectionType } from '../bridge/stores.ts'
+import { collectionOn, contributedRefusal, contributedTo, ownedRefusal, sessionFacts, type FloorCollectionType } from '../bridge/stores.ts'
 import { editConfig, keyName, type ConfigEdit } from '../config-edit.ts'
-import { createItem, deleteItem, itemPath, itemVersion, restoreItem, writeItem } from '../collections.ts'
+import { createItem, deleteItem, itemPath, itemVersion, putItem, restoreItem, writeItem } from '../collections.ts'
 import { logged } from '../logged.ts'
 import { thrownWords } from '../shared/thrown.ts'
 import { hostRequest, jobsRequest, pressSubmit, reap, reveal, runEditor, submitText, termsRequest, typeText, writeUpload } from '../machine.ts'
@@ -820,10 +820,33 @@ export const dispatch = defineResource({
         return refused ? apiError('refused', refused) : change()
       })
 
+    /** The item an extension contributes to a collection under `id`, read in place from its folder. */
+    const contributedItem = (project: string, collection: string, id: string) =>
+      contributedTo(readConfig(), project, collection, holder.registry().stores).find((i) => i.id === id)
+
+    /** A change to an item of the store's: one only an extension contributes is refused, saying how to drop it from view. */
     const toItem = (project: string, collection: string, id: string, change: (file: string) => Answer) =>
       inCollection(project, collection, () => {
         const file = itemPath(paths, project, collection, id)
-        return existsSync(file) ? change(file) : apiError('not_found', `${project}/${collection} holds no item "${id}"`)
+        if (existsSync(file)) return change(file)
+        const theirs = contributedItem(project, collection, id)
+        return theirs
+          ? apiError('refused', `${project}/${collection}/${id} is ${contributedRefusal(theirs.from!, project)}`)
+          : apiError('not_found', `${project}/${collection} holds no item "${id}"`)
+      })
+
+    /**
+     * A write to an item: the store's, or one an extension contributes, whose first write makes the store's own copy
+     * under its id, which shadows it from then on. Either is refused once it moved on from `modifiedAt`.
+     */
+    const writeTo = (project: string, collection: string, id: string, content: string, modifiedAt: number) =>
+      inCollection(project, collection, () => {
+        const moved = () => apiError('refused', `${project}/${collection}/${id} changed since version ${modifiedAt}`)
+        const file = itemPath(paths, project, collection, id)
+        if (existsSync(file)) return itemVersion(file) === modifiedAt ? { t: 'written', modifiedAt: writeItem(paths, project, collection, id, content) } : moved()
+        const theirs = contributedItem(project, collection, id)
+        if (!theirs) return apiError('not_found', `${project}/${collection} holds no item "${id}"`)
+        return theirs.modifiedAt === modifiedAt ? { t: 'written', modifiedAt: putItem(paths, project, collection, id, content) } : moved()
       })
 
     /** One edit of the config file, then the config taken again at once: a link's target folder raises no watch event. */
@@ -994,12 +1017,7 @@ export const dispatch = defineResource({
       'job/cancel': ({ id }, caller) => jobs({ t: 'cancel', id, by: ownerOf(caller) }),
       'collection/create': ({ project, collection, name, ext, content }) =>
         inCollection(project, collection, () => ({ t: 'created', ...createItem(paths, project, collection, name, ext, content) })),
-      'collection/write': ({ project, collection, id, content, modifiedAt }) =>
-        toItem(project, collection, id, (file) =>
-          itemVersion(file) === modifiedAt
-            ? { t: 'written', modifiedAt: writeItem(paths, project, collection, id, content) }
-            : apiError('refused', `${project}/${collection}/${id} changed since version ${modifiedAt}`),
-        ),
+      'collection/write': ({ project, collection, id, content, modifiedAt }) => writeTo(project, collection, id, content, modifiedAt),
       'collection/restore': ({ project, collection, id, content }) =>
         inCollection(project, collection, () => {
           const modifiedAt = restoreItem(paths, project, collection, id, content)
