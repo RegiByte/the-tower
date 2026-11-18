@@ -342,7 +342,7 @@ dialog.palette[open] { display: flex; flex-direction: column; max-height: min(56
   flex: 0 1 auto; min-width: 3em; display: flex; gap: var(--sp-s); overflow-x: scroll; overflow-y: hidden; overscroll-behavior-x: contain; scroll-padding-inline: var(--fade);
   padding-block: calc(2 * var(--ring) + var(--bar) - var(--lent)) var(--ring); margin-block: calc(-1 * var(--ring)) calc(-1 * var(--lent));
   min-height: calc(var(--control) + 3 * var(--ring) + 2 * var(--bar) - var(--lent)); scrollbar-width: auto; scrollbar-color: auto; }
-.tab-scroll > * { flex: none; max-width: 100%; }
+.tab-scroll .pane-tab { flex: none; max-width: 100%; }
 .tab-row > .tab-set > .tab-scroll:empty { min-width: 0; }
 .tab-scroll::-webkit-scrollbar { height: var(--bar); }
 .tab-scroll::-webkit-scrollbar-track { background: transparent; }
@@ -363,18 +363,18 @@ dialog.palette[open] { display: flex; flex-direction: column; max-height: min(56
 
 /* A worker's tabs in the menu form: those that fit on one row, the rest behind "+n ▾" after the tablist. */
 .tab-row > .tab-set.tabs-menu { flex: 0 1 auto; min-width: 0; display: flex; gap: var(--sp-s); overflow: hidden; padding-block: 2px; margin-block: -2px; }
-.tabs-menu > * { flex: none; max-width: 100%; }
-.tab-row > .tab-set.tabs-menu.tight > :not(.shown-tab) { flex: 0 1 auto; min-width: 3em; display: inline-flex; align-items: center; overflow: hidden; }
+.tabs-menu .pane-tab { flex: none; max-width: 100%; }
+.tab-row > .tab-set.tabs-menu.tight .pane-tab:not(.shown-tab) { flex: 0 1 auto; min-width: 3em; display: inline-flex; align-items: center; overflow: hidden; }
 .tabs-menu.tight .tab-word { min-width: 1.5em; overflow: hidden; text-overflow: ellipsis; }
-.tab-row > .tab-set.tabs-menu.tight > .shown-tab { flex: 0 1 auto; min-width: min-content; }
-.tabs-menu.tight > .shown-tab.on { grid-template-columns: minmax(2em, max-content); }
+.tab-row > .tab-set.tabs-menu.tight .shown-tab { flex: 0 1 auto; min-width: min-content; }
+.tabs-menu.tight .shown-tab.on { grid-template-columns: minmax(2em, max-content); }
 .tab-row > .tabs-more { color: var(--ink); }
 .tabs-adds { display: contents; }
 .tabs-adds > * { flex: none; }
 
 /* A worker's tabs in the wrap form: every tab drawn, on as many rows as they take, the row growing. */
 .tab-row > .tab-set.tabs-wrap { flex: 0 1 auto; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-xs) var(--sp-s); }
-.tabs-wrap > * { flex: none; max-width: 100%; }
+.tabs-wrap .pane-tab { flex: none; max-width: 100%; }
 .claude-term .xterm-viewport { overflow-y: hidden !important; }
 .claude-term .xterm-scrollable-element > .scrollbar { display: none; }
 

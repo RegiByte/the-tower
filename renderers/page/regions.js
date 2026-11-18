@@ -476,7 +476,7 @@ export function regions(deps) {
         more.hidden = false
         more.textContent = `+${all.length} ▾`
         const gap = gapOf(list)
-        ;[...list.children].forEach((el, n) => widths.set(drawsOf(all[n]), el.getBoundingClientRect().width + gap))
+        ;[...list.querySelectorAll('.pane-tab')].forEach((el, n) => widths.set(drawsOf(all[n]), el.getBoundingClientRect().width + gap))
         moreWidth = more.getBoundingClientRect().width + gapOf(strip)
       }
 
@@ -546,7 +546,7 @@ export function regions(deps) {
     const fadeOf = (scroller) => parseFloat(getComputedStyle(scroller).scrollPaddingLeft)
 
     /** The open tab when the scroller holds it. @param {HTMLElement} scroller */
-    const openIn = (scroller) => open === undefined ? null : /** @type {HTMLElement | null} */ (scroller.querySelector(`:scope > [data-tab="${CSS.escape(open)}"]`))
+    const openIn = (scroller) => open === undefined ? null : /** @type {HTMLElement | null} */ (scroller.querySelector(`.pane-tab[data-tab="${CSS.escape(open)}"]`))
 
     /** Whether `tab` is wider than the scroller can show between its fades: shown from its start, unfaded. @param {HTMLElement} scroller @param {HTMLElement} tab */
     const fills = (scroller, tab) => tab.offsetWidth > scroller.clientWidth - 2 * fadeOf(scroller)
