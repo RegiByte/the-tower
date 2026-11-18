@@ -4,7 +4,7 @@
   "name": "opencode",
   "summary": "The opencode v2 TUI, the tower's second runtime: one standalone server per session in a real PTY, configured through its env and read through the tower's plugin on its event bus.",
   "in": "tower",
-  "reviewed": "2026-11-15",
+  "reviewed": "2026-11-17",
   "refs": ["hub/src/shared/opencode.ts#OPENCODE_TESTED", "hub/src/shared/opencode.ts#OPENCODE_SURFACES", "hub/src/shared/launch-opencode.ts", "hub/src/mod/opencode/tui.ts", "hub/src/opencode-state.ts#sweepOpencodeStates", "hub/src/bridge/runtimes/opencode.ts#normalizeOpencode", "hub/test/opencode.test.ts", "hub/src/doctor.ts#readiness", "hub/src/shared/spawn-form.ts#modelNote"],
   "links": [
     { "to": "tower-mod", "verb": "triggers", "carries": "bus events to the tower's opencode plugin (session.*, permission.*, form.*, mcp.status.changed) and its tool, shell and session context hooks" }
@@ -15,7 +15,8 @@ A session runs opencode when its spawn names `runtime: 'opencode'` and the confi
 session's runtime is fixed for its life and its resume chain. The releases the tower is tested on are
 [`OPENCODE_TESTED`](ref:hub/src/shared/opencode.ts#OPENCODE_TESTED), beside the surfaces of opencode's it reads
 ([`OPENCODE_SURFACES`](ref:hub/src/shared/opencode.ts#OPENCODE_SURFACES)): the v2 plugin API and its bus events change
-between minor releases, so a session outside the range is flagged on the board. A v1 opencode refuses the plugin.
+between minor releases, so a session outside the range is flagged on the board, and the range moves only after
+`tool:opencode-check` reads a release clean ([[new-opencode-release]]). A v1 opencode refuses the plugin.
 
 **How a session starts** ([`launch-opencode.ts`](ref:hub/src/shared/launch-opencode.ts)). Every session runs its own
 server (`--standalone`): opencode applies its config when its server starts, so a session attached to a running
