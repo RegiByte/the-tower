@@ -219,6 +219,8 @@ export function wireSpawn<D, I, K extends KeptDraft>(dialog: HTMLDialogElement, 
     },
   })
   dialog.addEventListener('input', sync)
+  /** A choice in a combobox is no `input`: its value reaches the form once its `valuechange` is through. */
+  dialog.addEventListener('valuechange', () => queueMicrotask(sync))
   /** Files dropped anywhere on the dialog go to the prompt, so a drop that misses it never opens the file in place of the page. */
   dialog.addEventListener('dragover', (e) => {
     if (!io.upload || !e.dataTransfer?.types.includes('Files') || machine.state().t !== 'editing') return

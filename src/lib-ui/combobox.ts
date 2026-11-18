@@ -63,7 +63,7 @@ class TowerCombobox extends HTMLElement {
     else if (name === 'value') inner.value = value
     else if (name === 'label' || name === 'labelledby') this.#label(inner)
     else if (name === 'empty') inner.querySelector('ui-combobox-empty')!.textContent = value ?? ''
-    else if (name === 'placeholder') inner.querySelector('input')!.placeholder = value ?? ''
+    else if (name === 'placeholder') inner.querySelector<HTMLInputElement>('input')!.placeholder = value ?? ''
     else if (value === null) inner.removeAttribute(name)
     else inner.setAttribute(name, value)
   }
@@ -71,7 +71,7 @@ class TowerCombobox extends HTMLElement {
   /** Its own label part holding `label`, or none and the input named by the element `labelledby` names. */
   #label(inner: HTMLElementTagNameMap['ui-combobox']) {
     const by = this.getAttribute('labelledby')
-    const input = inner.querySelector('input')!
+    const input = inner.querySelector<HTMLInputElement>('input')!
     const own = inner.querySelector('ui-combobox-label')
     if (by !== null) {
       own?.remove()

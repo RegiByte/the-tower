@@ -411,7 +411,7 @@ ${reduced("button[aria-busy='true']::after, .icon-btn[aria-busy='true']::after",
 .spawn-form input[type=radio] { accent-color: var(--pp); margin: 0; translate: 0 2px; }
 .spawn-form .fields { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-l); }
 .spawn-form .fields > legend { grid-column: 1 / -1; }
-.spawn-form .fields label { display: grid; gap: var(--sp-s); }
+.spawn-form .fields :is(label, .field) { display: grid; gap: var(--sp-s); }
 .spawn-form .fields .wide { grid-column: 1 / -1; }
 .spawn-form .fields .why { color: var(--broken-text); font-size: var(--fs-s); }
 .spawn-form .fields .why:empty { display: none; }

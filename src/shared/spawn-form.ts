@@ -2,8 +2,10 @@ import type { Board, BoardRuntime, Floor } from '../bridge/board.ts'
 import type { Call, Replies, Verbs } from './api.ts'
 import { callsignRefused } from './callsign.ts'
 import { CLAUDE_EFFORTS, CLAUDE_MODELS } from './claude.ts'
+import { comboboxHtml, type ComboboxOption } from './elements.ts'
 import { base, esc, modelName } from './format.ts'
 import type { SpawnOption, Words } from './extensions.ts'
+import { domId } from './dom-id.ts'
 import { can, offeredCall } from './offered.ts'
 import { WORKTREE_STATE_NAME, worktreeBranch } from './worktree-words.ts'
 
@@ -232,7 +234,7 @@ export function spawnSummaryHtml(f: Floor, v: SpawnForm, runtime: BoardRuntime, 
 /** Words for what the runtime picks, with what it was seen to pick when known (`BoardRuntime.defaults`). */
 const observed = (words: string, seen: string | undefined) => (seen ? `${words} (${seen})` : words)
 
-/** A select's empty option: what the runtime `label` was seen to pick first, as narrow selects clip the end. */
+/** What a field left to the runtime `label` says: what it was seen to pick first, as a narrow field clips the end. */
 const defaultOption = (label: string, seen: string | undefined) => (seen ? `${seen} (default)` : `${label}'s default`)
 
 /** A choice of where, with what picking it means; `aside`: a hint at its right, as "default". */
@@ -240,21 +242,39 @@ const choiceHtml = (where: Where, title: string, what: string, { checked = false
   `<label class="choice"><input type="radio" name="where" value="${where}"${checked ? ' checked' : ''}${disabled ? ' disabled' : ''}>
     <b>${title}</b>${aside && `<span class="aside eyebrow">${aside}</span>`}<small>${what}</small></label>`
 
-/** A field's label: its name, and when the tower or Claude fills it in if left empty, says so. `hint`: a tip on an info mark beside it. */
-const labelHtml = (name: string, optional = false, hint?: string) =>
-  `<span class="lbl eyebrow">${name}${optional ? '<i>optional</i>' : ''}${hint ? `<span class="hint" tabindex="0" data-tip="${esc(hint)}">ⓘ</span>` : ''}</span>`
+/** A label's words: the field's name, and when the tower or Claude fills it in if left empty, says so. `hint`: a tip on an info mark beside it. */
+const labelWordsHtml = (name: string, optional: boolean, hint: string | undefined) =>
+  `${name}${optional ? '<i>optional</i>' : ''}${hint ? `<span class="hint" tabindex="0" data-tip="${esc(hint)}">ⓘ</span>` : ''}`
 
-const optionsHtml = (values: string[], none: string) => [`<option value="">${esc(none)}</option>`, ...values.map((v) => `<option>${esc(v)}</option>`)].join('')
+/** A field's label, inside the `<label>` around its control. */
+const labelHtml = (name: string, optional = false, hint?: string) => `<span class="lbl eyebrow">${labelWordsHtml(name, optional, hint)}</span>`
 
-/** An extension's field: a choice of its options, or typed; its hint as the placeholder or the empty choice. */
+/**
+ * A field chosen from `options` in a `<tower-combobox>` submitting `name`, `value` chosen as it opens: its label drawn
+ * beside it and naming it by id (`labelledby`), since a `<label>` around it would take a press in its list for one on
+ * the box. A field left to its default opens empty, `none` saying what the default is, and is emptied to go back to it.
+ * `wide` spans the form.
+ */
+const choiceFieldHtml = (
+  { name, label, optional = false, hint, wide = false }: { name: string; label: string; optional?: boolean; hint?: string; wide?: boolean },
+  options: ComboboxOption[],
+  chosen: { value: string } | { none: string },
+) =>
+  `<div class="field${wide ? ' wide' : ''}"><span class="lbl eyebrow" id="${esc(domId('spawn/label', name))}">${labelWordsHtml(label, optional, hint)}</span>` +
+  `${comboboxHtml({ place: 'spawn', name, labelledby: domId('spawn/label', name), options, empty: 'Nothing matches', ...('value' in chosen ? { value: chosen.value } : { placeholder: chosen.none }) })}</div>`
+
+/** Values that are their own words, as options. */
+const plain = (values: string[]): ComboboxOption[] => values.map((v) => ({ value: v, label: v }))
+
+/** An extension's field: a choice of its options, each found by its hint's words too, or typed; its hint as the placeholder or the empty choice. */
 const formFieldHtml = ({ cap, name, words, options }: FormField) =>
-  `<label class="wide">${labelHtml(words.label, true)}${
-    options
-      ? `<select name="${esc(fieldName(cap, name))}"${words.hint ? ` title="${esc(words.hint)}"` : ''}><option value="">${esc(words.hint ?? 'none')}</option>${options
-          .map((o) => `<option value="${esc(o.value)}"${o.hint ? ` title="${esc(o.hint)}"` : ''}>${esc(o.label)}</option>`)
-          .join('')}</select>`
-      : `<input name="${esc(fieldName(cap, name))}" autocomplete="off" spellcheck="false"${words.hint ? ` placeholder="${esc(words.hint)}"` : ''}>`
-  }</label>`
+  options
+    ? choiceFieldHtml(
+        { name: fieldName(cap, name), label: words.label, optional: true, wide: true },
+        options.map((o) => ({ value: o.value, label: o.label, ...(o.hint && { keywords: [o.hint] }) })),
+        { none: words.hint ?? 'none' },
+      )
+    : `<label class="wide">${labelHtml(words.label, true)}<input name="${esc(fieldName(cap, name))}" autocomplete="off" spellcheck="false"${words.hint ? ` placeholder="${esc(words.hint)}"` : ''}></label>`
 
 /**
  * The form's part drawn from the runtime `id`'s declaration (`runtime`): its commands when there are several, then a
@@ -267,14 +287,14 @@ export function providerHtml(f: Floor, id: string, runtime: BoardRuntime): strin
   const command = f.runtimes[id]?.command ?? ''
   const commandHtml =
     commands && commands.length > 1
-      ? `<label class="wide">${labelHtml(esc(label), true, `The command run in the terminal to start ${label}. Named commands are configured in config.json.`)}<select name="command">${commands.map((c) => `<option value="${esc(c)}"${c === command ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select></label>`
+      ? choiceFieldHtml({ name: 'command', label: esc(label), optional: true, hint: `The command run in the terminal to start ${label}. Named commands are configured in config.json.`, wide: true }, plain(commands), { value: command })
       : ''
   const choose = runtime.absent.includes('modelList')
     ? `<label>${labelHtml('Model', true)}<input name="model" list="spawn-models" autocomplete="off" spellcheck="false" placeholder="${esc(models.length ? defaultOption(label, defaults.model) : 'provider/model, typed')}"><datalist id="spawn-models">${models.map((m) => `<option value="${esc(m.id)}"></option>`).join('')}</datalist></label>
         <label>${labelHtml('Effort', true)}<input name="effort" list="spawn-efforts" autocomplete="off" spellcheck="false" placeholder="${esc(defaultOption(label, defaults.effort))}"><datalist id="spawn-efforts">${effortOptions(runtime, '')}</datalist></label>
         <small class="note wide" data-model-note></small>`
-    : `<label>${labelHtml('Model', true)}<select name="model">${optionsHtml(models.map((m) => m.id), defaultOption(label, modelName(defaults.model)))}</select></label>
-        <label>${labelHtml('Effort', true)}<select name="effort">${optionsHtml(effortsOn(runtime, ''), defaultOption(label, defaults.effort))}</select></label>`
+    : choiceFieldHtml({ name: 'model', label: 'Model', optional: true }, plain(models.map((m) => m.id)), { none: defaultOption(label, modelName(defaults.model)) }) +
+      choiceFieldHtml({ name: 'effort', label: 'Effort', optional: true }, plain(effortsOn(runtime, '')), { none: defaultOption(label, defaults.effort) })
   return `<div class="provider" data-provider="${esc(id)}">${commandHtml}${choose}</div>`
 }
 
@@ -314,7 +334,7 @@ export function spawnFormHtml(f: Floor, board: Board, { sign, draft, fields = []
       <div class="if-new fields">
         <label>${labelHtml('Worktree name', true)}<input name="name" autocomplete="off" spellcheck="false" pattern="[A-Za-z0-9][A-Za-z0-9._\\-]*" placeholder="the callsign, by default"></label>
         <label>${labelHtml('Branch', true)}<input name="branch" autocomplete="off" spellcheck="false" placeholder="${esc(branchPlaceholder(f, ''))}"></label>
-        <label class="wide">${labelHtml('From')}<select name="base"><option value="">${f.defaultBase ? `${esc(f.defaultBase)} · origin's default` : "each repo's origin default"}</option>${f.bases.filter((b) => b !== f.defaultBase).map((b) => `<option value="${esc(b)}">${esc(b)}</option>`).join('')}</select></label>
+        ${choiceFieldHtml({ name: 'base', label: 'From', wide: true }, plain(f.bases.filter((b) => b !== f.defaultBase)), { none: f.defaultBase ? `${f.defaultBase} · origin's default` : "each repo's origin default" })}
       </div>
       <fieldset class="if-worktree picks">${worktrees.map((w, i) => `<label class="pick"><input type="radio" name="worktree" value="${esc(w.repos[0].path)}"${i ? '' : ' checked'}>
         <b>${esc(w.name)}</b><span>⎇ ${esc(worktreeBranch(w))}</span><span class="st ${w.state}">${w.sessions.length && w.state !== 'unread' ? `${w.sessions.length} on duty` : WORKTREE_STATE_NAME[w.state]}</span></label>`).join('')}</fieldset>
@@ -322,7 +342,7 @@ export function spawnFormHtml(f: Floor, board: Board, { sign, draft, fields = []
         <b>${esc(base(dir))}</b><span>${i ? "its own CLAUDE.md, not the hub's" : 'the hub: its CLAUDE.md and skills'}</span></label>`).join('')}</fieldset>
       <div class="fields">
         <label class="wide">${labelHtml('Callsign', true)}<input name="callsign" autocomplete="off" spellcheck="false" placeholder="drawn at random"><small class="why" data-callsign-why></small></label>
-        ${runtimes.length > 1 ? `<label class="wide">${labelHtml('Runtime')}<select name="runtime">${runtimes.map(([id, r]) => `<option value="${esc(id)}"${id === v.runtime ? ' selected' : ''}>${esc(r.label)}</option>`).join('')}</select></label>` : ''}
+        ${runtimes.length > 1 ? choiceFieldHtml({ name: 'runtime', label: 'Runtime', wide: true }, runtimes.map(([id, r]) => ({ value: id, label: r.label })), { value: v.runtime }) : ''}
         ${providerHtml(f, v.runtime, board.runtimes[v.runtime])}
         ${fields.map(formFieldHtml).join('')}
       </div>
