@@ -85,7 +85,8 @@ test("a worker's processes are one line that asks first, none while it works; it
   assert.deepEqual((menu.groups[0].lines[2] as MenuLine).does, { t: 'action', subject: 'card', verb: 'reap', id: 'w1' }, "the card's reap, which asks with every process listed")
   assert.deepEqual(labels(group(menu.groups, 'Earlier conversations')), ['Resume: Fix the login form It drops the session cookie when the use…'])
   assert.equal(labels(menuOf({ ...left, resources: resources.slice(0, 1) } as Card).groups[0])[2], 'End 1 process…')
-  assert.ok(!labels(menuOf({ ...left, status: 'working' } as Card).groups[0]).some((l) => l.startsWith('End')), "while it works its processes are its own tool commands")
+  for (const status of ['working', 'needs_input', 'blocked', 'watching', 'booting'] as const)
+    assert.ok(!labels(menuOf({ ...left, status } as Card).groups[0]).some((l) => l.startsWith('End')), `${status}: its processes may be its own work in flight`)
 })
 
 test("a showing's menu offers a browser tab and its worker's tab, not the showing a click opens already", () => {
