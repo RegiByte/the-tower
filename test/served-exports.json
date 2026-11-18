@@ -284,6 +284,7 @@
       "runtimes.*.plugins",
       "server",
       "settings",
+      "shelf",
       "slots",
       "slots.*.scope",
       "slots.*.when",

@@ -293,10 +293,19 @@ const projectProblems = (config: Config, id: string, project: Project, renderers
             const problem = renderers && shelfProblem(project, entry, renderers, collectionIds)
             return [...unknownKeysAt(`${at}.shelf[${n}]`, entry, shelfKeys(entry)), ...(problem ? [fail(`${at}.shelf[${n}]`, problem)] : [])]
           })
+  const onFloor = [...extensions.resolved.accepted.values()].filter((a) => !a.off.includes(id))
+  const floorCollectionIds = [...collectionIds, ...onFloor.flatMap((a) => Object.keys(a.manifest.collections ?? {}))]
+  const contributedShelf = onFloor.flatMap((a) =>
+    (a.manifest.shelf ?? []).flatMap((entry, n) => {
+      const problem = renderers && shelfProblem(project, entry, renderers, floorCollectionIds)
+      return problem ? [warn(`extensions.${a.id}.shelf[${n}]`, `on ${id}'s shelf: ${problem}`)] : []
+    }),
+  )
   return [
     ...unknownKeys(`${at}.`, project, PROJECT_KEYS),
     ...shape,
     ...shelf,
+    ...contributedShelf,
     ...collections(`${at}.collections`, project.collections),
     ...(isObject(config.collections ?? {}) && isObject(project.collections ?? {}) ? checked(`${at}.collections`, () => projectCollections(config, id)) : []),
     ...worktrees(`${at}.worktrees`, project.worktrees),

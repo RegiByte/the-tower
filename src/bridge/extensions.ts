@@ -1345,7 +1345,7 @@ export const registry = (
   const stores = resolved.order.map((id) => {
     const { provides, chain, manifest } = resolved.accepted.get(id)!
     const { contributed } = resolved.accepted.get(id)!
-    return { provides, chain, collections: manifest.collections ?? {}, contributed, answers: states.get(id) === 'started' ? Object.keys(manifest.answers ?? {}) : [] }
+    return { provides, chain, collections: manifest.collections ?? {}, contributed, shelf: manifest.shelf ?? [], answers: states.get(id) === 'started' ? Object.keys(manifest.answers ?? {}) : [] }
   })
   const wrapping = wrappingOf(
     resolved.order.filter((id) => states.get(id) === 'started').map((id) => resolved.accepted.get(id)!),

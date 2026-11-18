@@ -79,6 +79,9 @@ export type ShelfEntry = { label: string } & (
   { html: string } | { md: string; order?: 'desc' } | { url: string } | { link: string } | { renderer: string } | { item: string }
 )
 
+/** A shelf entry as a floor shows it: the config's, or one an extension contributes, `from` its capability (since 2.12). */
+export type FloorShelfEntry = ShelfEntry & { from?: string }
+
 /** The collection and id an `item` entry names. */
 export const shelfItem = (entry: { item: string }): { collection: string; id: string } => {
   const slash = entry.item.indexOf('/')

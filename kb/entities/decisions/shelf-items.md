@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-11-18",
-  "refs": ["hub/src/shared/model.ts#ShelfEntry", "hub/src/shared/model.ts#shelfItem", "hub/src/shared/shelf-words.ts#shelfKind", "hub/src/shared/shelf-words.ts#shelfPage", "hub/src/shared/shelf-words.ts#shelfSource", "hub/src/shelf.ts#shelfFiles", "hub/src/shelf.ts#shelfServes", "hub/src/tower/http.ts#shelfFile", "hub/src/tower/http.ts#run"]
+  "refs": ["hub/src/shared/model.ts#ShelfEntry", "hub/src/shared/model.ts#shelfItem", "hub/src/shared/shelf-words.ts#shelfKind", "hub/src/shared/shelf-words.ts#shelfPage", "hub/src/shared/shelf-words.ts#shelfSource", "hub/src/shelf.ts#shelfFiles", "hub/src/shelf.ts#shelfServes", "hub/src/tower/http.ts#shelfFile", "hub/src/tower/http.ts#run", "hub/src/bridge/stores.ts#floorShelf"]
 }
 ---
 **Problem.** A page a worker made for the shelf had two homes, both wrong. An `html` entry's path is relative to the
@@ -36,6 +36,14 @@ shelf only needs to point at one.
   more. [`shelfPage`](ref:hub/src/shared/shelf-words.ts#shelfPage) names the file a framed entry opens and
   [`shelfSource`](ref:hub/src/shared/shelf-words.ts#shelfSource) where an entry comes from, for both renderers.
 - *Live.* The file is read on every request, so an item edited in place shows on the next load.
+- *Contributed by an extension* (since 2.12, [[extensions]]). A manifest's `shelf` takes entries of the kinds that
+  name no path: `renderer`, `item`, `url` and `link`. A page an extension ships is a renderer of its own or an item
+  it contributes ([[renderers-in-config]], [[collections]]), so no second base directory exists for `html` or `md`.
+  [`floorShelf`](ref:hub/src/bridge/stores.ts#floorShelf) puts the config's entries first, then each extension's on
+  the floors where it is on, marked `from` its capability: the board's floor `shelf` is that union, and the shelf's
+  routes index it, so the config's entries keep their numbers. `tower config check` checks each contributed entry
+  on each floor, as `extensions.<id>.shelf[<n>]`. Hiding one contributed entry on a floor is the extension's `off`
+  there; nothing finer, until someone asks.
 
 **Alternatives considered.**
 - Naming the item by its tag as well: a tag is a hash of the id, for people to say; resolving one means listing the
