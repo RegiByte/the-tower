@@ -28,7 +28,9 @@ wrap the SDK this way is [[tower-elements-wrap-the-sdk]].
   ([`relay`](ref:hub/src/lib-ui/sdk.ts#relay)), so a core view listens on its host.
 - **One subject menu per page.** `<tower-menu>` holds the SDK's data menu; each subject's area and ⋯ button name it by
   `for` and the subject by `payload`, and its owner sets `items` on `payloadchange`. The area handles `contextmenu`
-  and a long press itself and opens the menu at the point through the SDK's controller; the menu marks the areas of
+  and a long press itself, by the SDK's own context trigger's rules (a finger may move 10 px, the browser's long-press
+  menu is refused while it is down, the click its release makes after a hold is eaten) without binding the SDK's hold,
+  which writes on the element it binds, and opens the menu at the point through the SDK's controller; the menu marks the areas of
   the subject it is open for, however it opened.
 - **One SDK core.** `/lib-ui/sdk.js` is internal: the SDK entries in use bundled once, packages inlined, minified
   ([`uiSdkModule`](ref:hub/src/tower/served.ts#uiSdkModule)), never through `/vendor/`, since popups on two cores
