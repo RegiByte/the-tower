@@ -49,6 +49,7 @@
     "schema:board": "tsx scripts/board-schema.ts",
     "tower3d:fixtures": "tsx --import ./src/lent-modules.ts scripts/tower3d-fixtures.ts",
     "tool:webkit": "tsx scripts/webkit.ts",
+    "tool:lib-ui": "tsx scripts/lib-ui-check.ts",
     "tool:extension-shots": "tsx scripts/extension-shots.ts",
     "tool:stress": "tsx scripts/stress.ts"
   },
