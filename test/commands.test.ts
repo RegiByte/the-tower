@@ -45,3 +45,8 @@ test("configProblems: a project's command must be a string naming one of argv's,
   const badCommand = config({ projects: { p: { name: 'p', hub: '/', repos: [], runtimes: { claude: { command: 3 as unknown as string } } } } })
   assert.equal(configProblems(badCommand).some((p) => p.level === 'fail' && p.key === 'projects.p.runtimes.claude.command'), true)
 })
+
+test('configProblems: "_tower", the tower-wide collections\' folder, is never a floor id', () => {
+  const reserved = config({ projects: { _tower: { name: 't', hub: '/', repos: [] } } })
+  assert.deepEqual(configProblems(reserved).filter((p) => p.key.startsWith('projects._tower')), [{ level: 'fail', key: 'projects._tower', problem: '"_tower" is the folder of the tower-wide collections, never a floor\'s id: pick another' }])
+})

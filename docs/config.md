@@ -72,7 +72,7 @@ its floor's preferred one.
 |---|---|---|
 | `runtimes` | What serves each runtime's own harness, by runtime: `claude` and `opencode`; a runtime the tower doesn't know is a fail. See [Runtimes](#runtimes). | required, with `claude.argv` |
 | `env` | Variables added to every session's environment. They are scrubbed with the parent session's: a parent session's markers (`CLAUDECODE`, `CLAUDE_CODE_SESSION*`, `TOWER_SESSION_ID`, …) set here are dropped. | none |
-| `projects` | The floors, by id (letters, digits, `_`, `-`): see [Projects](#projects). | required |
+| `projects` | The floors, by id (letters, digits, `_`, `-`; never `_tower`, the tower-wide collections' folder): see [Projects](#projects). | required |
 | `collections` | The collections every project has, by id: see [Collections](#collections). | none |
 | `user.name` | The name the user's review notes are signed with: text with no `·`, no line break and no space at either end. | `user` |
 | `editor` | How the tower opens things in the user's editor, three argv templates: `window` opens `{dir}` in a new window, `open` opens `{path}` (a file or folder), `goto` opens `{path}` at `{line}`. Set all three or none. | VS Code's `code` |
