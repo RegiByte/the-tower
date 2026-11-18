@@ -27,6 +27,11 @@
   display: block;
 }
 
+/* Its content opens in the top layer, so the host takes no place in the page: a grid body would give it a row. */
+:where(tower-menu) {
+  position: fixed;
+}
+
 :where(tower-menu-area) {
   -webkit-touch-callout: none;
 }
