@@ -2,6 +2,8 @@ import type { FloorCollection, FloorItem } from '../bridge/board.ts'
 import { itemKey, itemSubject } from './subjects.ts'
 import type { Mounted, ViewCtx } from './views.ts'
 import { esc, span } from './cards.ts'
+import { domId } from './dom-id.ts'
+import { morphPanel } from './panel-kit.ts'
 import { markdownHtml } from './markdown.ts'
 import { itemTitles, titled, titleIn } from './titles.ts'
 
@@ -76,9 +78,9 @@ export const keptOf = (key: string) => {
   return { project, collection, id: id.join('|') }
 }
 
-/** One item as a button carrying `data-kept`; `open` marks the one shown. */
-export const itemRowHtml = (project: string, collection: string, item: FloorItem, title: string, open: boolean, now: number) =>
-  `<button class="kept-row ${open ? 'sel' : ''}" data-kept="${esc(keptKey(project, collection, item.id))}"${open ? ' aria-current="true"' : ''} data-tip="${esc(`${title}\n${item.id}`)}">` +
+/** One item as a button carrying `data-kept`, its id `domId(place, keptKey)`; `open` marks the one shown. */
+const itemRowHtml = (place: string, project: string, collection: string, item: FloorItem, title: string, open: boolean, now: number) =>
+  `<button class="kept-row ${open ? 'sel' : ''}" id="${esc(domId(place, keptKey(project, collection, item.id)))}" data-kept="${esc(keptKey(project, collection, item.id))}"${open ? ' aria-current="true"' : ''} data-tip="${esc(`${title}\n${item.id}`)}">` +
   `<span class="t">${esc(title)}</span><span class="meta">${esc(itemMeta(item, title, now))}</span></button>`
 
 const trayHtml = (c: FloorCollection, actions: string, rows: string) =>
@@ -87,8 +89,8 @@ const trayHtml = (c: FloorCollection, actions: string, rows: string) =>
   (rows || '<div class="kept-empty">none kept</div>') +
   '</div>'
 
-const rowsHtml = (project: string, c: FloorCollection, items: FloorItem[], title: (item: FloorItem) => string, open: string | undefined, now: number) =>
-  items.map((item) => itemRowHtml(project, c.id, item, title(item), item.id === open, now)).join('')
+const rowsHtml = (place: string, project: string, c: FloorCollection, items: FloorItem[], title: (item: FloorItem) => string, open: string | undefined, now: number) =>
+  items.map((item) => itemRowHtml(place, project, c.id, item, title(item), item.id === open, now)).join('')
 
 /**
  * A collection unfolded: its label with `actions` (a renderer's own buttons, such as a new draft), what it is for, and
@@ -101,7 +103,7 @@ export const collectionTrayHtml = (
   open: string | undefined,
   now: number,
   actions = '',
-) => trayHtml(c, actions, rowsHtml(project, c, newestFirst(c.items), title, open, now))
+) => trayHtml(c, actions, rowsHtml('collection', project, c, newestFirst(c.items), title, open, now))
 
 /** How many of a collection's newest items a tray beside other things lists before it leads to the whole collection. */
 export const TRAY_ROWS = 6
@@ -121,7 +123,7 @@ export const collectionPeekHtml = (
 ) => {
   const items = newestFirst(c.items)
   const rest = items.length - TRAY_ROWS
-  return trayHtml(c, actions, rowsHtml(project, c, items.slice(0, TRAY_ROWS), title, open, now) + (rest > 0 ? more(rest) : ''))
+  return trayHtml(c, actions, rowsHtml('kept', project, c, items.slice(0, TRAY_ROWS), title, open, now) + (rest > 0 ? more(rest) : ''))
 }
 
 /** What a renderer asks before deleting an item: deleting is the user's, and a deleted item is gone for good. */
@@ -207,8 +209,7 @@ export function mountKeptTray(host: HTMLElement, ctx: ViewCtx, id: string, tray:
   const unfoldedKey = `unfolded.${subject.key}`
   let unfolded = false
   const title = tray.titles(collection().id, (project, item) => tower.text(itemPath(project, collection().id, item)), () => draw())
-  let painted = ''
-  const paint = (html: string) => void (html !== painted && (host.innerHTML = painted = html))
+  const paint = (html: string) => morphPanel(host, html)
 
   const draw = () => {
     const c = collection()
