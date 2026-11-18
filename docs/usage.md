@@ -228,6 +228,19 @@ The command palette (⌘K) finds them too: a capability that names a key is that
 and no real companies or numbers. A pull request adds one. Any renderer reads them, the capabilities from
 `/lib/capabilities.js` and the patterns at `GET /patterns`.
 
+## The learning center and the tour
+
+> "Give me a tour of the tower." · "How do I keep a prompt for later?"
+
+**Learning center**, in the skyline's greeting and the palette, lists short guides to the tower's gestures by
+category, searchable, each drawn beside the list. **Take the tour**, beside it, starts a worker on your first floor
+that shows you the tower on your own floors, from the same guides. The tour runs on Claude whatever the floor's
+runtime: the guide skill it follows ships with Claude's plugin, and other runtimes don't load it yet.
+
+The guides are the tower-wide `guides` collection: the bundled `guides` extension ships its own, any extension adds
+its own, and `tower keep guides` keeps yours. Each is a markdown file with a `# Title` line, a json header with its
+keywords, category and order, then the body (`extensions/guides/README.md`).
+
 ## Your own renderer
 
 The tower page, Tower 3D and The Week (`/r/week/`, the budget week as a yearbook) are three renderers of the same board. Write your own, or copy one of them out of the

@@ -4,7 +4,9 @@
   "names": [
     "collections.guides",
     "client.center.js#mount",
+    "client.commands.js#TOUR_PROMPT",
     "client.commands.js#openCenter",
+    "client.commands.js#startTour",
     "client.guide.js#GUIDES",
     "client.guide.js#TOWER_WIDE",
     "client.guide.js#byCategory",

@@ -19,6 +19,12 @@
       "export": "openCenter",
       "on": ["board"],
       "words": { "label": "Learning center", "hint": "guides to the tower's gestures, searchable", "icon": "help" }
+    },
+    "tour": {
+      "module": "commands.js",
+      "export": "startTour",
+      "on": ["board"],
+      "words": { "label": "Take the tour", "hint": "a worker shows you the tower on your own floors", "icon": "play" }
     }
   },
   "views": {
