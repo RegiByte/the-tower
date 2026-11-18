@@ -1,12 +1,12 @@
 ---
 {
   "type": "decision",
-  "name": "Shared panels: one Changes and one Stats for every renderer",
-  "summary": "The Changes and Stats panels are pure views gathered in one module, `panels.ts`, the Reviews and Policies panels their extensions' own, gathered from a module per concern (view model in, html out), with the logic of picking lines, one stylesheet and a data-attribute protocol each renderer wires; renderers keep their own state and wiring.",
+  "name": "Shared panels: one Changes, one Stats and one Extensions for every renderer",
+  "summary": "The Changes, Stats and Extensions panels are pure views gathered in one module, `panels.ts`, the Reviews and Policies panels their extensions' own, gathered from a module per concern (view model in, html out), with the logic of picking lines, one stylesheet and a data-attribute protocol each renderer wires; renderers keep their own state and wiring.",
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-11-16",
+  "reviewed": "2026-11-18",
   "refs": [
     "hub/src/shared/panels.ts",
     "hub/src/shared/changes-panel.ts#markedChangesHtml",
@@ -47,11 +47,13 @@ drift apart.
 are the same view in every renderer; only where they sit, their state and a few gestures differ.
 
 **How.**
-- *One module of pure views* ([`panels.ts`](ref:hub/src/shared/panels.ts)) holds three panels,
+- *One module of pure views* ([`panels.ts`](ref:hub/src/shared/panels.ts)) holds the core's panels,
   each in a module of its own that it gathers and bundles: Changes
   ([`markedChangesHtml`](ref:hub/src/shared/changes-panel.ts#markedChangesHtml), [[changes-view]]), Stats
   ([`statsHtml`](ref:hub/src/shared/stats-panel.ts#statsHtml) over a `/stats` read, ranges asked by
-  [`statsQuery`](ref:hub/src/shared/stats-panel.ts#statsQuery), [[stats]]). The Reviews and Policies panels are their
+  [`statsQuery`](ref:hub/src/shared/stats-panel.ts#statsQuery), [[stats]]) and Extensions
+  ([`extensionsPanelHtml`](ref:hub/src/shared/extensions-panel.ts#extensionsPanelHtml) over `board.extensions`, held in a
+  main pane by the core view `tower/extensions`, [[extensions]]). The Reviews and Policies panels are their
   extensions' alone: `/x/reviews/panel.js`
   ([`reviewsHtml`](ref:hub/extensions/reviews/client/panel.ts#reviewsHtml) over `x.reviews`, [[review-threads]], whose
   view model [`threadViewOf`](ref:hub/extensions/reviews/client/panel.ts#threadViewOf) builds) and

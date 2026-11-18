@@ -234,6 +234,7 @@ export const CORE_VIEWS: readonly View[] = [
   { ...pane('brief', ['conversation', 'said'], { label: 'Brief', hint: 'the last prompts and answers of each conversation, in full' }, ['region', 'bus', 'toast']), regions: ['card.composer'], tab: 'tab' },
   { ...pane('changes', ['lines'], { label: 'Changes', hint: "what changed in the worker's repos, as git reads it" }, ['region', 'toast']), regions: ['lines.acts'], tab: 'tab' },
   served(core('tower/archive', ['floor'], ['pane'], { label: 'Archive', hint: "the floor's past workers" }), ['display', 'toast']),
+  served(core('tower/extensions', ['board'], ['pane'], { label: 'Extensions', hint: 'every extension the tower found: its state, what it declares and its problems' }), ['display']),
   served(core('tower/collection', ['collection'], ['pane'], { label: 'Collection', hint: "a collection's items" }), ['display']),
   served(core('tower/tray', ['collection'], ['row'], { label: 'Tray', hint: "a collection's count, unfolding to its newest items" }), ['display']),
   { ...served(core('tower/shelf', ['shelf'], ['pane'], { label: 'Shelf', hint: 'a shelf entry' }), ['region', 'bus', 'display', 'go', 'toast']), shows: ['section'], regions: ['section.acts', 'passage.acts'] },
