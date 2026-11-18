@@ -5,7 +5,7 @@ import { byKind, keepsThreads, reviewAction, type Act, type ActOf, type ByKind, 
 import { briefKey, expandedSaid, openFolds, openTools, saidText, saidWhat, toolCallHtml, toolCallSettled, withWhole, withWholesRead, type BriefMarkdown } from '/lib/brief.js'
 import { type StatsRange, STATS_ALL, statsHtml } from '/lib/stats.js'
 import { fenceText } from '/lib/markdown.js'
-import { keepShownTabs, drawPanel, keepingFocus, failedHtml, fileCall, pressing, itemKind, itemPath, keptOf, readsText } from '/lib/view.js'
+import { keepShownTabs, morphPanel, keepingFocus, failedHtml, fileCall, pressing, itemKind, itemPath, keptOf, readsText } from '/lib/view.js'
 import { readViewer, seenOf } from '/lib/viewer.js'
 import { actionId, offeredIds, layoutKey, type Layout } from '/lib/layout.js'
 import { type Lines, type Subject } from '/lib/board.js'
@@ -177,7 +177,7 @@ export function startPanels(started: PanelsDeps) {
       const tabs = [{ id: STATS_ALL, label: 'Overview' }, ...projects.map(({ id, label }) => ({ id, label }))]
       const { read: stats, failed, at, scope } = port.state().stats
       const range = port.state().viewer.statsRange
-      drawPanel($('doc-body'), statsHtml({ stats, failed, at, range, projects, tabs, scope: tabs.some((t) => t.id === scope) ? scope : STATS_ALL }), {})
+      morphPanel($('doc-body'), statsHtml({ stats, failed, at, range, projects, tabs, scope: tabs.some((t) => t.id === scope) ? scope : STATS_ALL }))
       showSince($('doc-body'))
     }
     if (panel.kind === 'picture') {
