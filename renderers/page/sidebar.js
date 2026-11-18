@@ -1,6 +1,7 @@
 import { boardSubject, callOf, can, cardSubject, crewFoldsOf, crewTreeIn, dutyOrderIn, floorSubject, goneHome, goneHomeLine, hiresBy, orderMoving, projectOfKey, workerKeyOf, workersIn } from '/lib/board.js'
 import { addedTidyOf, ATTENTION_NAME, branchLine, carriedLine, editedRows, extraUsageLine, gistLine, goneBases, heededAsks, heededWaits, heldActions, keptBranchLines, lampOf, mainUnreadHtml, LIMITS_STALE_MS, limitsFromTitle, loudest, paceLine, pairLineOf, pastCount, renderersHtml, resetLine, risky, satellitesOf, shelfKind, shelfSource, statusName, statusTitle, statusWord, strandedOf, SUBAGENT_FADE_MS, subagentTitle, tidyLine, tidyRowAsk, tidyRows, verbHint, verbLabel, WAITING_NAME, weekElapsed, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, worktreeBranch, worktreeRisk } from '/lib/cards.js'
 import { placeOnOpen } from '/lib/chrome.js'
+import { subjectAreaHtml, subjectButtonHtml, subjectHtml } from '/lib/elements.js'
 import { keyshortcuts } from '/lib/keys.js'
 import { addedActions, badgesOf, exemptionsOf, lineId, overflowOf, rankedBadges, rankedLines } from '/lib/layout.js'
 import { ICON, keyedTip, originIcon, SHELF_ICON, withIcons } from '/lib/view.js'
@@ -118,16 +119,17 @@ export async function sidebar(deps) {
   /** @param {Card} c @param {Card} [over] */
   const sessionHtml = (c, over) => {
     const adds = rowAdds(c)
-    return `<div class="sess ${lampOf(c)} ${c.waiting ? 'waits' : ''} ${callsYou(c) ? 'calls' : ''} ${c.id === selected() ? 'sel' : ''} ${onDuty(c) ? '' : 'gone'}" data-id="${c.id}" data-hold="${c.id}">
-    <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected() ? ' aria-current="true"' : ''}${adds.by}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusWord(c)}${c.stuck || c.stranded ? `<span class="sr-only">: ${esc(statusTitle(c))}</span>` : ''}</span><span class="ago" translate="no" data-since="${c.enteredAt}"></span></div>
+    const key = `card:${c.id}`
+    const id = `row:${key}`
+    return `<div class="sess ${lampOf(c)} ${c.waiting ? 'waits' : ''} ${callsYou(c) ? 'calls' : ''} ${c.id === selected() ? 'sel' : ''} ${onDuty(c) ? '' : 'gone'}" data-id="${c.id}" data-hold="${c.id}">${subjectAreaHtml(id, key, `
+    <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected() ? ' aria-current="true"' : ''}${adds.by}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusWord(c)}${c.stuck || c.stranded ? `<span class="sr-only">: ${esc(statusTitle(c))}</span>` : ''}</span><span class="ago" translate="no" data-since="${c.enteredAt}"></span>${subjectButtonHtml(`${id}/menu`, key, `${callsign(c.id)}: menu`)}</div>
     ${c.worktree ? `<div class="branch" data-tip="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${withIcons(esc([branchLine(c), pairLineOf(c.hiredBy && c.hiredBy.callsign === over?.callsign ? { ...c, hiredBy: undefined } : c, undefined)].filter(Boolean).join(' · ')))}</div>` : ''}
     ${adds.lines}
     <div class="line">${lineOf(c)}</div>
     ${adds.badges}
     ${satellitesHtml(c)}
     ${can(c, 'resume') ? `<div class="act resumes">${heldWhy('resume') ? heldHtml('resume', verbLabel('card', 'resume').toLowerCase(), `${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}`) : `<button data-resume="${esc(JSON.stringify(callOf(c, 'resume')))}" data-tip="${esc(verbHint('card', 'resume', c))}">${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}</button>`}${letGoHtml(c, verbLabel('card', 'let-go').toLowerCase())}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c.unresumable)}</div>` : ''}
-    ${adds.note}
-  </div>`
+    ${adds.note}`)}</div>`
   }
 
   /**
@@ -480,7 +482,7 @@ export async function sidebar(deps) {
     const n = String(all.length - i).padStart(2, '0')
     const spawn = heldWhy('spawn') ? heldHtml('spawn', `new session on ${f.name}`, ICON.plus) : can(f, 'spawn') ? `<button data-spawn="${f.id}" aria-label="new session on ${esc(f.name)}" data-tip="new session">${ICON.plus}</button>` : ''
     return `<section class="floor${open ? '' : ' folded'}" style="${paint(f.id)}" data-hold="floor:${esc(f.id)}">
-    <div class="sign"><span class="fold" role="heading" aria-level="2"><button data-floor-fold="${esc(f.id)}" aria-expanded="${open}" data-tip="${esc(`${f.name}: ${open ? 'fold' : 'unfold'}`)}"><span class="num">${n}</span><span class="name">${esc(f.name)}</span>${ICON.caret}</button></span>${open ? signHtml(f) : floorSummaryHtml(f)}${spawn}</div>
+    <div class="sign">${subjectHtml(`sign:floor:${f.id}`, `floor:${f.id}`, `${f.name}: menu`, `<span class="fold" role="heading" aria-level="2"><button data-floor-fold="${esc(f.id)}" aria-expanded="${open}" data-tip="${esc(`${f.name}: ${open ? 'fold' : 'unfold'}`)}"><span class="num">${n}</span><span class="name">${esc(f.name)}</span>${ICON.caret}</button></span>${open ? signHtml(f) : floorSummaryHtml(f)}${spawn}`)}</div>
     ${open ? floorBodyHtml(f, heads, floorCrews(f)) : ''}
   </section>`
   }
@@ -629,5 +631,5 @@ export async function sidebar(deps) {
   /** Every renderer of the same system: this one, the others to open, and those not built yet. */
   told(tower.get('renderers')).then((r) => r && ($('renderers').innerHTML = renderersHtml(r.renderers, location.pathname.split('/')[2], tower.framed)))
 
-  return { wireCrewGrips, toggleSection, toggleCrewFold, forgetFold, toggleFloor, floorHtml, boardSignHtml, paintLimits, railHtml, paintKeys, closeDrawer, toggleSide }
+  return { origins: () => origins, wireCrewGrips, toggleSection, toggleCrewFold, forgetFold, toggleFloor, floorHtml, boardSignHtml, paintLimits, railHtml, paintKeys, closeDrawer, toggleSide }
 }

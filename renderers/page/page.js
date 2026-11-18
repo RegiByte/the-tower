@@ -28,6 +28,7 @@ import { stats } from './stats.js'
 import { settingsPane } from './settings-pane.js'
 import { alerting } from './alerts.js'
 import { draft } from './draft.js'
+import { subjectMenus } from './subject-menus.js'
 import { archive } from './archive.js'
 import { EXTENSIONS_VIEW, extensionsEntry } from './extensions-entry.js'
 import { boardKit } from './board.js'
@@ -50,7 +51,7 @@ import { gapBeside, isCut, lineWidth, roomOf } from './fit.js'
  * @import { KeyPress } from '/lib/keys.js'
  * @import { HeadItem, KitMember, Layout, Overflow, Ranked, Region } from '/lib/layout.js'
  * @import { Executors, Handlers, Loop, StateEffect, TimerEffect } from '/lib/machine.js'
- * @import { Openable, Pick } from '/lib/palette.js'
+ * @import { MenuPick, Opened, Openable, Pick } from '/lib/palette.js'
  * @import { SpawnEvent, Spawning } from '/lib/spawn.js'
  * @import { StatsRange } from '/lib/stats.js'
  * @import { CommandKit, Placing } from '/lib/view.js'
@@ -403,7 +404,7 @@ function noticeShown(all) {
   shownPrimed = true
 }
 
-const { wireCrewGrips, toggleSection, toggleCrewFold, forgetFold, toggleFloor, floorHtml, boardSignHtml, paintLimits, railHtml, paintKeys, closeDrawer, toggleSide } = await sidebar({ render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, at, trayRowsHtml: (f) => trayRowsHtml(f), heed, withKeys, opensHtml: (subject) => opensHtml(subject), holdsOf: (region) => placing().regions.find((r) => r.id === region)?.holds ?? [], regionLayout: (region) => { const p = placing(); return { region: p.regions.find((r) => r.id === region), entry: p.layout[region] } } })
+const { origins, wireCrewGrips, toggleSection, toggleCrewFold, forgetFold, toggleFloor, floorHtml, boardSignHtml, paintLimits, railHtml, paintKeys, closeDrawer, toggleSide } = await sidebar({ render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, at, trayRowsHtml: (f) => trayRowsHtml(f), heed, withKeys, opensHtml: (subject) => opensHtml(subject), holdsOf: (region) => placing().regions.find((r) => r.id === region)?.holds ?? [], regionLayout: (region) => { const p = placing(); return { region: p.regions.find((r) => r.id === region), entry: p.layout[region] } } })
 watchCalls(/** @type {HTMLElement} */ (document.querySelector('.side')))
 wireCrewGrips($('floors'))
 
@@ -470,6 +471,33 @@ function doPick(does, row) {
   if (verb === 'let-go') return void letGo(row, c)
   if (verb === 'send-home') return void sendHome(row, c)
 }
+
+/**
+ * Runs what a line of a subject menu does (`subjectMenu` of `/lib/palette.js`): its own picks here, a palette entry's
+ * through `doPick`. A worker's terminal and brief open on that worker, whichever is selected.
+ * @param {MenuPick} does @param {HTMLElement} at
+ */
+function doMenuPick(does, at) {
+  if (does.t === 'display') return display(does.subject)
+  if (does.t === 'link') return void window.open(does.href, '_blank', 'noreferrer')
+  if (does.t === 'dir') {
+    const f = /** @type {Floor} */ (floorOf(does.project))
+    return does.verb === 'shell' ? void spawnShellAt(f.id, does.dir) : void openInEditor(at, f, does.dir)
+  }
+  if (does.t === 'action' && does.subject === 'card' && (does.verb === 'drive' || does.verb === 'brief'))
+    return goTo({ view: WORKER, subject: `card:${does.id}`, pane: { view: does.verb === 'drive' ? 'tower/terminal' : 'tower/brief' } })
+  doPick(does, at)
+}
+
+/** The views open in the main pane, each on its subject: the main view, and the tab open in it. @returns {Opened[]} */
+function openedViews() {
+  const v = viewing('view')
+  if (!v) return []
+  const tab = mainRegion.tabsAt(null)?.tabs().at
+  return [{ view: v.location.view, subject: v.location.subject ?? 'board' }, ...(tab ? [tab] : [])]
+}
+
+subjectMenus({ board, opened: openedViews, origins, pick: doMenuPick })
 
 /** A capability shown: its words, with the verb it names on the selected worker's floor when that floor offers it. @param {string} id */
 function learnPick(id) {
@@ -1528,7 +1556,7 @@ document.addEventListener(
  */
 document.addEventListener('click', async (e) => {
   const target = /** @type {Element} */ (e.target)
-  if (target.closest('a[href]') || inView(target)) return
+  if (target.closest('a[href], tower-menu, tower-menu-button') || inView(target)) return
   const spawn = target.closest('[data-spawn]')
   if (spawn) return openSpawn(/** @type {string} */ (spawn.dataset.spawn))
   const copy = target.closest('[data-copy]')?.dataset.copy
