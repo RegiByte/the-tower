@@ -26,7 +26,7 @@
     "hub/test/composer.test.ts",
     "hub/test/fixtures/composer-typed.jsonl",
     "hub/test/fixtures/escaped-prompt.jsonl",
-    "hub/scripts/claude-check.scenarios.ts#SCENARIOS"
+    "hub/scripts/runtime-check.claude.scenarios.ts#SCENARIOS"
   ],
   "links": [
     { "to": "board-verbs", "verb": "refines", "carries": "the card verb prompt, offered while the worker takes one" },

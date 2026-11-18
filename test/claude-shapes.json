@@ -1,5 +1,5 @@
 {
-  "claude": "2.1.323",
+  "release": "2.1.323",
   "recordings": {
     "api-error": {
       "prompt.submit": ["hook_event_name", "origin", "origin.kind", "text", "wait"],

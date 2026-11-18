@@ -5,7 +5,7 @@
   "summary": "A Claude Code release outside the tested range: the board flags each worker on it and says so once, doctor names it, and the range moves only after `tool:claude-check` records the scenarios again on it and reads clean against the baseline and the fixtures.",
   "in": "tower",
   "reviewed": "2026-11-17",
-  "refs": ["hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/src/shared/claude.ts#releaseRange", "hub/src/mod/hooks/register.js#register", "hub/src/bridge/runtimes/claude.ts#normalizeClaude", "hub/src/bridge/board.ts#board", "hub/src/shared/health.ts#untestedHtml", "hub/test/fixtures/", "hub/test/seating.test.ts", "hub/scripts/claude-check.ts", "hub/scripts/claude-check.ts#due", "hub/scripts/claude-check.report.ts#scenarioDifferences", "hub/scripts/claude-check.read.ts#withoutKept", "hub/scripts/claude-check.scenarios.ts#SCENARIOS", "hub/test/claude-shapes.json"]
+  "refs": ["hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/src/shared/claude.ts#releaseRange", "hub/src/mod/hooks/register.js#register", "hub/src/bridge/runtimes/claude.ts#normalizeClaude", "hub/src/bridge/board.ts#board", "hub/src/shared/health.ts#untestedHtml", "hub/test/fixtures/", "hub/test/seating.test.ts", "hub/scripts/runtime-check.ts", "hub/scripts/runtime-check.claude.ts#CLAUDE", "hub/scripts/runtime-check.ts#due", "hub/scripts/runtime-check.report.ts#scenarioDifferences", "hub/scripts/runtime-check.read.ts#withoutKept", "hub/scripts/runtime-check.claude.scenarios.ts#SCENARIOS", "hub/test/claude-shapes.json"]
 }
 ---
 **Symptom.** The tower reads several of [[claude-code]]'s surfaces it doesn't own, each listed with where it is read
@@ -27,16 +27,19 @@ What says a release is new to the tower:
   Claude has no `$.session.version`: its start hook fails after the start ran, and no version is posted.
 
 **Where to look first.** `npm run tool:claude-check -- run`
-([`claude-check.ts`](ref:hub/scripts/claude-check.ts#run)) records on the installed release every scenario in
-[`SCENARIOS`](ref:hub/scripts/claude-check.scenarios.ts#SCENARIOS), one per fixture of real Claude's and a few
+([`runtime-check.ts`](ref:hub/scripts/runtime-check.ts#run)) records on the installed release every scenario in
+[`SCENARIOS`](ref:hub/scripts/runtime-check.claude.scenarios.ts#SCENARIOS), one per fixture of real Claude's and a few
 with none, and reports, by scenario and event, everything that reads differently from the release the baseline was
 taken on. It exits 0 when nothing does, 1 when there is something to read.
+The runner knows no runtime by name: `tool:claude-check` is `tool:runtime-check -- claude`, and what is
+Claude's (its launches, the trust screen, the peer registry, the usage probe and the report's own surfaces) is one
+record, [`CLAUDE`](ref:hub/scripts/runtime-check.claude.ts#CLAUDE).
 Before it reports, each scenario that stopped short, replays differently or misses a check of its own sessions is
 recorded again, up to `--retries` times (1 unless set), and only its last attempt is read, the report naming what each
-earlier one missed ([`scenarioDifferences`](ref:hub/scripts/claude-check.report.ts#scenarioDifferences)): Haiku's
+earlier one missed ([`scenarioDifferences`](ref:hub/scripts/runtime-check.report.ts#scenarioDifferences)): Haiku's
 timing, or the classic-renderer fallback after a scenario died mid-start ([[claude-code]]), clears on a second take,
 drift doesn't.
-`npm run -s tool:claude-check -- due` ([`due`](ref:hub/scripts/claude-check.ts#due)) says whether the installed
+`npm run -s tool:claude-check -- due` ([`due`](ref:hub/scripts/runtime-check.ts#due)) says whether the installed
 release still needs a run: exit 0 when it reads `above` and no pull request titled `Claude <release>` is open or
 merged, the title a clean run's pull request takes (step 1), 1 when not, 2 when it can't tell. It is the check line of
 a policy ([[policies]]) that offers the run on each new release, and never again once one passed. Run by the tower,
@@ -45,13 +48,13 @@ without them reads exit 2 at every slot, a `check-failed` pass, and offers nothi
 - **Shapes.** Every event Claude posted and its payload keys, one level into objects (a tool's own input left
   out), against [`test/claude-shapes.json`](ref:hub/test/claude-shapes.json), the shapes of the last accepted run:
   the fixtures come from mixed releases, so they are no baseline for shapes. The run is compared as one vocabulary
-  ([`shapeChanges`](ref:hub/scripts/claude-check.read.ts#shapeChanges)), since which scenario raises an event
+  ([`shapeChanges`](ref:hub/scripts/runtime-check.read.ts#shapeChanges)), since which scenario raises an event
   shifts with timing and the model's choices; a scenario that stops raising one shows in its replay.
 - **Status replays.** Each recording through `timeline` (`test/replay.ts`) against its fixture's, the scenario
   driven as the fixture was. What a fixture can't share with a fresh run is left out by the scenario's data, not by
-  the code ([`comparedForm`](ref:hub/scripts/claude-check.read.ts#comparedForm)): the trust screen of a fixture
+  the code ([`comparedForm`](ref:hub/scripts/runtime-check.read.ts#comparedForm)): the trust screen of a fixture
   recorded in a trusted directory, and how many turns subagents that race the main loop report in.
-- **Surfaces no fixture covers** ([`renderReport`](ref:hub/scripts/claude-check.report.ts#renderReport)): the
+- **Surfaces no fixture covers** ([`renderReport`](ref:hub/scripts/runtime-check.claude.ts#report)): the
   quota probe's `get_usage` answer against `test/fixtures/probe-usage.out` (what the fold reads), a submit longer
   than a paste chunk landing whole, each session's peer registration with `pid` and `name`, `tower.claude` posting
   the installed release, `?1049h` and `?1006h` in every session's output, and the resume chain.
@@ -60,8 +63,8 @@ without them reads exit 2 at every slot, a `check-failed` pass, and offers nothi
   Enterprise organization ([[claude-code]]): such an event is read
   from a classic hook, which still fires. A `sec-default@builtin not seated` line says the run was recorded outside
   one, where nothing is kept, and the report names that condition
-  ([`unseatedBecause`](ref:hub/scripts/claude-check.read.ts#unseatedBecause)). On every run, each recording is also
-  replayed without what `sec-default` keeps ([`withoutKept`](ref:hub/scripts/claude-check.read.ts#withoutKept)):
+  ([`unseatedBecause`](ref:hub/scripts/runtime-check.read.ts#unseatedBecause)). On every run, each recording is also
+  replayed without what `sec-default` keeps ([`withoutKept`](ref:hub/scripts/runtime-check.read.ts#withoutKept)):
   a recording whose statuses change depends on an event a session inside an organization never logs, and the run
   is not clean.
 - **Mods API.** [`register.js`](ref:hub/src/mod/hooks/register.js#register) declares, in JSDoc, the slice of the
