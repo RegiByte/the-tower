@@ -216,44 +216,58 @@ export function keepingTyped(el: HTMLElement, write: () => void) {
 }
 
 /**
- * Every setting `prefSections` draws in `el`: a choice on click, a field on change (Enter, or leaving it). A field
+ * Every setting `prefSections` draws in `el`: a choice on click, a field once its text differs from what it held when it
+ * took focus or last set its pref, on Enter, on leaving it and on `change` (a size's steppers). The field keeps that
+ * text itself: a browser's own `change` can miss it, as WebKit's does once `keepingTyped` has put the text back. A field
  * left by pressing on another control in `el` changes as that press ends, with the control's own choice: setting it at
- * once would redraw the popover under the pointer, and the press would land on nothing. A field changed shows what it
- * sets, a size kept within its range, a face trimmed. A field left as it was when it took focus or last changed shows
- * its pref as last drawn, which another window may have changed meanwhile (`keepingTyped`).
+ * once would redraw the popover under the pointer, and the press would land on nothing. A field that sets its pref shows
+ * what it set, a size kept within its range, a face trimmed. A field left as it was when it took focus or last set its
+ * pref shows its pref as drawn since, which another window may have changed meanwhile (`keepingTyped`); one whose pref no
+ * draw has brought since keeps its text, as while a framed page's change makes its way to the tower and back.
  */
 export function wirePrefs(el: HTMLElement, set: (patch: Partial<Prefs>) => void) {
   let pressing = false
   let held: Partial<Prefs> = {}
-  const settled = new WeakMap<HTMLInputElement, string>()
+  const settled = new WeakMap<HTMLInputElement, { value: string; drawn: string }>()
   const fieldOf = (e: Event) => (e.target as Element).closest<HTMLInputElement>('input[data-pref]')
-  el.addEventListener('focusin', (e) => {
-    const field = fieldOf(e)
-    if (field) settled.set(field, field.value)
-  })
-  el.addEventListener('focusout', (e) => {
-    const field = fieldOf(e)
-    if (field && field.value === settled.get(field) && !(field.dataset.pref! in held)) field.value = field.defaultValue
-  })
+  const settle = (field: HTMLInputElement) => settled.set(field, { value: field.value, drawn: field.defaultValue })
   const release = () => {
     const patch = held
     held = {}
     if (Object.keys(patch).length) set(patch)
   }
+  const commit = (field: HTMLInputElement) => {
+    if (field.value === settled.get(field)?.value) return
+    const value = prefValue(field)
+    held = { ...held, ...value }
+    field.value = String(Object.values(value)[0])
+    settle(field)
+    if (!pressing) release()
+  }
+  el.addEventListener('focusin', (e) => {
+    const field = fieldOf(e)
+    if (field) settle(field)
+  })
+  el.addEventListener('focusout', (e) => {
+    const field = fieldOf(e)
+    if (!field) return
+    commit(field)
+    const was = settled.get(field)!
+    if (field.value === was.value && field.defaultValue !== was.drawn) field.value = field.defaultValue
+  })
+  el.addEventListener('keydown', (e) => {
+    const field = fieldOf(e)
+    if (field && e.key === 'Enter' && !e.isComposing) commit(field)
+  })
+  el.addEventListener('change', (e) => {
+    const field = fieldOf(e)
+    if (field) commit(field)
+  })
   el.addEventListener('pointerdown', () => (pressing = true))
   el.ownerDocument.addEventListener('pointerup', () => pressing && ((pressing = false), setTimeout(release)))
   el.addEventListener('click', (e) => {
     const control = (e.target as Element).closest<HTMLElement>('[data-pref][data-pref-value]')
     if (control) (held = { ...held, ...prefValue(control) }), release()
-  })
-  el.addEventListener('change', (e) => {
-    const field = fieldOf(e)
-    if (!field) return
-    const value = prefValue(field)
-    held = { ...held, ...value }
-    field.value = String(Object.values(value)[0])
-    settled.set(field, field.value)
-    if (!pressing) release()
   })
 }
 
