@@ -2,12 +2,13 @@
  * What every panel shares: drawing html into an element while keeping
  * what is being typed and what has focus, and a worker's tab row. Gathered by `panels.ts`.
  */
+import { morph } from './morph.ts'
 import { identityOf } from './press.ts'
 
 /** The text boxes a panel holds, by their attribute: their text lives in the renderer, never in the html. */
 export type TextBox = 'pick-text' | 'note-text'
 
-/** What `drawPanel` last put in each element, and the panel's root it made: anything else writing the element replaces the root. */
+/** What `drawPanel` or `morphPanel` last put in each element, and the panel's root it made: anything else writing the element replaces the root. */
 const painted = new WeakMap<HTMLElement, { html: string; root: Element | null }>()
 
 /**
@@ -43,6 +44,19 @@ export function drawPanel(el: HTMLElement, html: string, texts: Partial<Record<T
   if (!again || again === had) return
   again.focus()
   again.setSelectionRange(...caret!)
+}
+
+/**
+ * Morphs `html` into `el` when it differs from what `el` shows (`morph`): every node the html still describes stays
+ * itself, so a text box keeps its text, its caret and its focus, a control keeps its focus, and what scrolls keeps where
+ * it was. A control the morph had to make anew gets focus back by its identity (`keepingFocus`). A redraw that changes
+ * nothing leaves `el` as it is. @since 2.19
+ */
+export function morphPanel(el: HTMLElement, html: string) {
+  const was = painted.get(el)
+  if (was?.html === html && was.root === el.firstElementChild) return
+  keepingFocus(el, () => morph(el, html))
+  painted.set(el, { html, root: el.firstElementChild })
 }
 
 /**

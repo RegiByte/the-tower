@@ -18,7 +18,7 @@ a URL of its own ([`sourceUrl`](ref:hub/src/tower/served.ts#sourceUrl): `/lib/<f
 `/src/<path>.js`, a core view at `/x/tower/<file>.js`), transpiled alone with each import rewritten to the URL of
 what it names ([`sourceModule`](ref:hub/src/tower/served.ts#sourceModule)); each npm package one imports is bundled
 once at `/vendor/<package>.js` ([`vendorModule`](ref:hub/src/tower/served.ts#vendorModule)). One URL is one module
-record, so `pressing`'s in-flight set, `drawPanel`'s painted cache and the toasts' stack are one on a page, whatever
+record, so `pressing`'s in-flight set, the panel kit's painted cache and the toasts' stack are one on a page, whatever
 imports them. Each is built on request and cached until a file it was built from changes, with CORS open so a shelf
 page framed at an opaque origin can import it; a renderer page's import map names each at its text's hash
 ([`importMap`](ref:hub/src/tower/served.ts#importMap)). The `/shared/` and `/src/` URLs are not contract. These
@@ -113,7 +113,9 @@ behavior ([[renderer-is-disposable]]):
   left whole, or with `data-owned="children"` has only its attributes updated, and ids inside it take no part in
   matching, so a mounted view, a frame or a terminal inside drawn html keeps its own nodes. Datastar's morph with
   parts of idiomorph (`THIRD_PARTY.md`); `npm run test:morph` runs its cases in headless Chrome, `test:morph-webkit`
-  in WebKit. No panel draws with it yet: `drawPanel` still replaces its element's html.
+  in WebKit. A panel draws with it through `morphPanel` beside `drawPanel` ([[shared-panels]]); none does yet, and
+  `drawPanel` still replaces its element's html. What script writes on a drawn node is drawn or owned
+  ([[drawn-or-owned]]).
 - `press.ts`: a control that asks the tower something stays `aria-busy` while its request is in flight, found again
   by its identity in html drawn anew ([`pressing`](ref:hub/src/shared/press.ts#pressing), [[press-feedback]]).
 - `toasts.ts`: a few words about what just happened, stacked at the bottom of the page, each with at most one action

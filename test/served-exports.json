@@ -2476,6 +2476,10 @@
         "keyedTip": {
           "since": "2.0"
         },
+        "morphPanel": {
+          "since": "2.19",
+          "stability": "provisional"
+        },
         "mountKeptTray": {
           "since": "2.0"
         },

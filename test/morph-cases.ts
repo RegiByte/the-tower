@@ -4,6 +4,7 @@
  * throws on what it finds otherwise.
  */
 import { morph } from '../src/shared/morph.ts'
+import { morphPanel } from '../src/shared/panel-kit.ts'
 import { pressing } from '../src/shared/press.ts'
 import { watchTips } from '../src/shared/tips.ts'
 
@@ -413,6 +414,25 @@ const CASES: Case[] = [
       check(button.getAttribute('aria-describedby') === 'tower-tip', `the morphed button is ${button.outerHTML}`)
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
       document.getElementById('tower-tip')?.remove()
+    },
+  },
+  {
+    name: 'morphs a panel only when its html changed, keeping a box\'s text, caret and focus',
+    run(work) {
+      const html = (n: number) => `<p>${n} notes</p><textarea data-note-text></textarea>`
+      morphPanel(work, html(1))
+      const box = one<HTMLTextAreaElement>(work, 'textarea')
+      box.focus()
+      box.value = 'a reply'
+      box.setSelectionRange(2, 5)
+      const p = one<HTMLElement>(work, 'p')
+      p.dataset.mark = 'kept'
+      morphPanel(work, html(1))
+      check(p.dataset.mark === 'kept', 'the same html was written again')
+      morphPanel(work, html(2))
+      check(one(work, 'textarea') === box && box.value === 'a reply', `the box is ${box.outerHTML} holding "${box.value}"`)
+      check(p.textContent === '2 notes', `the count is ${p.textContent}`)
+      selectionIs(box, 2, 5)
     },
   },
 ]
