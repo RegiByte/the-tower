@@ -1,7 +1,8 @@
 /**
  * The Changes, Stats and Extensions panels every renderer draws: pure views from plain data to html, the logic of
  * picking lines, and one stylesheet (`panelsCss`). A renderer keeps the state (what it read, folds, the pick, text being
- * written), passes it in as a view model, puts the html in an element with `drawPanel` and wires the attributes below.
+ * written), passes it in as a view model, puts the html in an element with `drawPanel`, or
+ * `morphPanel` to keep the nodes the html still describes, and wires the attributes below.
  * It gathers the modules `changes-reads.ts`, `changes-lines.ts` and
  * `changes-panel.ts`, `stats-panel.ts`, `extensions-panel.ts`, `file-acts.ts`, `panel-html.ts`, `panel-kit.ts` and `panels-css.ts`.
  *
@@ -55,5 +56,5 @@ export {
 export { STATS_ALL, statsQuery, usd, hours, duration, statsHtml, type StatsProject, type StatsView } from './stats-panel.ts'
 export { brokenExtensions, extensionAnchor, extensionsAttention, extensionsInOrder, extensionsListHtml, extensionsPanelHtml, extensionsSummary } from './extensions-panel.ts'
 export { failedHtml } from './panel-html.ts'
-export { drawPanel, keepingFocus, keepShownTabs, type TextBox } from './panel-kit.ts'
+export { drawPanel, keepingFocus, keepShownTabs, morphPanel, type TextBox } from './panel-kit.ts'
 export { panelsCss } from './panels-css.ts'

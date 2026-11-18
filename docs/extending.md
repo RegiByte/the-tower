@@ -532,7 +532,10 @@ node that must stay itself while its siblings come, go or move. Mark a node anot
 mount, a frame, a terminal, an element with its own state) `data-owned` to have the morph leave it whole, its
 attributes and the mark itself included, or
 `data-owned="children"` to have it update the node's attributes and leave its children; ids inside an owned node take
-no part in matching. The mark is plain html, so a pure function drawing the view can emit it.
+no part in matching. The mark is plain html, so a pure function drawing the view can emit it. A view that redraws one
+element from a pure render on every board can call `morphPanel(el, html)` of `/lib/view.js` (provisional, since 2.19)
+instead: it morphs only when the html differs from what it last put there, and gives focus back by identity to a
+control the morph had to make anew.
 
 The morph makes a kept node's attributes what the new html says, so an attribute your script writes onto a node the
 html draws is gone on the next redraw. Render that state into the html instead, or mark the node `data-owned` and give

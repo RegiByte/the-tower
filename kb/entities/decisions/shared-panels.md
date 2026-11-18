@@ -16,6 +16,7 @@
     "hub/src/shared/stats-panel.ts#statsHtml",
     "hub/src/shared/stats-panel.ts#statsQuery",
     "hub/src/shared/panel-kit.ts#drawPanel",
+    "hub/src/shared/panel-kit.ts#morphPanel",
     "hub/src/shared/changes-lines.ts#watchPickDrag",
     "hub/src/shared/panel-kit.ts#keepingFocus",
     "hub/src/shared/changes-panel.ts#keepingFileTop",
@@ -77,6 +78,9 @@ are the same view in every renderer; only where they sit, their state and a few 
   the renderer's text, and gives focus and caret back
   ([`keepingFocus`](ref:hub/src/shared/panel-kit.ts#keepingFocus), which a renderer also wraps around its own redraws:
   a control the redraw put back, inside a view's host it moved, keeps its focus itself).
+  [`morphPanel`](ref:hub/src/shared/panel-kit.ts#morphPanel) is its twin on the morph, under the same rule of writing
+  only when the html changed: the nodes the html still describes stay themselves, so boxes keep their text, caret and
+  focus, and scroll stays, with no text handed in. Callers move onto it one at a time; `drawPanel` keeps its contract.
   A time is an empty `data-since` span each renderer fills on its own clock, so the clock never forces a redraw that
   would drop a text selection.
 - *A fold keeps the reader's place.* Folding or marking viewed a file the reader is inside redraws through
@@ -115,8 +119,9 @@ are the same view in every renderer; only where they sit, their state and a few 
 **Alternatives considered.**
 - *Optional flags on the views* (copyable tag or not, a hint line per renderer): one view doing two things; every
   renderer wires every attribute instead.
-- *A DOM morph (idiomorph or morphdom) or a framework* for redraws: `drawPanel` covers today's needs; a morph is the
-  next step only if hand-patching grows.
+- *Swapping `drawPanel`'s body for the morph*: every caller would move in one commit, each with sites that rely on new
+  nodes (attributes script writes, slots replaced in place); a function of its own lets each move when its site is ready.
+- *A framework* for redraws: the views stay pure functions to html strings, which the morph applies.
 - *Serving each panel's module apart* (`/changes-panel.js` and the rest): every module served is a URL renderers may
   import and so part of the contract for good; the library re-exports the names renderers use, and the modules stay free to be
   cut again.

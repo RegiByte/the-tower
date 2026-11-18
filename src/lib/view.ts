@@ -44,6 +44,7 @@ export {
   drawPanel,
   keepingFocus,
   /** @provisional */ keepShownTabs,
+  /** @provisional */ morphPanel,
 } from '../shared/panel-kit.ts'
 export {
   panelsCss,
