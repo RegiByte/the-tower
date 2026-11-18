@@ -75,12 +75,12 @@ primitives every renderer can reach.
   whose comment says why), then Enter as its own write once the host has written the last paste.
 - An extension may declare collections too, named by its capability ([[extensions]]): they join the floors it is on
   ([`floorCollections`](ref:hub/src/bridge/stores.ts#floorCollections)). One declared with `scope: "system"` (since
-  2.12) is a tower-wide collection instead, on no floor: its items are at `collections/_tower/<collection>/`, the board
+  2.13) is a tower-wide collection instead, on no floor: its items are at `collections/_tower/<collection>/`, the board
   carries it in `board.collections` ([`towerCollections`](ref:hub/src/bridge/stores.ts#towerCollections)), the verbs,
   reads and `ctx.collections` name its project `_tower` ([`collectionOn`](ref:hub/src/bridge/stores.ts#collectionOn)),
   and a worker's `keep`, `kept`, `read` and `unkeep` reach it after the floor's. A config entry of its id is refused,
   so an id names one collection.
-- *Contributed items* (since 2.12). An extension's `items` names a folder of its own per collection, read when the
+- *Contributed items* (since 2.13). An extension's `items` names a folder of its own per collection, read when the
   tower resolves extensions and never written: a collection is the union of the store's files and the folders of the
   extensions on the floor ([`contributedTo`](ref:hub/src/bridge/stores.ts#contributedTo),
   [`collectionItems`](ref:hub/src/bridge/stores.ts#collectionItems)), and the board, `ctx.collections`, the item read and

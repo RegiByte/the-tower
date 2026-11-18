@@ -13,7 +13,7 @@ import type { Restored } from './launch.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '2.12'
+export const API_VERSION = '2.13'
 
 const id = z.string().min(1)
 
@@ -331,7 +331,7 @@ export const VERBS = {
     input: z
       .object({ ...item, id: z.string().regex(ITEM_ID), content: z.string(), modifiedAt })
       .describe(
-        "Replace an item's content, if it is still at the version `modifiedAt`; refused once it has moved on. An item that no longer exists stays gone. An item an extension contributes (`from` on the board) is never written: its first write makes the store's own copy under its id, which shadows it from then on (@since 2.12).",
+        "Replace an item's content, if it is still at the version `modifiedAt`; refused once it has moved on. An item that no longer exists stays gone. An item an extension contributes (`from` on the board) is never written: its first write makes the store's own copy under its id, which shadows it from then on (@since 2.13).",
       ),
     reply: written,
   },
@@ -341,7 +341,7 @@ export const VERBS = {
       .describe("Put a deleted item back under its id, with the content it held: undoing a delete. Refused while an item holds the id."),
     reply: created,
   },
-  'collection/delete': { input: z.object({ ...item, id: z.string().regex(ITEM_ID) }).describe("Delete an item. One an extension contributes is refused: it is its extension's; deleting a copy that shadows one shows the extension's again (@since 2.12)."), reply: ok },
+  'collection/delete': { input: z.object({ ...item, id: z.string().regex(ITEM_ID) }).describe("Delete an item. One an extension contributes is refused: it is its extension's; deleting a copy that shadows one shows the extension's again (@since 2.13)."), reply: ok },
   'config/add': {
     input: z
       .strictObject({

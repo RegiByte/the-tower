@@ -44,7 +44,7 @@ Ship it as an extension: an `extension.json` at the root of its repo declares it
 writes, and the config adds the extension by its folder. `renderer` names the one `/` opens.
 
 ```json
-{ "id": "mine", "version": "1.0", "title": "Mine", "requires": { "tower": "2.12" },
+{ "id": "mine", "version": "1.0", "title": "Mine", "requires": { "tower": "2.13" },
   "renderers": { "mine": { "root": "out", "settings": { "badge": "mine" } } } }
 ```
 
@@ -607,7 +607,7 @@ An extension contributes items with `items`, a folder of its own per collection:
 The collection is its own, the config's, or one of a capability it requires or wants; one another capability owns is
 refused (a warning on the extension, the items left out). A collection is then the union of its sources: the user's
 files, writable, and each contributing extension's folder, read in place and never written, on the floors where that
-extension is on (since 2.12). The board marks a contributed item `from: <cap>` and the collection's `sources` say where
+extension is on (since 2.13). The board marks a contributed item `from: <cap>` and the collection's `sources` say where
 its folder is. A user's item of the same id shadows it (`shadows: <cap>`); `collection/write` on a contributed item
 makes the user's copy under its id; `collection/delete` and `tower unkeep` refuse one. A worker copies one to edit with
 `tower own <tag>`. The folder is read when the tower resolves its extensions, so an edit there shows after `tower
@@ -615,7 +615,7 @@ extensions restart <id>`. A contributed policy is offered at its slots until the
 as any policy is; its `check` line runs at each slot before any approval, as trusted as the extension's own code.
 A tower-wide collection, one of no floor, is declared by an extension with `"scope": "system"`: its items are at
 `collections/_tower/<collection>/<item>`, the board carries it in `board.collections`, and the verbs and reads name its
-project `_tower` (since 2.12).
+project `_tower` (since 2.13).
 `drafts` itself is declared by the bundled drafts extension; a config line of that name overrides its label and
 description.
 `/lib/view.js` draws any collection's items as rows and trays and reads one by its type, without a meaning, as `tower/tray`, the tower page's tray of a collection, does ([Views](#views)).
@@ -809,7 +809,7 @@ added to `within`; past 8 deep a call is refused. `ctx.cards()` is every card th
 leaves out included, as the core builds them.
 
 **Stores** are declared in the manifest and named by the capability. `collections` join the floors the
-extension is on, each named `<cap>` or `<cap>.<name>`, or with `"scope": "system"` (since 2.12) are one tower-wide
+extension is on, each named `<cap>` or `<cap>.<name>`, or with `"scope": "system"` (since 2.13) are one tower-wide
 collection under `_tower/`, which `ctx.collections` reaches with the project `_tower`; one marked `owned` declares five `doors` (`list`, `read`,
 `create`, `edit`, `delete`, each a verb or read of its own manifest, not deprecated, or a read of the core's such as
 `tower/board`, or `{ "none": "<why the domain has no such act>" }`), and the generic writes (`collection/*`, `tower
@@ -1517,7 +1517,7 @@ folder in the extension, loaded into every session on floors where it is on: [An
 ### Contributing surfaces
 
 A capability often starts as a config key and moves into an extension once it is worth sharing. Three of the config's
-surfaces take the same data from a manifest, so an extension ships them with nothing in the user's config (since 2.12):
+surfaces take the same data from a manifest, so an extension ships them with nothing in the user's config (since 2.13):
 
 | Manifest key | The config's twin | Where it shows |
 |---|---|---|
@@ -1533,7 +1533,7 @@ floor. `tower config check` checks each contributed shelf entry on each floor, a
 
 ```json
 {
-  "id": "lobby", "version": "1.0", "title": "Lobby", "requires": { "tower": "2.12" },
+  "id": "lobby", "version": "1.0", "title": "Lobby", "requires": { "tower": "2.13" },
   "renderers": { "lobby": { "root": "out" } },
   "shelf": [{ "label": "Lobby", "renderer": "lobby" }]
 }

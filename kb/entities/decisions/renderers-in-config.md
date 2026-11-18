@@ -24,7 +24,7 @@ update of the core never touches it.
   ([`BUILT_INS`](ref:hub/src/renderers.ts#BUILT_INS)); a config entry under a built-in's name overrides its fields,
   so `{ "tower3d": { "settings": … } }` keeps the root ([`renderersOf`](ref:hub/src/renderers.ts#renderersOf)).
   `renderer` defaults to `page`; naming a renderer that isn't declared is a config error ([`defaultRenderer`](ref:hub/src/renderers.ts#defaultRenderer)).
-- *Contributed by an extension* (since 2.12, [[extensions]]). A manifest's `renderers` declares the same fields, its
+- *Contributed by an extension* (since 2.13, [[extensions]]). A manifest's `renderers` declares the same fields, its
   `root` a folder inside the extension, each named `<provides>` or `<provides>.<name>` (so a name is one word or two
   joined by a dot); a built-in's name refuses the extension. [`contributedRenderers`](ref:hub/src/bridge/extensions.ts#contributedRenderers)
   reads them from the accepted extensions with their roots made absolute, and `renderersOf` merges the built-ins,

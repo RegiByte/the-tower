@@ -79,7 +79,7 @@ export type ShelfEntry = { label: string } & (
   { html: string } | { md: string; order?: 'desc' } | { url: string } | { link: string } | { renderer: string } | { item: string }
 )
 
-/** A shelf entry as a floor shows it: the config's, or one an extension contributes, `from` its capability (since 2.12). */
+/** A shelf entry as a floor shows it: the config's, or one an extension contributes, `from` its capability (since 2.13). */
 export type FloorShelfEntry = ShelfEntry & { from?: string }
 
 /** The collection and id an `item` entry names. */
@@ -454,7 +454,7 @@ export type ContributedRenderer = { root: string; entry?: string; settings?: Rec
  * file declares nothing; `configLayout`, the config's `layout` for it (since 1.104), `{}` when it sets none;
  * `layoutProblems`, what is wrong with that layout against the regions it and the extensions that would start declare,
  * when it declares regions (since 1.138): a region with a failing key is drawn by its default. `from`: the capability of
- * the extension that contributes it (since 2.12).
+ * the extension that contributes it (since 2.13).
  */
 export type Renderer = {
   name: string

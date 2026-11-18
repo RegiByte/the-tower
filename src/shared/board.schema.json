@@ -281,7 +281,7 @@
           "items": {
             "$ref": "#/definitions/FloorShelfEntry"
           },
-          "description": "The config's shelf entries, then those the extensions on the floor contribute, each marked `from` its capability (since 2.12)."
+          "description": "The config's shelf entries, then those the extensions on the floor contribute, each marked `from` its capability (since 2.13)."
         },
         "runtimes": {
           "type": "object",
@@ -551,7 +551,7 @@
           ]
         }
       ],
-      "description": "A shelf entry as a floor shows it: the config's, or one an extension contributes, `from` its capability (since 2.12)."
+      "description": "A shelf entry as a floor shows it: the config's, or one an extension contributes, `from` its capability (since 2.13)."
     },
     "FloorRuntime": {
       "type": "object",

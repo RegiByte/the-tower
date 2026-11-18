@@ -218,10 +218,10 @@ export type FloorItem = Pick<CollectionItem, 'id' | 'size' | 'modifiedAt'> & {
   keptBy?: KeptBy
   /**
    * The capability of the extension that contributes it: read in place from its folder (`sources`), never written. A
-   * write makes the user's copy, which shadows it. @since 2.12
+   * write makes the user's copy, which shadows it. @since 2.13
    */
   from?: string
-  /** On a user's item, the capability whose contributed item of its id it shadows: deleting it shows that one again. @since 2.12 */
+  /** On a user's item, the capability whose contributed item of its id it shadows: deleting it shows that one again. @since 2.13 */
   shadows?: string
   /** The part of the extension that declares its collection, as its item fold made it. @since 1.84 */
   x?: Record<string, unknown>
@@ -246,7 +246,7 @@ export type FloorCollection = {
   owner?: string
   doors?: Doors
   dir: string
-  /** Where each contributing extension's items are, by capability: a contributed item's file is `<sources[from]>/<id>`. @since 2.12 */
+  /** Where each contributing extension's items are, by capability: a contributed item's file is `<sources[from]>/<id>`. @since 2.13 */
   sources?: Record<string, string>
   items: FloorItem[]
 }
@@ -296,7 +296,7 @@ export type FloorRuntime = {
  */
 export type Floor = Omit<Project, 'shelf' | 'collections' | 'worktrees' | 'hiring' | 'brief' | 'extensions' | 'capabilities' | 'runtimes'> & {
   id: string
-  /** The config's shelf entries, then those the extensions on the floor contribute, each marked `from` its capability (since 2.12). */
+  /** The config's shelf entries, then those the extensions on the floor contribute, each marked `from` its capability (since 2.13). */
   shelf?: FloorShelfEntry[]
   /** The floor's part of each runtime the tower knows, by the same ids as `board.runtimes`. @since 2.0 */
   runtimes: Record<string, FloorRuntime>
@@ -392,7 +392,7 @@ export type Board = {
   floors: Floor[]
   /**
    * The tower-wide collections, those of no one floor, kept under the collections root's `_tower/`: the verbs and
-   * reads name their project `_tower`. @since 2.12
+   * reads name their project `_tower`. @since 2.13
    */
   collections: FloorCollection[]
   /** Who waits on you, in the order to go to them. */
