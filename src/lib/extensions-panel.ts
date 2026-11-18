@@ -1,4 +1,4 @@
-/** The library's `/lib/extensions-panel.js`: the Extensions panel, every extension the tower found in words. */
+/** The library's `/lib/extensions-panel.js`: the Extensions panel, every extension the tower found in words. @since 2.11 */
 export {
   brokenExtensions,
   extensionAnchor,

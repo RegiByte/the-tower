@@ -4,7 +4,7 @@
   "name": "docs/extending.md",
   "summary": "How a user extends or copies a renderer and what the core promises it: the renderer API's verbs, reads and errors, the library and what the tower serves beside it, shelf pages, collections, extensions (a manifest and a start, this lane), plugins, keeping a fork and what is not an extension point.",
   "in": "tower",
-  "reviewed": "2026-11-16",
+  "reviewed": "2026-11-18",
   "refs": ["hub/src/tower/served.ts#libraryUrls", "hub/src/shared/extensions.ts#StartCtx", "hub/src/tower/http.ts#STATIC", "hub/src/tower/tower.js", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/api.ts#ERROR_CODES", "hub/src/shared/shelf-page.ts", "hub/src/renderers.ts#BUILT_INS", "hub/src/shared/health.ts#whyNot", "hub/scripts/extension-shots.ts", "hub/src/shared/extensions.ts#LEGACY"]
 }
 ---
