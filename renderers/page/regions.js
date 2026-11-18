@@ -1,5 +1,6 @@
 import { can, findCard, parentOf, shownSubject } from '/lib/board.js'
 import { shownFrom } from '/lib/brief.js'
+import { subjectAreaHtml, subjectButtonHtml } from '/lib/elements.js'
 import { heldActions, shownHref, shownKey, shownTitle } from '/lib/cards.js'
 import { addedActions, offeredIn, ordered, overflowOf, paneShows, pickView, shownOf } from '/lib/layout.js'
 import { panesOf } from '/lib/keys.js'
@@ -182,7 +183,7 @@ export function regions(deps) {
    * the PTY to nothing). The tab open is the location's for the main pane's worker (`scope`), else the region's own;
    * none named, the terminal while the worker drives, else its brief.
    * @param {HTMLElement} host @param {Region} region @param {Subject} subject @param {Record<string, Record<string, unknown>>} options @param {PaneScope | undefined} scope
-   * @returns {RegionHandle & { tabs: () => { views: string[], open: string | undefined }, toPane: (id: string) => boolean }}
+   * @returns {RegionHandle & { tabs: () => { views: string[], open: string | undefined, at: { view: string, subject: string } | undefined }, toPane: (id: string) => boolean }}
    */
   function tabs(host, region, subject, options, scope) {
     const hostView = /** @type {HTMLElement | null} */ (host.closest('[data-view]'))?.dataset.view
@@ -278,12 +279,13 @@ export function regions(deps) {
     function shownTabHtml(s, on, key, panel) {
       const from = shownFrom(card.lineage, s)
       const what = `${card.callsign} showed ${s.target} · ${ago(Date.now() - s.at)} ago${from ? ` · in ${from.label}` : ''}`
-      return `<button class="pane-tab shown-tab ${on ? 'on' : ''}" role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="${panel}" data-tip="${esc(what)}" data-tab="${esc(key)}">` +
+      const subject = shownSubject(card, s).key
+      return subjectAreaHtml(`tab:${subject}`, subject, `<button class="pane-tab shown-tab ${on ? 'on' : ''}" role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="${panel}" data-tip="${esc(what)}" data-tab="${esc(key)}">` +
         `<span class="shown-name">${s.kind === 'link' ? `${ICON.remote} ` : ''}${esc(shownTitle(s))}</span>${from ? `<small>${from.mark}</small>` : ''}` +
         (on ? heldHtml('shown.tab', shownSubject(card, s), iconActionsHtml) : '') +
         (on && s.kind !== 'link' ? `<span class="icon-btn" data-out="${esc(shownHref(s))}" aria-hidden="true" data-tip="open in a browser tab">${ICON.remote}</span>` : '') +
         (on && s.kind === 'file' ? fileSpansHtml(s.target) : '') +
-        `<span class="icon-btn" data-unshow="${esc(shownKey(s))}" aria-hidden="true" data-tip="close: it comes back if shown again">${ICON.close}</span></button>`
+        `<span class="icon-btn" data-unshow="${esc(shownKey(s))}" aria-hidden="true" data-tip="close: it comes back if shown again">${ICON.close}</span></button>`)
     }
 
     /**
@@ -390,8 +392,10 @@ export function regions(deps) {
     /** What extensions add to the open showing (`shown.head`), after the tablist. @param {TabOf[]} all */
     function shownAddsHtml(all) {
       const showing = all.find((t) => t.key === open)?.showing
-      const adds = showing ? heldHtml('shown.head', shownSubject(card, showing), actionsHtml) : ''
-      return adds && `<span class="shown-adds" role="group" aria-label="on ${esc(shownTitle(/** @type {CardShown} */ (showing)))}">${adds}</span>`
+      if (!showing) return ''
+      const subject = shownSubject(card, showing)
+      const menu = subjectButtonHtml(`head:${subject.key}/menu`, subject.key, `${shownTitle(showing)}: menu`)
+      return `<span class="shown-adds" role="group" aria-label="on ${esc(shownTitle(showing))}">${heldHtml('shown.head', subject, actionsHtml)}${menu}</span>`
     }
 
     /** The worker's tablist around `inner`, the tabs as form `form` lays them out. @param {keyof typeof forms} form @param {string} inner */
@@ -681,7 +685,11 @@ export function regions(deps) {
         if (on && open && tabsOf().find((t) => t.key === open)?.showing) keptShown(open)
       },
       /** The view ids of its tabs, and of the tab open. */
-      tabs: () => ({ views: tabsOf().map((t) => t.view.id), open: tabsOf().find((t) => t.key === open)?.view.id }),
+      tabs: () => {
+        const all = tabsOf()
+        const on = all.find((t) => t.key === open)
+        return { views: all.map((t) => t.view.id), open: on?.view.id, at: on && { view: on.view.id, subject: on.subject.key } }
+      },
       /** Opens the tab of view `id`, its terminal focused, else its tab; false when it has none. @param {string} id */
       toPane(id) {
         const t = tabsOf().find((t) => t.view.id === id)
