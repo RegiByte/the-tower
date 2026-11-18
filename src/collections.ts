@@ -125,6 +125,10 @@ export const readItem = (paths: SystemPaths, project: string, collection: string
   return existsSync(file) ? readFileSync(file, 'utf8') : undefined
 }
 
+/** An item's content as a collection lists it: a contributed item's from its extension's folder, any other's from the store. */
+export const itemText = (paths: SystemPaths, item: CollectionItem): string | undefined =>
+  item.file === undefined ? readItem(paths, item.project, item.collection, item.id) : existsSync(item.file) ? readFileSync(item.file, 'utf8') : undefined
+
 /** An item by a name of the caller's, made or replaced whole, answering its new version. */
 export const putItem = (paths: SystemPaths, project: string, collection: string, id: string, content: string): number => {
   const file = itemPath(paths, project, collection, id)

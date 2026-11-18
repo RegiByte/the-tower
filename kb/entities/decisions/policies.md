@@ -8,6 +8,7 @@
   "date": "2026-10-13",
   "reviewed": "2026-11-18",
   "refs": [
+    "hub/extensions/policies/client/policies.ts#stepOf",
     "hub/src/shared/slots.ts#cronFields",
     "hub/src/shared/slots.ts#ruleWords",
     "hub/src/shared/slots.ts#slotWords",
@@ -126,6 +127,14 @@ user may replace it by providing `policies`.
   `/policies.js` and the old panel in `/panels.js`) went at 2.0; `docs/migrating-to-2.md` names what replaces each.
   Off on a floor, or off everywhere, the extension's parts are gone and its files and folders stay; on again, every
   run and approval is back, since nothing is stored beside them.
+
+- *A policy an extension contributes* ([[collections]]: `items` in its manifest, read in place) is a policy like
+  any other on each floor where its extension is on: `start: "auto"` is offered at its slots until the user approves
+  the file's words on that floor, because the runner's step is `run` only while the current hash has an approval
+  ([`stepOf`](ref:hub/extensions/policies/client/policies.ts#stepOf)) and `policies/run` refuses `auto` otherwise. An
+  update of the extension that changes the words needs approving again; a user's unedited copy (`tower own`) keeps
+  the approval, its id and hash the same. Its `check` runs at each slot before any approval, as trusted as the
+  extension's own code, which enabling it already runs.
 
 **Alternatives considered.** Offers as stored state with an expiry (derivable from the passes). Check results
 in the runner's memory alone (lost on restart, a check run twice in a slot). Generic `spawn` plus a separate fact

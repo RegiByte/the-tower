@@ -32,6 +32,8 @@ import { titled, titleIn } from './shared/titles.ts'
 import { briefParts, sessionLabel, type BriefPart } from './shared/brief.ts'
 import { configPath } from './shared/paths.ts'
 import { readConfig } from './system.ts'
+import { mediaTypeOf } from './shared/media.ts'
+import { contributedRefusal } from './bridge/stores.ts'
 import { CliError } from './cli-error.ts'
 import { checkFolder, freezeFolder } from './extension-check.ts'
 import { plural, when } from './shared/format.ts'
@@ -491,9 +493,18 @@ const readItem = async ({ project, id: collection }: KeptIn, id: string): Promis
 /** The command that reads the conversation an item was kept in, by the keeper's session: its callsign may name a later worker. */
 const keptInLine = ({ session, conversation }: KeptBy) => `    kept in \`tower agent ${session}${conversation ? ` ${conversation}` : ''}\``
 
+/** An item's file: in the store, or in the folder of the extension that contributes it. */
+const fileOf = (collection: FloorCollection, item: FloorItem): string => `${item.from ? collection.sources![item.from] : collection.dir}/${item.id}`
+
+/** Whose an item is: its keeper's, or an extension's, read-only, and whether a user's copy shadows one. */
+const keptWords = (item: FloorItem): string =>
+  item.from
+    ? `from ${item.from}, read-only: \`tower own ${item.tag}\` copies it to edit`
+    : `kept by ${item.keptBy?.callsign ?? 'unknown'}${item.shadows ? ` (a copy of ${item.shadows}'s)` : ''}`
+
 const itemLines = (collection: FloorCollection, item: FloorItem, title: string | undefined, now: number) => [
-  `  ${item.tag}  ·  ${[title?.slice(0, 80) ?? '(untitled)', `edited ${ago(now - item.modifiedAt)} ago`, sizeOf(item.size), `kept by ${item.keptBy?.callsign ?? 'unknown'}`].join('  ·  ')}`,
-  `    ${collection.dir}/${item.id}`,
+  `  ${item.tag}  ·  ${[title?.slice(0, 80) ?? '(untitled)', `edited ${ago(now - item.modifiedAt)} ago`, sizeOf(item.size), keptWords(item)].join('  ·  ')}`,
+  `    ${fileOf(collection, item)}`,
   ...(item.keptBy ? [keptInLine(item.keptBy)] : []),
 ]
 
@@ -561,7 +572,7 @@ const unkeepable = (floor: Floor, kept: KeptIn[], names: string[]): NamedItem[] 
   const refused = [
     ...called.flatMap(({ name, found }) => unnamedWhy(floor, name, found) ?? []),
     ...named.flatMap(({ collection, item }) => {
-      const why = unkeepRefusal(collection)
+      const why = item.from ? contributedRefusal(item.from, collection.project) : unkeepRefusal(collection)
       return why ? [`${item.tag}: ${why}`] : []
     }),
   ]
@@ -939,6 +950,21 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     const { collection, item } = itemNamed(floor, keptIn(board, floor), tagOrId)
     process.stdout.write(await readItem(collection, item.id))
   },
+  own: async ([tagOrId]) => {
+    if (!tagOrId) throw new CliError(usageLine('own'))
+    const board = await readBoard()
+    const floor = ownFloor(board, me)
+    const { collection, item } = itemNamed(floor, keptIn(board, floor), tagOrId)
+    if (!item.from) throw new CliError(`${item.tag} is the collection's own already: edit its file in place, ${fileOf(collection, item)}`)
+    if (!/^text\/|^application\/json$/.test(mediaTypeOf(item.id))) throw new CliError(`${item.tag} is no text file: \`tower own\` copies text items only`)
+    const content = await readItem(collection, item.id)
+    await command('collection/write', { project: collection.project, collection: collection.id, id: item.id, content, modifiedAt: item.modifiedAt })
+    const announced = await ask('fact', { name: 'keep', value: { project: collection.project, collection: collection.id, id: item.id } })
+    if (isFailure(announced)) throw new CliError(`Your copy is made, but its card won't name you as its keeper: ${refusedLine('fact', announced)}`, `edit it in place: ${collection.dir}/${item.id}`)
+    console.log(
+      `Owned ${item.tag}: your copy is ${collection.dir}/${item.id}, edit it in place. It shadows ${item.from}'s from now on and doesn't get its updates; \`tower unkeep ${item.tag}\` deletes your copy and brings ${item.from}'s back.`,
+    )
+  },
   unkeep: async (names) => {
     if (!names.length) throw new CliError(usageLine('unkeep'))
     const board = await readBoard()
@@ -955,7 +981,7 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
           '`tower kept` lists what the floor still keeps',
         )
       }
-      deleted.push(`Deleted ${item.tag} ${titles[n] ? `"${titles[n]}" ` : ''}from ${collection.label}: ${collection.dir}/${item.id}`)
+      deleted.push(`Deleted ${item.tag} ${titles[n] ? `"${titles[n]}" ` : ''}from ${collection.label}: ${collection.dir}/${item.id}${item.shadows ? `; ${item.shadows}'s item of that id shows again` : ''}`)
     }
     console.log([...deleted, 'Deleted for good: nothing keeps a copy.'].join('\n'))
   },

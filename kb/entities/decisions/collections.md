@@ -24,7 +24,9 @@
     "hub/src/bridge/stores.ts#ownedRefusal",
     "hub/src/shared/model.ts#TOWER_WIDE",
     "hub/src/bridge/stores.ts#towerCollections",
-    "hub/src/bridge/stores.ts#collectionOn"
+    "hub/src/bridge/stores.ts#collectionOn",
+    "hub/src/bridge/stores.ts#contributedTo",
+    "hub/src/bridge/stores.ts#collectionItems"
   ]
 }
 ---
@@ -77,7 +79,17 @@ primitives every renderer can reach.
   carries it in `board.collections` ([`towerCollections`](ref:hub/src/bridge/stores.ts#towerCollections)), the verbs,
   reads and `ctx.collections` name its project `_tower` ([`collectionOn`](ref:hub/src/bridge/stores.ts#collectionOn)),
   and a worker's `keep`, `kept`, `read` and `unkeep` reach it after the floor's. A config entry of its id is refused,
-  so an id names one collection. A config entry of the same name is no
+  so an id names one collection.
+- *Contributed items* (since 2.12). An extension's `items` names a folder of its own per collection, read when the
+  tower resolves extensions and never written: a collection is the union of the store's files and the folders of the
+  extensions on the floor ([`contributedTo`](ref:hub/src/bridge/stores.ts#contributedTo),
+  [`collectionItems`](ref:hub/src/bridge/stores.ts#collectionItems)), and the board, `ctx.collections`, the item read and
+  the shelf all read it. The collection is the extension's own, the config's, or one of a capability it requires or
+  wants; another's owned one is refused with a warning. An item carries `from`, its collection `sources`; a user's
+  item of the same id shadows it and carries `shadows`. `collection/write` on a contributed item makes the store's
+  copy under its id; `collection/delete` and `tower unkeep` refuse one; `tower own` copies one for a worker to edit
+  ([[workers-edit-kept-items]]). Copying items into the store at enable was rejected: copies drift from the shipped
+  ones, updates never arrive, and the user could not tell theirs from an extension's. A config entry of the same name is no
   conflict: its `label` and `description` win, since they are what workers read. One the extension declares `owned`
   is written only through its owner's verbs: `collection/create`, `write`, `restore` and `delete` (and so `tower
   keep`) answer `refused`, naming its create door ([`ownedRefusal`](ref:hub/src/bridge/stores.ts#ownedRefusal)),

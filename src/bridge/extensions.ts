@@ -15,14 +15,14 @@ import { USER_LAYOUT_KEYS, type RendererRegions } from '../shared/regions.ts'
 import { FACT_KINDS } from '../shared/rate-limits.ts'
 import type { Config, ExtensionConfig } from '../shared/model.ts'
 import type { Reads } from '../shared/shelf-page.ts'
-import { offOn, type ExtensionStores } from './stores.ts'
+import { offOn, type ContributedItems, type ExtensionStores } from './stores.ts'
 
 /**
  * An extension folder the tower found: a bundled one, or one the config names. `text`: its `extension.json`, when there
  * is one; `contract`: its `contract.json`, when there is one; `claudePluginLack`: what the Claude plugin its manifest
  * names lacks, when it lacks anything.
  */
-export type Found = { id: string; bundled: boolean; dir?: string; text?: string; contract?: string; client?: ClientRead; claudePluginLack?: 'folder' | 'plugin.json' }
+export type Found = { id: string; bundled: boolean; dir?: string; text?: string; contract?: string; client?: ClientRead; claudePluginLack?: 'folder' | 'plugin.json'; items?: ContributedItems }
 
 /**
  * A client folder's modules as discovery read them: each by the path it is served at below `/x/<cap>/` (a `.ts` as
@@ -157,6 +157,8 @@ export type Accepted = {
   chain: string[]
   off: string[]
   problems: LoadProblem[]
+  /** The items it contributes, by collection, read in place: only to collections it may add to. */
+  contributed: ContributedItems
   /** What it tells the workers, the config's over its manifest's. */
   guidance?: Guided
 }
@@ -371,6 +373,45 @@ const storeRuleProblems = (manifest: Manifest, provides: string): LoadProblem[] 
       return problem ? [error('invalid', problem, at)] : []
     }),
   ]
+}
+
+/** Each items folder the manifest names that isn't a folder inside the extension. */
+const itemFolderProblems = (manifest: Manifest, found: Found): LoadProblem[] =>
+  Object.entries(manifest.items ?? {})
+    .filter(([collection]) => !found.items?.[collection])
+    .map(([collection, folder]) => error('invalid', `items.${collection} names "${folder}", which is no folder inside the extension`, `items.${collection}`))
+
+/**
+ * Why an accepted extension's items can't join `collection`: it is no collection of its own, of the config's, or of a
+ * capability it requires or wants; or another capability owns it, and only its owner writes it.
+ */
+const itemsRefusal = (a: Accepted, collection: string, accepted: Accepted[], config: Config): string | undefined => {
+  const declarer = accepted.find((x) => Object.hasOwn(x.manifest.collections ?? {}, collection))
+  if (declarer?.provides === a.provides) return undefined
+  if (declarer?.manifest.collections![collection].owned) return `${declarer.provides} owns ${collection}: only it adds to it`
+  const reached = [...requiredOf(a.manifest), ...Object.keys(a.manifest.wants ?? {})]
+  if (declarer && reached.includes(declarer.provides)) return undefined
+  const configDeclares = Object.hasOwn(config.collections ?? {}, collection) || Object.values(config.projects).some((p) => Object.hasOwn(p.collections ?? {}, collection))
+  if (!declarer && configDeclares) return undefined
+  return declarer
+    ? `${collection} is ${declarer.provides}'s: require or want ${declarer.provides} to add to it`
+    : `no extension or config entry declares a collection ${collection}`
+}
+
+/** Each accepted extension with the items it may contribute, and a warning for each collection it may not add to. */
+const withContributions = (accepted: Map<string, Accepted>, config: Config): Map<string, Accepted> => {
+  const all = [...accepted.values()]
+  return new Map(
+    all.map((a) => {
+      const refusals = Object.keys(a.contributed).flatMap((collection) => {
+        const why = itemsRefusal(a, collection, all, config)
+        return why ? [{ collection, why }] : []
+      })
+      if (!refusals.length) return [a.id, a]
+      const contributed = Object.fromEntries(Object.entries(a.contributed).filter(([c]) => !refusals.some((r) => r.collection === c)))
+      return [a.id, { ...a, contributed, problems: [...a.problems, ...refusals.map(({ collection, why }) => warn('invalid', `items.${collection} joins no collection: ${why}`, `items.${collection}`))] }]
+    }),
+  )
 }
 
 /** The subject kinds the core folds: an extension's own are `<capability>.<kind>`. */
@@ -822,7 +863,7 @@ export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower:
   const stores = storeSchemas(manifest)
   const folds = compileFolds(manifest, capabilityOf(manifest))
   const fields = compileFields(manifest, capabilityOf(manifest))
-  const broken = [...storeRuleProblems(manifest, capabilityOf(manifest)), ...stores.problems, ...folds.problems, ...checkProblems(manifest), ...cliProblems(manifest), ...fields.problems, ...viewProblems(manifest), ...idSpaceProblems(manifest), ...iconProblems(manifest, found.client)]
+  const broken = [...itemFolderProblems(manifest, found), ...storeRuleProblems(manifest, capabilityOf(manifest)), ...stores.problems, ...folds.problems, ...checkProblems(manifest), ...cliProblems(manifest), ...fields.problems, ...viewProblems(manifest), ...idSpaceProblems(manifest), ...iconProblems(manifest, found.client)]
   if (broken.length) return { found, claims, manifest, problems: broken }
   const warnings = [
     ...ownContractProblems(found, manifest),
@@ -1040,6 +1081,7 @@ export const resolve = (found: Found[], config: Config, tower: string): Resolved
           chain,
           off: Object.keys(config.projects).filter((project) => offOn(config, project, chain)),
           problems: [...r.problems, ...floors.problems, ...without],
+          contributed: r.found.items ?? {},
           ...(r.guidance && { guidance: r.guidance }),
         },
       ]
@@ -1054,7 +1096,7 @@ export const resolve = (found: Found[], config: Config, tower: string): Resolved
     placed.add(next.provides)
     order.push(next.id)
   }
-  return { order, accepted, refused }
+  return { order, accepted: withContributions(accepted, config), refused }
 }
 
 /** The most problems an extension shows. */
@@ -1287,7 +1329,8 @@ export const registry = (
   )
   const stores = resolved.order.map((id) => {
     const { provides, chain, manifest } = resolved.accepted.get(id)!
-    return { provides, chain, collections: manifest.collections ?? {}, answers: states.get(id) === 'started' ? Object.keys(manifest.answers ?? {}) : [] }
+    const { contributed } = resolved.accepted.get(id)!
+    return { provides, chain, collections: manifest.collections ?? {}, contributed, answers: states.get(id) === 'started' ? Object.keys(manifest.answers ?? {}) : [] }
   })
   const wrapping = wrappingOf(
     resolved.order.filter((id) => states.get(id) === 'started').map((id) => resolved.accepted.get(id)!),
