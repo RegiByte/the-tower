@@ -10,6 +10,7 @@ import { loop, timers } from '/lib/machine.js'
 import { markdownCss } from '/lib/markdown.js'
 import { settingsCss } from '/lib/settings.js'
 import { wireSpawn } from '/lib/spawn.js'
+import '/lib-ui/combobox.js'
 import { STATS_ALL } from '/lib/stats.js'
 import { loadTerminalFont } from '/lib/terminal.js'
 import { copyTelling, fileButtonsHtml, fileCall, itemsCss, keepingFocus, panelsCss, pressing } from '/lib/view.js'
@@ -1561,7 +1562,7 @@ document.addEventListener(
  */
 document.addEventListener('click', async (e) => {
   const target = /** @type {Element} */ (e.target)
-  if (target.closest('a[href], tower-menu, tower-menu-button') || inView(target)) return
+  if (target.closest('a[href], tower-menu, tower-menu-button, tower-combobox') || inView(target)) return
   const spawn = target.closest('[data-spawn]')
   if (spawn) return openSpawn(/** @type {string} */ (spawn.dataset.spawn))
   const copy = target.closest('[data-copy]')?.dataset.copy

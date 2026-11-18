@@ -40,7 +40,7 @@ async function importCycles() {
     format: 'esm',
     outdir: 'out',
     logLevel: 'silent',
-    external: ['/lib/*', '/x/*'],
+    external: ['/lib/*', '/lib-ui/*', '/x/*'],
     loader: { '.glb': 'empty', '.webm': 'empty', '.kaykit': 'empty' },
   })
   const ours = (file: string) => file.startsWith(SRC)

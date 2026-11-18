@@ -27,7 +27,7 @@ test('spawnFormHtml: the command picker is absent with one or no named commands,
   const multi = boardOf(MULTI)
   const html = spawnFormHtml(multi.floors[0], multi, { sign: 's' })
   assert.equal(html.includes('name="command"'), true)
-  assert.match(html, /<option value="b" selected>/)
+  assert.match(html, /<tower-combobox id="spawn:command" name="command"[^>]* value="b"/)
 })
 
 const WITH_OPENCODE: Config = { ...SINGLE, runtimes: { claude: { argv: ['claude'] }, opencode: { argv: ['opencode'] } } }
@@ -36,7 +36,7 @@ test('spawnFormHtml: a runtime is picked only when the config runs more than one
   const single = boardOf(SINGLE)
   assert.equal(spawnFormHtml(single.floors[0], single, { sign: 's' }).includes('name="runtime"'), false)
   const two = boardOf(WITH_OPENCODE)
-  assert.match(spawnFormHtml(two.floors[0], two, { sign: 's' }), /<select name="runtime"><option value="claude" selected>/)
+  assert.match(spawnFormHtml(two.floors[0], two, { sign: 's' }), /<tower-combobox id="spawn:runtime" name="runtime"[^>]* value="claude" options="\[\{&quot;value&quot;:&quot;claude&quot;/)
   assert.equal(spawnDefaults(two.floors[0]).runtime, 'claude')
 })
 

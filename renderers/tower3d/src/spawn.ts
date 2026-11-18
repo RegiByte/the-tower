@@ -2,6 +2,7 @@ import type { Draft, DraftIo } from '../../../extensions/drafts/client/drafts.ts
 import type { Call } from '/lib/extension.js'
 import { type Held } from './acts.ts'
 import { wireSpawn } from '/lib/spawn.js'
+import '/lib-ui/combobox.js'
 import { hiringHandlers, noHires } from './hiring.ts'
 import type { Tower } from './api.ts'
 import { type SpawnForm, spawnCall, spawnDefaults } from './cards.ts'
