@@ -5,7 +5,7 @@ import type { StreamFact } from '../src/bridge/streams.ts'
 import { adoptCalls, asksOf, carriesCredentials, clonesOf, holding, NO_CLONES, step, type ClonesState } from '../extensions/floors/clones.ts'
 
 const DAY = 86_400_000
-const job = (id: string, rest: Partial<Job>): Job => ({ id, owner: 'floors', label: `Clone ${id}`, argv: ['git', 'clone'], cwd: '/code', state: 'running', startedAt: 1_000, ...rest })
+const job = (id: string, rest: Partial<Job>): Job => ({ id, pid: 4242, owner: 'floors', label: `Clone ${id}`, argv: ['git', 'clone'], cwd: '/code', state: 'running', startedAt: 1_000, ...rest })
 const fold = (facts: StreamFact[]): ClonesState => facts.reduce(step, NO_CLONES)
 const started = (j: string, id: string, at = 1_000): StreamFact => [at, 's', { job: j, id, name: id, url: `https://example.com/${id}.git`, into: `/code/${id}` }]
 

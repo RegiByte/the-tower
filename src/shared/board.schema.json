@@ -3981,6 +3981,10 @@
         "id": {
           "type": "string"
         },
+        "pid": {
+          "type": "number",
+          "description": "Its process's id, which is also its process group: what it starts stays in the group unless it leaves it."
+        },
         "owner": {
           "type": "string"
         },
@@ -4023,6 +4027,7 @@
       },
       "required": [
         "id",
+        "pid",
         "owner",
         "label",
         "argv",
