@@ -34,14 +34,21 @@ const mark = (marks: string, busy: boolean) =>
   document.querySelectorAll(marks).forEach((el) => (busy ? el.setAttribute('aria-busy', 'true') : el.removeAttribute('aria-busy')))
 
 /**
+ * Marks again what a redraw left unmarked: a control drawn anew, or one a morph kept and stripped of the `aria-busy`
+ * its html lacks. Only a control missing the mark is written, so the observer's own writes end its next pass.
+ */
+const remark = () =>
+  inFlight.forEach((marks) => document.querySelectorAll(marks).forEach((el) => el.getAttribute('aria-busy') === 'true' || el.setAttribute('aria-busy', 'true')))
+
+/**
  * Runs `request` for `press`. Until it settles, every element `press.marks` selects is `aria-busy`, drawn by
- * `design.css`, one drawn again meanwhile included. A press whose key is in flight is ignored and answers `undefined`.
+ * `design.css`, one drawn again meanwhile included, and one a morph kept and stripped of the mark. A press whose key is in flight is ignored and answers `undefined`.
  * @since 2.17
  */
 export async function pressingAs<T>(press: Press, request: () => Promise<T>): Promise<T | undefined> {
   if (inFlight.has(press.key)) return undefined
-  redrawn ??= new MutationObserver(() => inFlight.forEach((marks) => mark(marks, true)))
-  if (!inFlight.size) redrawn.observe(document.body, { childList: true, subtree: true })
+  redrawn ??= new MutationObserver(remark)
+  if (!inFlight.size) redrawn.observe(document.body, { childList: true, subtree: true, attributeFilter: ['aria-busy'] })
   inFlight.set(press.key, press.marks)
   mark(press.marks, true)
   try {

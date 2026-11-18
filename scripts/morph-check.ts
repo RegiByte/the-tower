@@ -26,7 +26,7 @@ async function page() {
 <script type="module">
 ${cases}
 window.morphRun = async () => {
-  const results = runCases(document.getElementById('work'))
+  const results = await runCases(document.getElementById('work'))
   await fetch('/results', { method: 'POST', body: JSON.stringify(results) })
   return results.length
 }
