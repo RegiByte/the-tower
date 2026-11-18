@@ -1,8 +1,9 @@
 import { CAPABILITIES, tipAt, tipKey, tipsOf } from '/lib/capabilities.js'
 import { chordLabel, COMMANDS, keysLabel } from '/lib/keys.js'
-import { ICON } from '/lib/view.js'
+import { domId } from '/lib/morph.js'
+import { ICON, morphPanel } from '/lib/view.js'
 import { esc } from '/lib/words.js'
-import { $, repaint } from './kit.js'
+import { $ } from './kit.js'
 
 /**
  * @import { Pattern, Tip } from '/lib/capabilities.js'
@@ -33,23 +34,24 @@ export function tipStrip(deps) {
   /** A capability's words, escaped, its backticked spans as code. @param {string} text */
   const wordsHtml = (text) => esc(text).replace(/`([^`]+)`/g, '<code>$1</code>')
 
-  /** @param {Tip} tip */
+  /** The tip, its parts by its key, so a control holding focus keeps it while the same tip shows. @param {Tip} tip */
   function tipHtml(tip) {
-    const dismiss = `<button class="icon-btn" data-tip-dismiss="${esc(tipKey(tip))}" aria-label="dismiss this tip for good" data-tip="dismiss this tip for good: settings bring it back">${ICON.close}</button>`
+    const key = tipKey(tip)
+    const dismiss = `<button class="icon-btn" id="${esc(domId('tip/dismiss', key))}" data-tip-dismiss="${esc(key)}" aria-label="dismiss this tip for good" data-tip="dismiss this tip for good: settings bring it back">${ICON.close}</button>`
     if (tip.kind === 'pattern')
-      return `<span class="tip-body" tabindex="0" data-tip="${esc(`${tip.summary}\n\n${tip.story.replace(/(?<!\n)\n(?!\n)/g, ' ')}`)}"><span class="eyebrow">pattern</span><b>${esc(tip.title)}</b></span>${dismiss}`
+      return `<span class="tip-body" id="${esc(domId('tip', key))}" tabindex="0" data-tip="${esc(`${tip.summary}\n\n${tip.story.replace(/(?<!\n)\n(?!\n)/g, ' ')}`)}"><span class="eyebrow">pattern</span><b>${esc(tip.title)}</b></span>${dismiss}`
     const chord = tip.command && keysLabel(keys(), tip.command)
     const caps = tip.command ? keys()[tip.command].map((t) => `<kbd>${esc(chordLabel(t))}</kbd>`).join('') : ''
     const text = `<span class="eyebrow">tip</span><span>${wordsHtml(tip.text)}</span>${caps}`
     const does = tip.command && COMMANDS.find((c) => c.id === tip.command)?.does
-    return (chord ? `<button class="tip-body" data-tip-run="${tip.command}" data-tip="${esc(`${chord}: ${does}`)}">${text}</button>` : `<span class="tip-body">${text}</span>`) + dismiss
+    return (chord ? `<button class="tip-body" id="${esc(domId('tip', key))}" data-tip-run="${tip.command}" data-tip="${esc(`${chord}: ${does}`)}">${text}</button>` : `<span class="tip-body" id="${esc(domId('tip', key))}">${text}</span>`) + dismiss
   }
 
   /** The tip showing now, or none. */
   function paintTip() {
     const v = viewer()
     const tip = v.tips ? tipAt(tipsOf(CAPABILITIES, patterns, v.tipsDismissed), seed, now()) : undefined
-    repaint($('tip'), tip ? tipHtml(tip) : '')
+    morphPanel($('tip'), tip ? tipHtml(tip) : '')
     fit()
   }
 
