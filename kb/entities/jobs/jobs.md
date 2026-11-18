@@ -4,7 +4,7 @@
   "name": "Jobs",
   "summary": "Commands run to their end outside the tower, each a job whose start, cancel and end are facts in the jobs log, so a clone or a build outlives a tower restart and its outcome survives it.",
   "in": "tower",
-  "reviewed": "2026-11-17"
+  "reviewed": "2026-11-18"
 }
 ---
 The [[jobs-daemon]] is the only part, and the only writer of the jobs log in [[system-root]]. A job is one command
@@ -15,7 +15,8 @@ and for a while after; its output is never logged.
 **The tower's side.** The tower watches `jobs/` and polls the daemon's `list` beside the shells ([[live-system]]).
 The board's `jobs` holds every owner's jobs running or over within the last day, newest first, and `jobsUp` whether
 the daemon answers; `GET /jobs` holds them all ([`jobsNow`](ref:hub/src/bridge/jobs.ts#jobsNow),
-[`recentJobs`](ref:hub/src/bridge/jobs.ts#recentJobs)). `job/start {argv, cwd, env?, label}` and `job/cancel {id}` act
+[`recentJobs`](ref:hub/src/bridge/jobs.ts#recentJobs)), each with its `pid`, which is also its process group, so a
+reader can find what a job runs on the machine (API 2.10). `job/start {argv, cwd, env?, label}` and `job/cancel {id}` act
 for their caller, who owns the job: a worker's session, an extension's capability (`ctx.jobs`, as the capability even
 inside a handler answering someone else), or the user. A job answers once the tower holds it, since the daemon logs
 its start before replying. Its screen streams at `/job/<id>/screen`, and on the mux; a view draws it with the kit's
