@@ -15,6 +15,7 @@ export const elements = {
       value: 'The value of the option chosen; absent, none is. Written back from `valuechange`, it is applied with no event.',
       name: 'The name its value submits under in a form.',
       label: 'The visible label that names it.',
+      labelledby: 'The id of an element elsewhere on the page that names it, for a label that holds more than words: set, it draws no label of its own.',
       placeholder: 'The text the empty box shows.',
       empty: 'What the list says when no option matches.',
       disabled: 'It can be neither focused nor changed, and submits nothing.',
@@ -33,9 +34,9 @@ export const elements = {
   },
 } satisfies Record<string, ElementContract>
 
-/** The parts the combobox is built of: a label, the text box, and the list in its popup. */
+/** The parts the combobox is built of: the text box and the list in its popup, after its label unless another element names it. */
 const PARTS =
-  '<ui-combobox-label></ui-combobox-label><ui-combobox-input><input></ui-combobox-input>' +
+  '<ui-combobox-input><input></ui-combobox-input>' +
   '<ui-combobox-content hidden><ui-combobox-empty></ui-combobox-empty><ui-combobox-list></ui-combobox-list></ui-combobox-content>'
 
 class TowerCombobox extends HTMLElement {
@@ -60,11 +61,26 @@ class TowerCombobox extends HTMLElement {
     const value = this.getAttribute(name)
     if (name === 'options') inner.items = value === null ? [] : (JSON.parse(value) as ListData<string>)
     else if (name === 'value') inner.value = value
-    else if (name === 'label') inner.querySelector('ui-combobox-label')!.textContent = value ?? ''
+    else if (name === 'label' || name === 'labelledby') this.#label(inner)
     else if (name === 'empty') inner.querySelector('ui-combobox-empty')!.textContent = value ?? ''
     else if (name === 'placeholder') inner.querySelector('input')!.placeholder = value ?? ''
     else if (value === null) inner.removeAttribute(name)
     else inner.setAttribute(name, value)
+  }
+
+  /** Its own label part holding `label`, or none and the input named by the element `labelledby` names. */
+  #label(inner: HTMLElementTagNameMap['ui-combobox']) {
+    const by = this.getAttribute('labelledby')
+    const input = inner.querySelector('input')!
+    const own = inner.querySelector('ui-combobox-label')
+    if (by !== null) {
+      own?.remove()
+      input.setAttribute('aria-labelledby', by)
+      return
+    }
+    if (input.getAttribute('aria-labelledby') !== null && !own) input.removeAttribute('aria-labelledby')
+    const label = own ?? inner.insertBefore(document.createElement('ui-combobox-label'), inner.firstChild)
+    label.textContent = this.getAttribute('label') ?? ''
   }
 
   get value() {

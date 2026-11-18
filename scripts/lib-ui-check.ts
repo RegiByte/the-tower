@@ -1,6 +1,6 @@
 /**
  * The tower's elements (`/lib-ui/`) in a page that redraws them through the morph every 100 ms, as a renderer does, in
- * a real browser, drawn by `/lib/elements.js` as a view draws them: typing into `<tower-combobox>` and choosing from it, `<tower-menu>` opened by a right-click on a
+ * a real browser, drawn by `/lib/elements.js` as a view draws them: typing into `<tower-combobox>` and choosing from it, one named by a label drawn apart (`labelledby`), `<tower-menu>` opened by a right-click on a
  * `<tower-menu-area>` and by Enter on a `<tower-menu-button>`, its submenu, its action and its focus coming back, each
  * checked as it happens. The page is served by this script on a free port, the modules as the tower serves them
  * (`servedModule`); a check failing fails the run. Run it on every bump of the UI SDK, in both engines:
@@ -51,6 +51,7 @@ const PAGE = `<!doctype html>
   #view { position: absolute; left: ${ROWS.left}px; top: 24px; width: ${ROWS.width}px; }
   #view .head { height: 20px; color: var(--muted); }
   #view tower-combobox { height: 100px; }
+  #view .named { position: absolute; top: 320px; width: 100%; }
   #rows { position: absolute; top: ${ROWS.top - 24}px; left: 0; width: 100%; }
   tower-menu-area { display: flex; align-items: center; gap: var(--sp-m); box-sizing: border-box; height: ${ROWS.height}px; padding: 0 var(--sp-m); border-radius: var(--radius); }
   tower-menu-area:state(open) { background: var(--panel-2); box-shadow: var(--selected); }
@@ -75,6 +76,8 @@ const row = (s) => subjectHtml('row', s.id, \`\${s.name}: menu\`, \`<span class=
 const view = () => \`<div class="head">render \${tick}</div>
 \${comboboxHtml({ place: 'check', name: 'fruit', label: 'Fruit', placeholder: 'Search fruits', empty: 'No fruit', value: fruit, options: fruits })}
 <div id="rows">\${subjects.map(row).join('')}</div>
+<div class="named"><span id="check/label:size">Size <small>optional</small></span>
+\${comboboxHtml({ place: 'check', name: 'size', labelledby: 'check/label:size', options: [{ value: 's', label: 'Small' }, { value: 'l', label: 'Large' }] })}</div>
 \${subjectMenuHtml()}\`
 
 const root = document.getElementById('view')
@@ -127,6 +130,12 @@ window.check = {
     if (seen.log.some((l) => l[2] !== 'item-press')) fail('the value written back fired an event', seen)
     return seen
   },
+  labelled: () => {
+    const named = document.getElementById('check:size')
+    const seen = { labelledby: named.querySelector('input').getAttribute('aria-labelledby'), parts: named.querySelectorAll('ui-combobox-label').length }
+    if (seen.labelledby !== 'check/label:size' || seen.parts) fail('a combobox with labelledby should draw no label and name its input by it', seen)
+    return seen
+  },
   blur: () => { document.activeElement?.blur(); return true },
   menuAt: (payload, point, first) => {
     const r = content()?.getBoundingClientRect()
@@ -168,7 +177,7 @@ window.check = {
     return seen
   },
   ownAttributes: () => {
-    const written = { 'tower-combobox': ['id', 'name', 'label', 'placeholder', 'empty', 'value', 'options', 'data-owned'], 'tower-menu': ['id', 'data-owned'],
+    const written = { 'tower-combobox': ['id', 'name', 'label', 'labelledby', 'placeholder', 'empty', 'value', 'options', 'data-owned'], 'tower-menu': ['id', 'data-owned'],
       'tower-menu-area': ['id', 'for', 'payload'], 'tower-menu-button': ['id', 'for', 'payload', 'label', 'data-owned'] }
     const extra = Object.entries(written).flatMap(([tag, names]) => [...document.querySelectorAll(tag)].flatMap((el) => [...el.attributes].map((a) => a.name).filter((n) => !names.includes(n)).map((n) => \`\${tag} \${n}\`)))
     if (extra.length) fail('an element wrote an attribute on itself', extra)
@@ -198,6 +207,7 @@ const STEPS = (shots: (name: string) => Step[]): Step[] => [
   { key: 'Enter' },
   { wait: 500 },
   { eval: `check.picked('peach')` },
+  { eval: 'check.labelled()' },
   { eval: 'check.blur()' },
   { rclick: rowPoint(1) },
   { wait: 500 },

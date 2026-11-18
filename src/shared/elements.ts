@@ -14,19 +14,19 @@ export type ComboboxOption =
 
 /**
  * What a `<tower-combobox>` draws: its options, the value chosen (none when absent) and its words. Its id is
- * `domId(place, name)`, `name` the field it submits.
+ * `domId(place, name)`, `name` the field it submits. It is named by its own `label`, or by the element drawn apart
+ * whose id is `labelledby`, when the label around it holds more than words.
  */
 export type Combobox = {
   place: string
   name: string
-  label: string
   placeholder?: string
   empty?: string
   value?: string | null
   options: ComboboxOption[]
   disabled?: boolean
   required?: boolean
-}
+} & ({ label: string; labelledby?: never } | { labelledby: string; label?: never })
 
 /** One attribute, or nothing for an absent value; `true` writes a bare one. */
 const attribute = (name: string, value: string | boolean | null | undefined) =>
@@ -34,7 +34,7 @@ const attribute = (name: string, value: string | boolean | null | undefined) =>
 
 /** A `<tower-combobox>`: a text box filtering `options` to choose one, the value kept by its `valuechange` written back as `value`. */
 export const comboboxHtml = (c: Combobox): string =>
-  `<tower-combobox${attribute('id', domId(c.place, c.name))}${attribute('name', c.name)}${attribute('label', c.label)}${attribute('placeholder', c.placeholder)}` +
+  `<tower-combobox${attribute('id', domId(c.place, c.name))}${attribute('name', c.name)}${attribute('label', c.label)}${attribute('labelledby', c.labelledby)}${attribute('placeholder', c.placeholder)}` +
   `${attribute('empty', c.empty)}${attribute('value', c.value)}${attribute('options', JSON.stringify(c.options))}` +
   `${attribute('disabled', c.disabled)}${attribute('required', c.required)} data-owned="children"></tower-combobox>`
 
