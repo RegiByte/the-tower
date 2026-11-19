@@ -34,7 +34,7 @@ import { subjectMenus } from './subject-menus.js'
 import { archive } from './archive.js'
 import { EXTENSIONS_VIEW, extensionsEntry } from './extensions-entry.js'
 import { boardKit } from './board.js'
-import { onDuty, $, signHtml, topAnchorOf, sightAnchorOf, holdRow, announce, toast, notice, closableNotice, told } from './kit.js'
+import { onDuty, $, signHtml, sightAnchorOf, holdRow, announce, toast, notice, closableNotice, told } from './kit.js'
 import { DRAFTS, draftsOf, keepUnsent, titleOf } from './clients.js'
 import { palette } from './palette.js'
 import { asksHtml, badgeHtml, drawCount, regionActionHtml, tuckableBadgeHtml } from './added.js'
@@ -120,7 +120,7 @@ function render() {
   paintLimits()
   const floors = $('floors')
   // The selected worker's row stays where a move or a click left it while in sight, so a move key's target stays in view.
-  const anchor = sightAnchorOf(floors, selected()) ?? topAnchorOf(floors)
+  const anchor = sightAnchorOf(floors, selected())
   morphPanel(floors, floorsTopDown().map(floorHtml).join(''))
   floorTrays.place(floors)
   holdRow(floors, anchor)
