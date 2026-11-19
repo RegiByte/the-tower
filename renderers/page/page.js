@@ -131,6 +131,7 @@ function render() {
   mainRegion.update()
   renderDock()
   drawSettings()
+  // Morphs empty every [data-since] span the html draws, so the clock fills them again before the frame is painted.
   tick()
 }
 
