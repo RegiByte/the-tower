@@ -152,7 +152,7 @@ export function startPanels(started: PanelsDeps) {
       show('logbook-shot', panel.tab === 'screen')
       show('logbook-text', panel.tab === 'brief')
       $('logbook-sessions').innerHTML = sessionsHtml(c, panel.on, panel.threads)
-      $('logbook-text').innerHTML = logbookBriefHtml(board, c, panel.threads, briefLook($('logbook-text')), 'logbook')
+      if (panel.tab === 'brief') drawLogbookBrief(board, c, panel.threads)
     }
     if (panel.kind === 'draft') {
       const d = draft!
@@ -1031,10 +1031,15 @@ export function startPanels(started: PanelsDeps) {
   /** The desk's brief as last read, with the conversations read whole in it: what it is drawn again from, and what a copy reads its text from. */
   let deskBrief: { id: string; threads: Threads; wholes: Brief[] } | undefined
 
-  /** The tool calls read in a logbook, by key, as last drawn: one still running is read again when drawn open, drawn as last read meanwhile. */
+  /**
+   * The tool calls read in a logbook, by key, as last drawn: one still running is read again while it is drawn open,
+   * drawn as last read meanwhile, and not twice at once.
+   */
   const toolsRead = new Map<string, string>()
 
   const toolsSettled = new Set<string>()
+
+  const toolsReading = new Set<string>()
 
   const toolRead = (key: string) => toolsRead.get(key)
 
@@ -1045,6 +1050,16 @@ export function startPanels(started: PanelsDeps) {
     const c = findCard(boardNow()!, deskBrief!.id)!
     const look = same ? briefLook($('desk-brief')) : { open: new Set<string>(), expanded: new Set<string>(), tools: toolRead, markdown: port.state().viewer.briefMarkdown }
     $('desk-brief').innerHTML = logbookHtml(boardNow()!, c, deskBrief!.threads, look, replayNow()?.id === c.id ? replayNow()!.session : undefined, 'desk')
+  }
+
+  /**
+   * The reader's logbook brief, morphed, so what you hold in it (a selection, an answer shown in full, a call opened,
+   * where you scrolled) stays as turns and calls arrive; each call drawn open that hadn't ended is read again.
+   */
+  function drawLogbookBrief(board: Board, c: Card, threads: Threads | undefined) {
+    const el = $('logbook-text')
+    morphPanel(el, logbookBriefHtml(board, c, threads, briefLook(el), 'logbook'))
+    for (const details of el.querySelectorAll<HTMLDetailsElement>('details[data-tool][open]')) readTool(details.dataset.tool!)
   }
 
   /** The logbook again, if the desk shows it, in your `viewer.briefMarkdown`. */
@@ -1069,11 +1084,10 @@ export function startPanels(started: PanelsDeps) {
     }, (err: Error) => toast(err.message))
   }
 
-  /** A logbook's tool call opened: read and drawn in its body, kept once it ended. */
-  document.addEventListener('toggle', (e) => {
-    const details = e.target
-    if (!(details instanceof HTMLDetailsElement) || !details.dataset.tool || !details.open || toolsSettled.has(details.dataset.tool)) return
-    const key = details.dataset.tool
+  /** A logbook's tool call open: read and drawn in its body, kept for every draw after, read no more once it ended. */
+  function readTool(key: string) {
+    if (toolsSettled.has(key) || toolsReading.has(key)) return
+    toolsReading.add(key)
     const [session, call] = key.split(':')
     tower.toolCall(session, call).then((read) => {
       const html = toolCallHtml(read)
@@ -1081,7 +1095,13 @@ export function startPanels(started: PanelsDeps) {
       if (toolCallSettled(read)) toolsSettled.add(key)
       for (const drawn of document.querySelectorAll<HTMLElement>('details[data-tool]'))
         if (drawn.dataset.tool === key) drawn.querySelector('[data-tool-body]')!.innerHTML = html
-    }, (err: Error) => toast(err.message))
+    }, (err: Error) => toast(err.message)).finally(() => toolsReading.delete(key))
+  }
+
+  /** A logbook's tool call opened is read. */
+  document.addEventListener('toggle', (e) => {
+    const details = e.target
+    if (details instanceof HTMLDetailsElement && details.dataset.tool && details.open) readTool(details.dataset.tool)
   }, true)
 
   const openScreen = () => port.dispatch({ type: 'tab', to: { tab: 'screen' } })
