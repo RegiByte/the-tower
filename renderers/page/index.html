@@ -358,6 +358,12 @@ dialog.palette[open] { display: flex; flex-direction: column; max-height: min(56
   min-height: calc(var(--control) + 3 * var(--ring) + 2 * var(--bar) - var(--lent)); scrollbar-width: auto; scrollbar-color: auto; }
 .tab-scroll .pane-tab { flex: none; max-width: 100%; }
 .tab-row > .tab-set > .tab-scroll:empty { min-width: 0; }
+/* A row too narrow for the panes' tabs and room for a tab past them, as a grid cell with heads hidden is: the scroller
+   takes only the room the panes' tabs leave, as wide as its tabs at most, down to that room, then the panes' tabs give
+   way, their labels cut short, down to 3em each. */
+.tab-row > .tab-set.tabs-scroll > .tab-scroll:not(:empty) { flex: 1 1 0; max-width: max-content; min-width: 7em; }
+.tab-row > .tab-set.tabs-scroll > .pane-tab { flex: 0 1 auto; min-width: 3em; display: inline-flex; align-items: center; overflow: hidden; }
+.tabs-scroll > .pane-tab .tab-word { min-width: 1.5em; overflow: hidden; text-overflow: ellipsis; }
 .tab-scroll::-webkit-scrollbar { height: var(--bar); }
 .tab-scroll::-webkit-scrollbar-track { background: transparent; }
 /* The thumb paints the scroller's color, which only its tabs' own colors hide: WebKit repaints a scrollbar when that
