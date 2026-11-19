@@ -2,7 +2,7 @@ import { can, type Card, conversationSubject, saidSubject, type Subject } from '
 import { type Brief, briefCss, briefHtml, briefKey, type BriefMarkdown, expandedSaid, openFolds, openTools, saidText, saidWhat, toolCallHtml, toolCallSettled, withWhole, withWholesRead } from '/lib/brief.js'
 import { addedActions } from '/lib/layout.js'
 import { fenceText, markdownCss, markdownHtml } from '/lib/markdown.js'
-import { copyTelling, drawPanel, type Mount, type RegionHandle, type Tab } from '/lib/view.js'
+import { copyTelling, morphPanel, type Mount, type RegionHandle, type Tab } from '/lib/view.js'
 import { domId } from '/lib/morph.js'
 import { esc } from '/lib/words.js'
 import { VIEWER_KEYS } from '/lib/viewer.js'
@@ -11,7 +11,9 @@ import { saidOf } from '../shared/brief.ts'
 /**
  * A worker's brief: its earlier sessions folded, then its session's conversations, each turn's prompt, Claude's steps
  * and its answer, the latest at the bottom, in the viewer's markdown. Read again as its conversations change and, while
- * it works, as it calls each tool; kept at the end while the viewer reads there. A tool call opened is read once it
+ * it works, as each event of its turn arrives; morphed on each draw, so what the viewer holds there (a selection, an
+ * answer shown in full, a call opened, where it scrolled, focus in what extensions draw) stays, and kept at the end
+ * while the viewer reads there. A tool call opened is read once it
  * ended, and again on each draw while it runs, drawn as last read meanwhile; a conversation's earlier turns are read
  * whole when asked for, and joined to each read's last turns of it. Each conversation's heading holds what extensions add to it (`conversation.head`). Each prompt
  * and answer drawn is a viewer subject on the page's bus (`said`), and holds the commands offered on it beside its copy
@@ -93,7 +95,7 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit, scop
       const added = board.adds[`conversation:${id}`]
       return added?.badges?.length || added?.actions?.length ? `<span id="${esc(domId(`${scope}/conv-head`, `conversation:${id}`))}" data-conversation-head="${esc(id)}" data-owned></span>` : ''
     }
-    drawPanel(body, briefHtml({ briefs: threads, agent: board.runtimes[card.runtime].label, said: markdownHtml, promptBy, open, expanded, markdown, working: card.status === 'working', adds, acts, openTools: opened, tools: (key) => tools.get(key), scope }), {})
+    morphPanel(body, briefHtml({ briefs: threads, agent: board.runtimes[card.runtime].label, said: markdownHtml, promptBy, open, expanded, markdown, working: card.status === 'working', adds, acts, openTools: opened, tools: (key) => tools.get(key), scope }))
     placeRegions()
     if (atEnd) el.scrollTop = el.scrollHeight
     for (const details of body.querySelectorAll<HTMLDetailsElement>('details[data-tool][open]')) readTool(details.dataset.tool!)
