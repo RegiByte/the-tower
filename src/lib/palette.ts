@@ -3,6 +3,8 @@ export {
   /** @provisional */ paletteEntries,
   /** @provisional */ rankingOf,
   /** @provisional */ rankPalette,
+  /** @provisional */ rankSpawnPick,
+  /** @provisional */ spawnPickEntries,
 } from '../shared/palette.ts'
 export type {
   /** @provisional */ Entry,

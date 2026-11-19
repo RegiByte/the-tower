@@ -2121,8 +2121,16 @@
           "since": "2.0",
           "stability": "provisional"
         },
+        "rankSpawnPick": {
+          "since": "2.23",
+          "stability": "provisional"
+        },
         "rankingOf": {
           "since": "2.0",
+          "stability": "provisional"
+        },
+        "spawnPickEntries": {
+          "since": "2.23",
           "stability": "provisional"
         },
         "subjectMenu": {
