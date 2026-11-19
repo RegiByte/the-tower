@@ -101,7 +101,9 @@ choice another window made for another region stays. The page reads its layout (
 the config's and its `renderer.json`'s) again on every board and every store event. An action is seen once the
 viewer runs it or it is drawn in place in a focused window ([`markSeen`](ref:hub/renderers/page/page.js#markSeen)).
 
-**Subject menus.** Every floor's sign, worker row and shown tab is a `<tower-menu-area>` with a ⋯ button: a
+**Subject menus.** Every floor's sign, worker row and shown tab is a `<tower-menu-area>` with a ⋯ button, a shown
+tab's only while it is open and inside it, before its close: the tab's `role=tab` button names the showing, and its
+icons, ⋯ and close sit beside that button in one `.shown-tab`, since a button holds no other ([`regions`](ref:hub/renderers/page/regions.js#regions)). A
 right-click, the context-menu key, a long press or the ⋯ opens the page's one `<tower-menu>`
 ([`subjectMenus`](ref:hub/renderers/page/subject-menus.js#subjectMenus)), filled from `subjectMenu` of `/lib/palette.js`
 as the board and the page's open views stand when it opens ([[command-palette]]). A line chosen runs by the runner of

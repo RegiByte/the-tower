@@ -276,17 +276,24 @@ export function regions(deps) {
       return `<button class="pane-tab ${on ? 'on' : ''}" role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="panel-${esc(t.key)}" ${tip} data-tab="${esc(t.key)}"><span class="tab-word">${esc(t.view.words.label)}</span>${tally}</button>`
     }
 
-    /** What a worker showed, as a tab: a link opens in a browser tab, anything else also opens out of the tower. @param {CardShown} s @param {boolean} on @param {string} key @param {string} panel */
+    /**
+     * What a worker showed, as a tab: a link opens in a browser tab, anything else also opens out of the tower. The tab is
+     * the `role=tab` button naming the showing, with its icons and close beside it in one `.shown-tab`; the open one also
+     * holds the ⋯ of its subject menu, a button of its own since a button holds no other.
+     * @param {CardShown} s @param {boolean} on @param {string} key @param {string} panel
+     */
     function shownTabHtml(s, on, key, panel) {
       const from = shownFrom(card.lineage, s)
       const what = `${card.callsign} showed ${s.target} · ${ago(Date.now() - s.at)} ago${from ? ` · in ${from.label}` : ''}`
-      const subject = shownSubject(card, s).key
-      return subjectAreaHtml('tab', subject, `<button class="pane-tab shown-tab ${on ? 'on' : ''}" role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="${panel}" data-tip="${esc(what)}" data-tab="${esc(key)}">` +
-        `<span class="shown-name">${s.kind === 'link' ? `${ICON.remote} ` : ''}${esc(shownTitle(s))}</span>${from ? `<small>${from.mark}</small>` : ''}` +
-        (on ? heldHtml('shown.tab', shownSubject(card, s), iconActionsHtml) : '') +
+      const subject = shownSubject(card, s)
+      return subjectAreaHtml('tab', subject.key, `<span class="pane-tab shown-tab ${on ? 'on' : ''}" data-tab="${esc(key)}">` +
+        `<button class="shown-pick" role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="${panel}" data-tip="${esc(what)}" data-tab="${esc(key)}">` +
+        `<span class="shown-name">${s.kind === 'link' ? `${ICON.remote} ` : ''}${esc(shownTitle(s))}</span>${from ? `<small>${from.mark}</small>` : ''}</button>` +
+        (on ? heldHtml('shown.tab', subject, iconActionsHtml) : '') +
         (on && s.kind !== 'link' ? `<span class="icon-btn" data-out="${esc(shownHref(s))}" aria-hidden="true" data-tip="open in a browser tab">${ICON.remote}</span>` : '') +
         (on && s.kind === 'file' ? fileSpansHtml(s.target) : '') +
-        `<span class="icon-btn" data-unshow="${esc(shownKey(s))}" aria-hidden="true" data-tip="close: it comes back if shown again">${ICON.close}</span></button>`)
+        (on ? subjectButtonHtml('tab', subject.key, `${shownTitle(s)}: menu`) : '') +
+        `<span class="icon-btn" data-unshow="${esc(shownKey(s))}" aria-hidden="true" data-tip="close: it comes back if shown again">${ICON.close}</span></span>`)
     }
 
     /**
@@ -390,13 +397,12 @@ export function regions(deps) {
       return /** @type {keyof typeof forms} */ (overflowOf(/** @type {Region & { overflows: Overflow[] }} */ (region), layout()[region.id]))
     }
 
-    /** What extensions add to the open showing (`shown.head`), after the tablist. @param {TabOf[]} all */
+    /** What extensions add to the open showing (`shown.head`), after the tablist: nothing when they add nothing. @param {TabOf[]} all */
     function shownAddsHtml(all) {
       const showing = all.find((t) => t.key === open)?.showing
       if (!showing) return ''
-      const subject = shownSubject(card, showing)
-      const menu = subjectButtonHtml('head', subject.key, `${shownTitle(showing)}: menu`)
-      return `<span class="shown-adds" role="group" aria-label="on ${esc(shownTitle(showing))}">${heldHtml('shown.head', subject, actionsHtml)}${menu}</span>`
+      const adds = heldHtml('shown.head', shownSubject(card, showing), actionsHtml)
+      return adds && `<span class="shown-adds" role="group" aria-label="on ${esc(shownTitle(showing))}">${adds}</span>`
     }
 
     /** The worker's tablist around `inner`, the tabs as form `form` lays them out. @param {keyof typeof forms} form @param {string} inner */
@@ -613,7 +619,7 @@ export function regions(deps) {
 
     strip.addEventListener('click', (e) => {
       const target = /** @type {Element} */ (e.target)
-      if (target.closest('[data-unshow], [data-out], [data-file-call], [data-added], .shown-adds')) return
+      if (target.closest('[data-unshow], [data-out], [data-file-call], [data-added], .shown-adds, tower-menu-button')) return
       const key = /** @type {HTMLElement | null} */ (target.closest('[data-tab]'))?.dataset.tab
       const t = key && tabsOf().find((t) => t.key === key)
       if (t) pick(t)
@@ -699,7 +705,7 @@ export function regions(deps) {
         queueMicrotask(() => {
           const term = mounted.get(t.key)?.hosted.terminal()
           if (term) term.focus()
-          else /** @type {HTMLElement | null} */ (strip.querySelector(`[data-tab="${CSS.escape(t.key)}"]`))?.focus()
+          else /** @type {HTMLElement | null} */ (strip.querySelector(`[role=tab][data-tab="${CSS.escape(t.key)}"]`))?.focus()
         })
         return true
       },
