@@ -37,7 +37,7 @@ const AT_END = 48
 /** A worker has a Brief tab wherever the board offers its brief: every worker, whatever its state. */
 export const tab: Tab = (_board, subject) => (can(subject.value as Card, 'brief') ? {} : undefined)
 
-export const mount: Mount = (host, { tower, board: first, subject: at, kit }) => {
+export const mount: Mount = (host, { tower, board: first, subject: at, kit, scope }) => {
   let board = first
   let subject = at
   let card = at.value as Card
@@ -90,7 +90,7 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
       const added = board.adds[`conversation:${id}`]
       return added?.badges?.length || added?.actions?.length ? `<span data-conversation-head="${id}"></span>` : ''
     }
-    drawPanel(body, briefHtml({ briefs: threads, agent: board.runtimes[card.runtime].label, said: markdownHtml, promptBy, open, expanded, markdown, working: card.status === 'working', adds, acts, openTools: opened, tools: (key) => tools.get(key) }), {})
+    drawPanel(body, briefHtml({ briefs: threads, agent: board.runtimes[card.runtime].label, said: markdownHtml, promptBy, open, expanded, markdown, working: card.status === 'working', adds, acts, openTools: opened, tools: (key) => tools.get(key), scope }), {})
     regions = [...body.querySelectorAll<HTMLElement>('[data-conversation-head]')].flatMap((slot) => {
       const conv = card.conversations.find((v) => v.id === slot.dataset.conversationHead)
       if (!conv) return []
