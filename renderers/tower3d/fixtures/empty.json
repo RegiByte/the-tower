@@ -34,6 +34,7 @@
           "send-home": [
             "Alt+W"
           ],
+          "spawn-pick": [],
           "pane-terminal": [
             "Ctrl+Shift+1"
           ],
