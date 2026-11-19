@@ -132,8 +132,8 @@ renderer can draw the brief alike, inline.
   between its prompt and its answer: Claude's words as quiet text, a message it sent as a bubble to its recipient, a
   tool call as a `<details>` line that, opened, the renderer reads once and draws with
   [`toolCallHtml`](ref:hub/src/shared/brief.ts#toolCallHtml), kept once it ended
-  ([`toolCallSettled`](ref:hub/src/shared/brief.ts#toolCallSettled): one still running is read again as it is drawn
-  open); a run of five or more calls folds to its count, naming
+  ([`toolCallSettled`](ref:hub/src/shared/brief.ts#toolCallSettled): one still running is read again after each draw
+  while it is open); a run of five or more calls folds to its count, naming
   those that failed, were denied or stopped. "earlier turns" on a conversation reads it whole, drawn in place
   ([`withWhole`](ref:hub/src/shared/brief.ts#withWhole)) and joined to each later read's last turns of it
   ([`joinedWholes`](ref:hub/src/shared/brief.ts#joinedWholes)): a turn once past never changes, so its turns before
