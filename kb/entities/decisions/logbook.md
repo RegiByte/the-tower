@@ -11,6 +11,8 @@
     "hub/renderers/tower3d/src/desk.ts#dressBinder",
     "hub/renderers/tower3d/src/screens.ts#monitorOf",
     "hub/renderers/tower3d/src/ui.ts#logbookHtml",
+    "hub/renderers/tower3d/src/panels.ts#drawLogbookBrief",
+    "hub/renderers/tower3d/src/panels.ts#readTool",
     "hub/renderers/tower3d/src/ui.ts#sessionsHtml",
     "hub/renderers/tower3d/src/ui.ts#logbookTabsHtml",
     "hub/renderers/tower3d/src/panels.ts#logbookTab",
@@ -76,7 +78,12 @@ nothing is stored or added to the core ([[renderer-is-disposable]]).
   reader ([`openLogbook`](ref:hub/renderers/tower3d/src/panels.ts#openLogbook)) on two tabs
   ([`logbookTabsHtml`](ref:hub/renderers/tower3d/src/ui.ts#logbookTabsHtml), [`logbookTab`](ref:hub/renderers/tower3d/src/panels.ts#logbookTab)):
   Logbook, the brief, which it opens on, and Screen, the session chips over a session's last screen, mounted only while
-  it shows. The archive panel's rows open the same reader, and the keymap's `pane-*` commands switch its tabs
+  it shows. The reader's brief is drawn only while its tab shows, and morphed
+  ([`drawLogbookBrief`](ref:hub/renderers/tower3d/src/panels.ts#drawLogbookBrief)), so a selection, an answer shown in
+  full, a call opened and where you scrolled stay as turns and calls arrive; after each draw, each call drawn open that
+  hadn't ended is read again, one read per call at a time ([`readTool`](ref:hub/renderers/tower3d/src/panels.ts#readTool)).
+  The desk's brief and the reader's draw their ids under their container's scope, `desk` and `logbook`, since the desk's
+  is only hidden when you leave it and both can hold the same card's brief. The archive panel's rows open the same reader, and the keymap's `pane-*` commands switch its tabs
   ([[keymap]]).
 
 **Alternatives considered.**
