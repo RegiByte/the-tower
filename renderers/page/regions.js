@@ -650,7 +650,7 @@ export function regions(deps) {
       const target = /** @type {Element} */ (e.target)
       const line = /** @type {HTMLElement | null} */ (target.closest('[data-menu-line]'))
       if (line) return deps.runLine(/** @type {string} */ (/** @type {HTMLElement} */ (line.closest('tower-menu-area')).getAttribute('payload')), /** @type {string} */ (line.dataset.menuLine))
-      if (target.closest('[data-unshow], [data-out], [data-file-call], [data-added], .shown-adds, tower-menu-button')) return
+      if (target.closest('[data-unshow], [data-file-call], [data-added], .shown-adds, tower-menu-button')) return
       const key = /** @type {HTMLElement | null} */ (target.closest('[data-tab]'))?.dataset.tab
       const t = key && tabsOf().find((t) => t.key === key)
       if (t) pick(t)
