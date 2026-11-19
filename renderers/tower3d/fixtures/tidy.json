@@ -31,6 +31,9 @@
             "?"
           ],
           "spawn": [],
+          "send-home": [
+            "Alt+W"
+          ],
           "pane-terminal": [
             "Ctrl+Shift+1"
           ],

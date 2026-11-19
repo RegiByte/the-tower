@@ -58,7 +58,8 @@ A worker hires others with `tower hire`, each in its own git worktree when the f
 floor's `hiring` limits. Hires are listed under the worker that hired them (`tower agents`), report back to it, and
 are sent home with `tower home <CALLSIGN>` when their work is in. Asked for work in another project, a worker hires
 on that floor with `tower hire … floor <id>`: the hire works there and still reports to it. From the tower page, the
-`+` on a floor starts a worker, and a kept draft can start one too.
+`+` on a floor starts a worker, and a kept draft can start one too. Send home on a worker (⌥W for the selected one,
+asked first) ends it and everyone under it that runs; each can be resumed.
 
 A worker's callsign is drawn at random unless you type one as it starts: the New worker dialog's Callsign,
 `tower hire … callsign ZECA` or `tower spawn <project> --callsign ZECA`. A name typed without a number gets one
