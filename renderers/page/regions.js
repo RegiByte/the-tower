@@ -669,8 +669,15 @@ export function regions(deps) {
       if (target.closest('[data-unshow], [data-file-call], [data-added], .shown-adds, tower-menu-button')) return
       const key = /** @type {HTMLElement | null} */ (target.closest('[data-tab]'))?.dataset.tab
       const t = key && tabsOf().find((t) => t.key === key)
-      if (t) pick(t)
+      if (t) pick(t), queueMicrotask(() => focusTerminalOf(t))
     })
+
+    /** Focuses tab `t`'s terminal, true when it has one: a microtask after `pick`, once its panel is open. @param {TabOf} t */
+    const focusTerminalOf = (t) => {
+      const term = mounted.get(t.key)?.hosted.terminal()
+      term?.focus()
+      return !!term
+    }
 
     /** The tabs move as the ARIA tabs pattern has it: ← → Home End go along the row and open the tab they reach. */
     strip.addEventListener('keydown', (e) => {
@@ -749,11 +756,7 @@ export function regions(deps) {
         const t = tabsOf().find((t) => t.view.id === id)
         if (!t) return false
         pick(t)
-        queueMicrotask(() => {
-          const term = mounted.get(t.key)?.hosted.terminal()
-          if (term) term.focus()
-          else /** @type {HTMLElement | null} */ (strip.querySelector(`[role=tab][data-tab="${CSS.escape(t.key)}"]`))?.focus()
-        })
+        queueMicrotask(() => focusTerminalOf(t) || /** @type {HTMLElement | null} */ (strip.querySelector(`[role=tab][data-tab="${CSS.escape(t.key)}"]`))?.focus())
         return true
       },
       /** Focuses the open tab's terminal, if it has one, as the terminal focuses itself when it first opens. */
