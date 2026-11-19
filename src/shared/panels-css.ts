@@ -6,8 +6,9 @@ import { highlightCss } from './highlight.ts'
  *
  * Also a worker's `.tab-row`, on one line: its tabs (any of them in a `.tab-set`, which lays out as if absent), its
  * showings' tabs in a `.shown-tabs` strip that scrolls sideways, faded at an edge past which more hide, an `.activity`
- * line down to 8em and its `.moves`. A `.shown-tab` is never wider than the strip; its first child is its `.shown-name`,
- * capped at 16em, the selected one's never under 6em beside its controls.
+ * line down to 8em and its `.moves`. A `.shown-tab` is never wider than the strip; a first child that is its `.shown-name`
+ * is capped at 16em, the selected one's never under 6em beside its controls. The tower page draws its own shown tab over
+ * these: its `role=tab` button first, the name inside it, the open one's name down to 2em.
  *
  * Also an extension's `.badge` beside a subject, toned by an attention class (`.ready`, `.needs`, …), and a row of a
  * subject's `.badges`.
