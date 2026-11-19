@@ -10,6 +10,7 @@
   "refs": [
     "hub/src/shared/markdown.ts",
     "hub/src/shared/markdown.ts#markdownHtml",
+    "hub/src/shared/markdown.ts#markdownKept",
     "hub/src/shared/markdown.ts#documentHtml",
     "hub/src/shared/markdown.ts#safeHref",
     "hub/src/shared/markdown.ts#imagePath",
@@ -58,7 +59,9 @@ would reach for a markdown library's `parse` and draw it inline.
   [`safeHref`](ref:hub/src/shared/markdown.ts#safeHref) allows it and otherwise draws its words, and the `image`
   renderer keeps only an image that resolves to the tower's own origin (a path), drawing any other as a link to it.
   Markdown syntax emits only a fixed set of tags, so with raw HTML escaped and URLs allowlisted the output is safe by
-  construction, in any element.
+  construction, in any element. [`markdownKept`](ref:hub/src/shared/markdown.ts#markdownKept) (since 2.22) is the
+  same function remembered for the 500 texts the page drew most lately: a brief at work is drawn on every event, its
+  words mostly the same, and the page's Brief and Tower 3D's logbook draw through it.
 - [`documentHtml`](ref:hub/src/shared/markdown.ts#documentHtml), for a file a worker showed or a shelf keeps: raw HTML
   stays (the user's documents may use it), relative images are read beside the file
   ([`imagePath`](ref:hub/src/shared/markdown.ts#imagePath)), and markdown links obey

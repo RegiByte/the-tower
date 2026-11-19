@@ -1,7 +1,7 @@
 import { can, type Card, conversationSubject, saidSubject, type Subject } from '/lib/board.js'
 import { type Brief, briefCss, briefHtml, briefKey, type BriefMarkdown, expandedSaid, openFolds, openTools, saidText, saidWhat, toolCallHtml, toolCallSettled, withWhole, withWholesRead } from '/lib/brief.js'
 import { addedActions } from '/lib/layout.js'
-import { fenceText, markdownCss, markdownHtml } from '/lib/markdown.js'
+import { fenceText, markdownCss, markdownKept } from '/lib/markdown.js'
 import { copyTelling, morphPanel, type Mount, type RegionHandle, type Tab } from '/lib/view.js'
 import { domId } from '/lib/morph.js'
 import { esc } from '/lib/words.js'
@@ -34,20 +34,6 @@ const CSS = `:where([data-view="${ID}"]) {
     scrollbar-width: thin; scrollbar-color: var(--line) transparent; scrollbar-gutter: stable; }
   & .brief-foot > .view-root { max-width: 980px; margin: 0 auto; }
 }`
-
-/** How many texts' markdown the page keeps drawn: a brief at work is drawn on every event, its words mostly the same. */
-const MARKDOWN_KEPT = 500
-const markdowns = new Map<string, string>()
-
-/** A text's markdown as html (`markdownHtml`, a pure function of the text), kept for the texts drawn most lately. */
-function markdownOf(text: string) {
-  const kept = markdowns.get(text)
-  markdowns.delete(text)
-  const html = kept ?? markdownHtml(text)
-  markdowns.set(text, html)
-  if (markdowns.size > MARKDOWN_KEPT) markdowns.delete(markdowns.keys().next().value!)
-  return html
-}
 
 /** How near its end, in pixels, the viewer reads for a redraw to keep the brief there. */
 const AT_END = 48
@@ -109,7 +95,7 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit, scop
       const added = board.adds[`conversation:${id}`]
       return added?.badges?.length || added?.actions?.length ? `<span id="${esc(domId(`${scope}/conv-head`, `${session}:conversation:${id}`))}" data-conversation-head="${esc(id)}" data-owned></span>` : ''
     }
-    morphPanel(body, briefHtml({ briefs: threads, agent: board.runtimes[card.runtime].label, said: markdownOf, promptBy, open, expanded, markdown, working: card.status === 'working', adds, acts, openTools: opened, tools: (key) => tools.get(key), scope }))
+    morphPanel(body, briefHtml({ briefs: threads, agent: board.runtimes[card.runtime].label, said: markdownKept, promptBy, open, expanded, markdown, working: card.status === 'working', adds, acts, openTools: opened, tools: (key) => tools.get(key), scope }))
     placeRegions()
     if (atEnd) el.scrollTop = el.scrollHeight
     for (const details of body.querySelectorAll<HTMLDetailsElement>('details[data-tool][open]')) readTool(details.dataset.tool!)

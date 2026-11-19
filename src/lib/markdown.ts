@@ -5,6 +5,7 @@ export {
   /** @provisional */ imagePath,
   markdownCss,
   markdownHtml,
+  markdownKept,
   /** @provisional */ relativeHref,
   /** @provisional */ sectionLabels,
   /** @provisional */ sectionsHtml,

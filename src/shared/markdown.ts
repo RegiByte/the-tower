@@ -75,6 +75,20 @@ const documents = new Marked({
 /** Words nobody vetted as html safe in any element: raw HTML escaped, links `safeHref` opening a tab of their own, remote images as links to them. */
 export const markdownHtml = (text: string) => words.parse(text, { async: false })
 
+/** How many texts' markdown a page keeps drawn: a brief at work is drawn on every event, its words mostly the same. */
+const MARKDOWN_KEPT = 500
+const markdowns = new Map<string, string>()
+
+/** A text as `markdownHtml` draws it, a pure function of the text, kept for the texts this page drew most lately. @since 2.22 */
+export function markdownKept(text: string) {
+  const kept = markdowns.get(text)
+  markdowns.delete(text)
+  const html = kept ?? markdownHtml(text)
+  markdowns.set(text, html)
+  if (markdowns.size > MARKDOWN_KEPT) markdowns.delete(markdowns.keys().next().value!)
+  return html
+}
+
 /** A markdown file served at `url` as html for a frame without scripts: raw HTML kept as written, markdown links `safeHref`, relative images read beside it. */
 export function documentHtml(text: string, url: string) {
   const tokens = documents.lexer(text)
