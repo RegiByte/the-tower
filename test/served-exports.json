@@ -2066,6 +2066,9 @@
         "markdownHtml": {
           "since": "2.0"
         },
+        "markdownKept": {
+          "since": "2.21"
+        },
         "relativeHref": {
           "since": "2.0",
           "stability": "provisional"
