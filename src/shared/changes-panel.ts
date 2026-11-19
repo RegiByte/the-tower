@@ -16,6 +16,7 @@ import { changedFiles, fileKey, fileRows, isFolded, isViewed, livePick, pickRang
 import { fileButtonsHtml } from './file-acts.ts'
 import { failedHtml, settledHtml } from './panel-html.ts'
 import { domId } from './dom-id.ts'
+import { comboboxHtml, type ComboboxOption } from './elements.ts'
 
 /**
  * What every Changes panel draws from: `folds` are the files folded or unfolded against what their viewed mark says, by
@@ -173,7 +174,7 @@ export function changesPanelHtml(v: PanelView) {
   const layouts = `<div class="seg" role="group" aria-label="diff layout">${DIFF_LAYOUTS.map((l) =>
     `<button type="button" class="${l === v.layout ? 'on' : ''}" data-changes-layout="${l}" aria-pressed="${l === v.layout}" data-tip="${esc(DIFF_LAYOUT_MEANS[l])}">${DIFF_LAYOUT_LABEL[l]}</button>`).join('')}</div>`
   const head = `<div class="changes-head"><span><b>${viewedCount(read).viewed} / ${files.length}</b> files viewed</span><span>${countsHtml(sum('added'), sum('removed'))}</span>
-      <span>read <span translate="no" data-since="${read.at}"></span> ago</span>${scopeHtml(read.repos, v.scope)}${layouts}<button type="button" class="tree-toggle ${v.tree ? 'on' : ''}" data-changes-tree aria-pressed="${v.tree}" data-tip="${v.tree ? 'hide' : 'show'} the changed files as a tree beside the diffs">${ICON.sidebar} Files</button><button data-changes-read>${ICON.resume} Read again</button></div>`
+      <span>read <span translate="no" data-since="${read.at}"></span> ago</span>${scopeHtml(v, read.repos)}${layouts}<button type="button" class="tree-toggle ${v.tree ? 'on' : ''}" data-changes-tree aria-pressed="${v.tree}" data-tip="${v.tree ? 'hide' : 'show'} the changed files as a tree beside the diffs">${ICON.sidebar} Files</button><button data-changes-read>${ICON.resume} Read again</button></div>`
   const commit = isCommitScope(v.scope)
   const pickable = v.pickable && !commit
   const repos = commit ? read.repos.filter((r) => r.commits.some((c) => c.sha === r.shows)) : read.repos
@@ -243,19 +244,21 @@ function treeHtml(read: ChangesRead, repos: RepoChanges[], folds: ReadonlySet<st
 }
 
 /**
- * The picker of what to compare: all since the base, what isn't committed, or one of the commits since the base, newest
- * first (each under its repo's name when more than one repo has some). Drawn only while there are commits: without
- * them, all is what isn't committed.
+ * The picker of what to compare, a `<tower-combobox>`: all since the base, what isn't committed, or one of the commits
+ * since the base, newest first (each under its repo's name when more than one repo has some). Drawn only while there
+ * are commits: without them, all is what isn't committed. It is named by the words beside it, which only a screen
+ * reader reads; the element it is in, marked `data-changes-scope`, hears its `valuechange`.
  */
-function scopeHtml(repos: RepoChanges[], scope: ChangesScope) {
+function scopeHtml(v: ChangesBase, repos: RepoChanges[]) {
   const withCommits = repos.filter((r) => r.commits.length)
   if (!withCommits.length) return ''
-  const option = (value: string, label: string, tip?: string) =>
-    `<option value="${esc(value)}" ${value === scope ? 'selected' : ''}${tip ? ` title="${esc(tip)}"` : ''}>${esc(label)}</option>`
-  const commits = withCommits.map((r) => `<optgroup label="${esc(withCommits.length > 1 ? `${repoName(r.dir)}: commits` : 'commits')}">${
-    r.commits.map((c) => option(c.sha, `${c.sha.slice(0, 7)} ${c.subject}`, c.at)).join('')}</optgroup>`).join('')
-  return `<select class="scope" data-changes-scope aria-label="compare" data-tip="what to compare: all since the base, what isn't committed, or one commit">${
-    option('all', 'All changes')}${option('uncommitted', 'Uncommitted')}${commits}</select>`
+  const commits: ComboboxOption[] = withCommits.map((r) => ({
+    type: 'group', label: withCommits.length > 1 ? `${repoName(r.dir)}: commits` : 'commits',
+    items: r.commits.map((c) => ({ value: c.sha, label: `${c.sha.slice(0, 7)} ${c.subject}` })),
+  }))
+  const label = domId(`${v.mount}/scope-label`, `card:${v.card}`)
+  return `<span class="scope" data-changes-scope data-tip="what to compare: all since the base, what isn't committed, or one commit"><span class="scope-label" id="${esc(label)}">compare</span>${
+    comboboxHtml({ place: `${v.mount}/scope`, name: `card:${v.card}`, labelledby: label, value: v.scope, empty: 'Nothing matches', options: [{ value: 'all', label: 'All changes' }, { value: 'uncommitted', label: 'Uncommitted' }, ...commits] })}</span>`
 }
 
 /** `manyRepos`: more than one repo has files, so each file's header names its repo. */

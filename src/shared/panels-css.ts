@@ -53,8 +53,9 @@ a.badge:hover { background: color-mix(in oklab, var(--c) 12%, transparent); }
 .changes-head .seg button:hover { color: var(--ink); }
 .changes-head .seg button.on { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px #0003; }
 .changes-head > button { margin-left: 0; }
-.changes-head select.scope { max-width: 280px; margin-left: auto; font: var(--fs-s) var(--ui); background: var(--panel-2); color: var(--ink); border: 1px solid var(--line-strong); border-radius: var(--radius); }
-.changes-head select.scope + .seg { margin-left: 0; }
+.changes-head .scope { flex: 0 1 280px; min-width: 9rem; margin-left: auto; font: var(--fs-s) var(--ui); }
+.changes-head .scope + .seg { margin-left: 0; }
+.changes-head .scope-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 /* The tree beside the diffs, stuck below the head and scrolling on its own: the renderer's element sizes it, as a size container.
    Its right padding keeps an overlay scrollbar (macOS) off the checks and the separators; the gutter does for a classic one. */
 /* The renderer's bottom padding would cut the tree short of the element's edge: the diffs take it instead. */

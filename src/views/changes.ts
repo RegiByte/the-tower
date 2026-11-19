@@ -213,9 +213,9 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, scope: m
     if (target.closest('[data-changes-read]')) return (changeReads.dispatch({ type: 'retry', id: card.id }), draw())
   })
 
-  host.addEventListener('change', (e) => {
-    const to = (e.target as Element).closest<HTMLSelectElement>('[data-changes-scope]')?.value
-    if (to) compare(to as ChangesScope)
+  host.addEventListener('valuechange', (e) => {
+    const to = (e as CustomEvent<{ value: string | null }>).detail.value
+    if (to && (e.target as Element).closest('[data-changes-scope]')) compare(to as ChangesScope)
   })
 
   watchPickDrag(el, {
