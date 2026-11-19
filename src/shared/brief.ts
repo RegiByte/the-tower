@@ -104,8 +104,11 @@ export type BriefView = {
   expanded?: ReadonlySet<string>
   markdown?: BriefMarkdown
   working?: boolean
-  /** What a renderer draws on a conversation's heading, by the conversation's id: html, empty for none. */
-  adds?: (conversation: string) => string
+  /**
+   * What a renderer draws on a conversation's heading, by the conversation's id and the session it is drawn in (a
+   * resumed conversation is drawn in each session that holds its turns): html, empty for none. @since 2.21 the session
+   */
+  adds?: (conversation: string, session: string) => string
   /** What a renderer draws beside a prompt's or an answer's copy, by its key (`saidOf`): html, empty for none. @since 1.118 */
   acts?: (said: string) => string
   /** The tool calls and runs of them the viewer opened, by key (`openTools`). @since 1.133 */
@@ -337,15 +340,15 @@ const refName = (ref: SessionRef, parts: BriefPart[]) => {
 }
 
 /** What a renderer drew for a conversation, on its heading. */
-const addsHtml = (conversation: string, d: Drawing) => {
-  const adds = d.adds?.(conversation)
+const addsHtml = (t: Brief, d: Drawing) => {
+  const adds = d.adds?.(t.id, t.session.id)
   return adds ? ` <span class="brief-adds">${adds}</span>` : ''
 }
 
 /** A session's conversations in order, each with its last turns, oldest first; `promptBy` names the latest prompt the user's side gave. */
 const conversationsHtml = (part: BriefPart, parts: BriefPart[], promptBy: BriefView['promptBy'], d: Drawing) =>
   part.threads.map((t, i) => `<section class="brief-conv"${idAttr(d, 'conv', conversationKey(t))}>
-    <h4 class="eyebrow">conversation ${i + 1} of ${part.threads.length} · ${esc(sessionWhen(part.session.startedAt + t.at * 1000))}${t.resumes ? ` · resumes ${esc(refName(t.resumes, parts))}` : ''}${t.resumedBy ? ` · resumed by ${esc(refName(t.resumedBy, parts))}` : ''}${addsHtml(t.id, d)}</h4>
+    <h4 class="eyebrow">conversation ${i + 1} of ${part.threads.length} · ${esc(sessionWhen(part.session.startedAt + t.at * 1000))}${t.resumes ? ` · resumes ${esc(refName(t.resumes, parts))}` : ''}${t.resumedBy ? ` · resumed by ${esc(refName(t.resumedBy, parts))}` : ''}${addsHtml(t, d)}</h4>
     ${t.earlier ? `<button type="button" class="earlier" data-brief-earlier="${esc(conversationKey(t))}">earlier turns</button>` : ''}
     ${t.turns.length ? t.turns.map((turn, j) => turnHtml(t, turn, j === t.turns.findLastIndex((u) => !u.from) ? promptBy(t.id) : undefined, d)).join('') : '<p class="none">nothing asked yet</p>'}</section>`).join('')
 
