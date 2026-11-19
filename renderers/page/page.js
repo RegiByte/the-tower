@@ -1735,7 +1735,16 @@ function run(id, e) {
   if (id === 'shell-here') return e.repeat || shellHere()
   if (id === 'home' && !isHome(view())) return (goHome(), true)
   if (id === 'spawn') return spawnIn(focusedSubject())
+  if (id === 'send-home') return e.repeat || sendHomeSelected()
   return false
+}
+
+/** Sends the selected worker home, asked first, as its Send home button does; a worker that doesn't offer it is said so. */
+function sendHomeSelected() {
+  const c = selected() && findCard(selected())
+  if (!c) return false
+  if (!can(c, 'send-home')) return (toast(noLongerOffered(c.callsign, 'send-home')), true)
+  return (void sendHome({ key: `send-home ${c.id}`, marks: '[data-send-home]' }, c), true)
 }
 
 /**

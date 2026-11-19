@@ -42,7 +42,7 @@ export const VERB_WORDS: Record<VerbId, VerbWords> = {
   'card/reap': { label: 'End all', hint: 'End every process it left running.', destructive: true, api: 'reap' },
   'card/kill': { label: 'Kill', hint: 'End its session; its conversation can be resumed.', destructive: true, api: 'kill' },
   'card/let-go': { label: 'Let go', hint: 'Take it off duty without resuming it; its conversation stays in the archive.', destructive: true, api: 'let-go' },
-  'card/send-home': { label: 'Send home', hint: 'End it and every worker under it that runs; each can be resumed.', destructive: true, api: 'kill' },
+  'card/send-home': { label: 'Send home', hint: 'End it and every worker under it that runs; each can be resumed.', destructive: true, api: 'kill', command: 'send-home' },
   'floor/spawn': { label: 'New worker', hint: 'Start a worker on this floor, from the new-worker form.', api: 'spawn' },
   'floor/cut': { label: 'New worker in a worktree', hint: 'Start a worker in a new worktree of every repo of the floor.', api: 'spawn' },
   'floor/shell': { label: 'New shell', hint: "A login shell in the floor's hub; it keeps running after the page closes.", api: 'shell/spawn' },
