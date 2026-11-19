@@ -125,10 +125,13 @@ export const RELOAD_ENTRY: Entry = {
 const UNLISTED: ReadonlySet<VerbId> = new Set(['card/submit', 'card/prompt', 'card/kill', 'floor/cut'])
 
 /**
- * Commands only a terminal or a text field runs, the palette's own, `spawn`, which each floor's entry runs, and
- * `send-home`, which the selected worker's own entry runs while it offers it, are not listed in it.
+ * Global commands another entry runs, so the palette doesn't list them as commands: the palette's own, `spawn` by each
+ * floor's entry, `send-home` by the selected worker's own entry while it offers it.
  */
-const listedCommand = (id: string, scope: string) => scope === 'global' && id !== 'palette' && id !== 'spawn' && id !== 'send-home'
+const RUN_ELSEWHERE: ReadonlySet<string> = new Set(['palette', 'spawn', 'send-home'])
+
+/** Commands only a terminal or a text field runs, and those another entry runs, are not listed in it. */
+const listedCommand = (id: string, scope: string) => scope === 'global' && !RUN_ELSEWHERE.has(id)
 
 const PANE_COMMANDS: ReadonlySet<string> = new Set(COMMANDS.filter((c) => c.group === 'Panes').map((c) => c.id))
 
