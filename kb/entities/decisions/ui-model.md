@@ -192,9 +192,11 @@ and a framed document's section are the same thing.
   view the layout picks stays mounted for as long as the page is open, whatever the main pane shows, so an extension
   can keep something in sight or play it. The page paints it only when a view draws it
   ([`paintStrip`](ref:hub/renderers/page/page.js#paintStrip)). `floor.trays` is a `row` region on each collection of an
-  open floor ([[collection-trays]]): the region moves into the sidebar's placeholder per collection a host kept mounted
-  by the collection's key through redraws, closed when the collection leaves the board or its pick changes, so a press
-  that went down before the board arrived still clicks its control. A row region's layout `order` also places its rows:
+  open floor ([[collection-trays]]): the sidebar draws a slot per collection, owned and with an id by its key
+  (`tray:collection:<f>/<c>`, the strip's `strip:board`), and the region mounts in it a host kept by the collection's
+  key through redraws, closed when the collection leaves the board or its pick changes; a morph keeps the slot with
+  its host, so a press that went down before the board arrived still clicks its control
+  ([`rows`](ref:hub/renderers/page/regions.js#rows)). A row region's layout `order` also places its rows:
   the page's `renderer.json` orders `drafts/tray`, `reviews/tray` and `policies/tray` first, its own trays after.
   [`tower/tray`](ref:hub/src/views/tray.ts#mount) draws any collection
   ([`mountKeptTray`](ref:hub/src/shared/items.ts#mountKeptTray)); the drafts, reviews and policies extensions draw

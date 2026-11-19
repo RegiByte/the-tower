@@ -4,6 +4,7 @@ import { subjectAreaHtml, subjectButtonHtml } from '/lib/elements.js'
 import { heldActions, shownKey, shownTitle } from '/lib/cards.js'
 import { addedActions, offeredIn, ordered, overflowOf, paneShows, pickView, shownOf } from '/lib/layout.js'
 import { panesOf } from '/lib/keys.js'
+import { domId } from '/lib/morph.js'
 import { menuPins, subjectMenu } from '/lib/palette.js'
 import { mountTermView } from '/lib/terminal.js'
 import { fileSpansHtml, ICON, keyedTip, viewHost } from '/lib/view.js'
@@ -845,15 +846,16 @@ export function regions(deps) {
   }
 
   /**
-   * A region the page draws once for each of many subjects inside a list it paints whole (`floor.trays`: one row per
+   * A region the page draws once for each of many subjects inside a list it redraws whole (`floor.trays`: one row per
    * collection of a floor). Each subject's view, the one the layout picks among those the region offers, lives in a
-   * host of its own, kept mounted while its subject stands: a paint writes `slotHtml` where it goes, and `place` moves
-   * the host there, updated. A host no paint places (its floor folded) stays mounted unseen; one whose subject left
-   * the board, or whose pick changed, is closed. The layout's `order` also places the rows: those drawn by a view it
-   * names first, in its order, the rest after in theirs.
-   * @param {string} id
+   * host of its own, kept mounted while its subject stands: a paint writes `slotHtml` where it goes, an owned slot
+   * whose id is `domId(place, <subject key>)`, so a morph keeps it with its host, and `place` puts the host in it,
+   * updated. A host no paint places (its floor folded) stays mounted unseen; one whose subject left the board, or whose
+   * pick changed, is closed. The layout's `order` also places the rows: those drawn by a view it names first, in its
+   * order, the rest after in theirs.
+   * @param {string} id @param {string} place
    */
-  function rows(id) {
+  function rows(id, place) {
     /** @type {Map<string, { view: string | undefined, el: HTMLElement, hosted: Hosted | undefined }>} */
     const held = new Map()
     const region = () => /** @type {Region} */ (declared().find((r) => r.id === id))
@@ -898,24 +900,13 @@ export function regions(deps) {
       /** Whether a view the region offers draws `subject`. @param {Subject} subject */
       draws: (subject) => pick(subject)?.module !== undefined,
       /** Where a paint puts `subject`'s row. @param {Subject} subject */
-      slotHtml: (subject) => `<div data-row-of="${esc(id)}" data-row="${esc(subject.key)}"></div>`,
-      /** Moves each row into the place a paint of `root` left for it, and closes those whose subject left the board. @param {HTMLElement} root */
+      slotHtml: (subject) => `<div class="row-slot" id="${esc(domId(place, subject.key))}" data-owned data-row-of="${esc(id)}" data-row="${esc(subject.key)}"></div>`,
+      /** Puts each row, updated, in the slot a paint of `root` left for it, and closes those whose subject left the board. @param {HTMLElement} root */
       place(root) {
         for (const slot of /** @type {NodeListOf<HTMLElement>} */ (root.querySelectorAll(`[data-row-of="${CSS.escape(id)}"]`))) {
           const subject = subjectOf(/** @type {string} */ (slot.dataset.row))
-          if (subject) slot.replaceWith(hostOf(subject))
-        }
-        for (const key of [...held.keys()]) if (!subjectOf(key)) drop(key)
-      },
-      /**
-       * Updates the rows in `root` where they stand, when its paint wrote nothing new: one whose pick changed is mounted
-       * afresh in its place. Those whose subject left the board are closed. @param {HTMLElement} root
-       */
-      refresh(root) {
-        for (const el of /** @type {NodeListOf<HTMLElement>} */ (root.querySelectorAll(`.region-row[data-region="${CSS.escape(id)}"]`))) {
-          const subject = subjectOf(/** @type {string} */ (el.dataset.subject))
-          const now = subject && hostOf(subject)
-          if (now && now !== el) el.replaceWith(now)
+          const host = subject && hostOf(subject)
+          if (host && host.parentElement !== slot) slot.replaceChildren(host)
         }
         for (const key of [...held.keys()]) if (!subjectOf(key)) drop(key)
       },
