@@ -25,8 +25,9 @@ every other key, and reach every renderer the way `user.name` does.
   open dialog). A letter or digit in a chord is the physical key, so ⌥'s composed characters on a Mac don't matter;
   another character is matched by what it types, and Alt with a character is refused.
   A command may have no default chord: `spawn`, the new-worker form on the floor or the draft in focus, is what a view
-  runs through `kit.run` and the config may bind; the `?` sheet lists only commands with chords, and the palette
-  leaves `spawn` to each floor's own entry.
+  runs through `kit.run` and the config may bind; so is `spawn-pick`, the palette over the floors alone
+  ([[command-palette]]), since a browser keeps ⌘N and ⌘⇧N for its windows. The `?` sheet lists only commands with
+  chords, and the palette leaves `spawn` to each floor's own entry.
 - The config's `keys` maps an id to a chord, a list or `null`, replacing the defaults.
   [`keysProblems`](ref:hub/src/shared/keymap.ts#keysProblems) is the check: bad syntax and one chord on two commands
   that can fire in the same place fail, an unknown id warns, and an id the keymap no longer has (`pane-reviews`,

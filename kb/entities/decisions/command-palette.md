@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-21",
-  "reviewed": "2026-11-18",
-  "refs": ["hub/src/shared/palette.ts#paletteEntries", "hub/src/shared/palette.ts#addedEntries", "hub/src/shared/adds.ts#unboundCommands", "hub/src/shared/palette.ts#rankPalette", "hub/src/shared/palette.ts#WEIGHTS", "hub/src/shared/palette.ts#matchScore", "hub/src/shared/waits.ts#heededWaits", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/renderers/page/palette.js#palette", "hub/renderers/page/page.js#doPick", "hub/renderers/page/page.js#runAddedAt", "hub/test/palette.test.ts"]
+  "reviewed": "2026-11-19",
+  "refs": ["hub/src/shared/palette.ts#paletteEntries", "hub/src/shared/palette.ts#addedEntries", "hub/src/shared/adds.ts#unboundCommands", "hub/src/shared/palette.ts#rankPalette", "hub/src/shared/palette.ts#spawnPickEntries", "hub/src/shared/palette.ts#rankSpawnPick", "hub/src/shared/palette.ts#WEIGHTS", "hub/src/shared/palette.ts#matchScore", "hub/src/shared/waits.ts#heededWaits", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/renderers/page/palette.js#palette", "hub/renderers/page/page.js#doPick", "hub/renderers/page/page.js#runAddedAt", "hub/test/palette.test.ts"]
 }
 ---
 **Problem.** The tower's capabilities were reachable only by the mouse, by chords nobody had learned yet, or by tips
@@ -71,6 +71,13 @@ same palette, and only the drawing is a renderer's.
   an extension's action runs it through the handler its button runs
   ([`runAddedAt`](ref:hub/renderers/page/page.js#runAddedAt)), which marks it seen for the viewer
   ([[region-overflow]]): the renderer's handler does it, never the shared palette code.
+- The palette also opens over one thing alone: the floors a worker can start on, on the keymap command `spawn-pick`
+  ([`spawnPickEntries`](ref:hub/src/shared/palette.ts#spawnPickEntries)), for a new worker on another floor without
+  searching the whole catalog. Each is its floor's name; its id is the floor's spawn entry's, so a pick there is
+  recent in both. With nothing typed they are one group, the selected worker's floor first, then the floors picked
+  lately; typed, they rank as the palette does ([`rankSpawnPick`](ref:hub/src/shared/palette.ts#rankSpawnPick)). A
+  pick is the floor's `spawn`, the new-worker form. It has no default chord, as `spawn` has none: a browser keeps ⌘N
+  and ⌘⇧N for its windows, so the config's `keys` binds them where a renderer receives them (Tower.app).
 
 **Alternatives considered.**
 - Patterns as entries: stories don't fit a one-line list, and they turn the palette into reading matter.
