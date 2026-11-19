@@ -12,6 +12,26 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.15.0
+
+The tower page keeps what you hold while it redraws, everywhere a working worker's churn reached it (pass 3b, the
+morph, closes: #698–#701), and the Brief shows a tool call finishing while its turn is still open. API 2.22. Nothing to
+restart beyond the tower (`tower update` does it).
+
+- **The Brief redraws a call finishing, or a step, mid-turn.** It read again only when the worker's status or its
+  latest tool changed, so a call that ended inside an open turn stayed "running" until the turn ended.
+- **Focus, selection, scroll and open state survive a redraw** in the sidebar's floors (a subject menu opened from a
+  row stays open; folds, trays and the scrolled list keep), the tab row (its sideways scroll, focus on a tab and its ⋯,
+  the "+n" list open), the Brief (a selection in an answer, an expanded answer, an open tool call, the scroll; an
+  open running call keeps refreshing) and Tower 3D's logbook. The page no longer freezes the sidebar and tab row while
+  a menu is open.
+- **A grid cell with heads hidden shows its shown tabs again.** The panes' tabs now give up their labels' width before
+  a shown tab is pushed out of the row.
+- An ended subagent's row fades once instead of restarting its fade on each redraw.
+- For renderer and extension authors: `BriefView.scope` and the drawn session as `BriefView.adds`' second argument
+  (2.21); `markdownKept(text)` in `/lib/markdown.js`, `markdownHtml` cached by text (2.22). A worker's tablist holds
+  only its tabs (through `aria-owns`), and no element id repeats when a view is mounted twice.
+
 ## v2.14.0
 
 A shown tab's menu sits on the tab and pins what you want drawn there (#694, #696), and more of the page keeps what you
