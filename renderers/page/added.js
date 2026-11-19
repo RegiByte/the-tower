@@ -1,5 +1,5 @@
 import { DISMISS_ASK_TITLE } from '/lib/cards.js'
-import { actionWords, badgesOf, glyphOf } from '/lib/layout.js'
+import { actionId, actionWords, badgesOf, glyphOf } from '/lib/layout.js'
 import { ICON } from '/lib/view.js'
 import { domId } from '/lib/morph.js'
 import { esc, plural, span } from '/lib/words.js'
@@ -12,11 +12,17 @@ import { esc, plural, span } from '/lib/words.js'
  * @import { Glyph } from '/lib/layout.js'
  */
 
-/** One badge: a link when it has `href`. @param {Added<Badge>} b */
-export const badgeHtml = (b) => {
-  const attrs = `class="badge ${b.tone ?? 'quiet'}"${b.hint ? ` data-tip="${esc(b.hint)}"` : ''}`
+/** One badge with `more` among its attributes: a link when it has `href`. @param {Added<Badge>} b @param {string} more */
+const badgeWith = (b, more) => {
+  const attrs = `class="badge ${b.tone ?? 'quiet'}"${b.hint ? ` data-tip="${esc(b.hint)}"` : ''}${more}`
   return b.href ? `<a ${attrs} href="${esc(b.href)}" target="_blank" rel="noreferrer">${esc(b.label)}</a>` : `<span ${attrs}>${esc(b.label)}</span>`
 }
+
+/** One badge: a link when it has `href`. @param {Added<Badge>} b */
+export const badgeHtml = (b) => badgeWith(b, '')
+
+/** One badge of a region that tucks what doesn't fit: `data-tucked` while it is behind ⋯. @param {Added<Badge>} b @param {boolean} tucked */
+export const tuckableBadgeHtml = (b, tucked) => badgeWith(b, tucked ? ' data-tucked' : '')
 
 /** A subject's badges: a link when one has `href`. @param {Board} board @param {Subject} subject */
 export const badgesHtml = (board, subject) => badgesOf(board, subject).map(badgeHtml).join('')
@@ -59,11 +65,26 @@ export const moreOf = (id, counts) => {
   }
 }
 
-/** One action as a button: what its press runs is on it, with the key of the subject it runs on. @param {Board} board @param {string} key @param {Added<Action>} action */
-const actionHtml = (board, key, action) => {
+/**
+ * One action as a button, `classes` among its classes and `more` among its attributes: what its press runs is on it,
+ * with the key of the subject it runs on.
+ * @param {Board} board @param {string} key @param {Added<Action>} action @param {string} classes @param {string} more
+ */
+const buttonOf = (board, key, action, classes, more) => {
   const words = actionWords(board, action)
-  return `<button class="added${words.destructive ? ' danger' : ''}" data-added="${esc(JSON.stringify({ subject: key, action }))}"${words.hint ? ` data-tip="${esc(words.hint)}"` : ''}>${esc(words.label)}</button>`
+  return `<button class="added${words.destructive ? ' danger' : ''}${classes}" data-added="${esc(JSON.stringify({ subject: key, action }))}"${words.hint ? ` data-tip="${esc(words.hint)}"` : ''}${more}>${esc(words.label)}</button>`
 }
+
+/** One action as a button: what its press runs is on it, with the key of the subject it runs on. @param {Board} board @param {string} key @param {Added<Action>} action */
+const actionHtml = (board, key, action) => buttonOf(board, key, action, '', '')
+
+/**
+ * One action as a region of contributions draws it, its id `domId(<region>/act, <subject key>/<action id>)`: `fresh`, a
+ * dot and the description "new", while it is new to the viewer; `data-tucked` while it is behind ⋯.
+ * @param {Board} board @param {string} region @param {string} key @param {Added<Action>} action @param {{ fresh: boolean, tucked: boolean }} state
+ */
+export const regionActionHtml = (board, region, key, action, state) =>
+  buttonOf(board, key, action, state.fresh ? ' fresh' : '', ` id="${esc(domId(`${region}/act`, `${key}/${actionId(action)}`))}"${state.fresh ? ' aria-description="new"' : ''}${state.tucked ? ' data-tucked' : ''}`)
 
 /** Actions on a subject as buttons. @param {Board} board @param {Subject} subject @param {Added<Action>[]} actions */
 export const actionsHtml = (board, subject, actions) => actions.map((a) => actionHtml(board, subject.key, a)).join('')

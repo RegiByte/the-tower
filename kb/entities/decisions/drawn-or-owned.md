@@ -6,11 +6,12 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-11-18",
-  "reviewed": "2026-11-18",
+  "reviewed": "2026-11-19",
   "refs": [
     "hub/src/shared/morph.ts#morph",
     "hub/src/shared/press.ts#pressingAs",
     "hub/src/shared/tips.ts#watchTips",
+    "hub/renderers/page/added.js#regionActionHtml",
     "hub/docs/extending.md"
   ]
 }
@@ -39,9 +40,12 @@ neither, so the morph and the writer take turns overwriting each other. Extensio
   pass: [`pressingAs`](ref:hub/src/shared/press.ts#pressingAs) keeps `aria-busy` on every control a press marks, and
   [`watchTips`](ref:hub/src/shared/tips.ts#watchTips) keeps a shown tip's `aria-describedby` on its control.
 
-Known cases, each fixed in the step that swaps its site onto the morph (the swap order of pass 3b): the tower page's
-region writer sets `data-tucked` and the `fresh` class on its controls and `data-region` and `data-subject` on its
-slots (`renderers/page/page.js`); the Brief view sets `display: contents` on its region slots (`src/views/brief.ts`);
+Known cases, each fixed in the step that swaps its site onto the morph (the swap order of pass 3b). The tower page's
+region writer draws `data-tucked`, the `fresh` class and `aria-description` into the html it morphs into its holds
+(`renderers/page/added.js`); it still sets `data-region` and `data-subject` on the slots a view draws, and `data-tucked`
+on the view's own controls it tucks: a view that morphs such a slot owns it, and one that morphs such a control
+updates its region after, so the fit writes the mark again before the frame is painted (the card head,
+`src/views/card.ts`). The Brief view sets `display: contents` on its region slots (`src/views/brief.ts`);
 the floors form sets `disabled` on `[data-unrepo]` (`extensions/floors/client/repos.ts`). The extensions popover's spot
 class is already added again on every draw.
 

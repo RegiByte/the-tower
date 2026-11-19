@@ -37,7 +37,7 @@ import { boardKit } from './board.js'
 import { onDuty, $, signHtml, topAnchorOf, sightAnchorOf, holdRow, paintOnce, announce, toast, notice, closableNotice, told } from './kit.js'
 import { DRAFTS, draftsOf, keepUnsent, titleOf } from './clients.js'
 import { palette } from './palette.js'
-import { actionsHtml, asksHtml, badgeHtml, drawCount } from './added.js'
+import { asksHtml, badgeHtml, drawCount, regionActionHtml, tuckableBadgeHtml } from './added.js'
 import { menu } from './menu.js'
 import { gapBeside, isCut, lineWidth, roomOf } from './fit.js'
 
@@ -795,19 +795,14 @@ const capitalized = (label) => label.replace(/^./, (l) => l.toUpperCase())
 
 /**
  * A form a region of contributions is drawn in (decision `region-overflow`): `actionsAt`, where its action buttons are;
- * `paint`, each hold's html in its place, written only where it changed; the frame's `prepare` and `read`, as for a
- * `PlacedRegion`, `read`'s write answering the action buttons drawn in place; `remeasure`; `close`, the form undone.
- * @typedef {{ badges: string, lines: AddedLine[], actions: string }} RegionParts
- *   What a region draws, badges and actions as html, its lines ranked for the form to place.
+ * `paint`, each hold's html morphed into its place (`morphPanel`), only where it changed, what is fresh and what is
+ * tucked drawn in it; the frame's `prepare` and `read`, as for a `PlacedRegion`, `read`'s write answering the action
+ * buttons drawn in place; `remeasure`; `close`, the form undone.
+ * @typedef {{ badges: (tucked: (key: string) => boolean) => string, lines: AddedLine[], actions: (tucked: (key: string) => boolean) => string }} RegionParts
+ *   What a region draws: its badges' and its actions' html, each item tucked where `tucked` says by its key in the
+ *   menu, and its lines ranked for the form to place.
  * @typedef {{ name: Overflow, actionsAt: HTMLElement, paint(parts: RegionParts): void, prepare(): void, read(): () => HTMLElement[], remeasure(): void, close(): void }} RegionForm
  */
-
-/** Writes html into elements, each only when it differs from what this writer last wrote there. */
-const writer = () => {
-  /** @type {Map<Element, string>} */
-  const wrote = new Map()
-  return (/** @type {Element} */ to, /** @type {string} */ html) => wrote.get(to) !== html && (wrote.set(to, html), (to.innerHTML = html), true)
-}
 
 /**
  * One of the page's regions inside a view that holds what extensions add, on `subject`: drawn the page's way, its
@@ -847,18 +842,33 @@ function kitRegion(el, id, subject, options) {
   const actionEls = () => /** @type {HTMLElement[]} */ ([...form.actionsAt.querySelectorAll(':scope > [data-added]')])
   /** Whether the action ranked `r` carries the dot. @param {Ranked} r @param {readonly string[]} offered @param {readonly string[]} had */
   const dotOn = (r, offered, had) => dotted.has(r.id) || isFresh(offered, had, r.id)
-  /** Each action's dot, on while it is new to the viewer or the region keeps it. */
-  const dot = () => {
-    const offered = offeredIds(board())
-    const had = seenAmong(offered)
-    actionEls().forEach((b, n) => {
-      const on = dotOn(ranked[n], offered, had)
-      b.classList.toggle('fresh', on)
-      if (on) b.setAttribute('aria-description', 'new')
-      else b.removeAttribute('aria-description')
+  /** Each ranked action's key in the menu: its id, numbered among the actions of the same id. */
+  const actionKeys = () => {
+    const seen = new Map()
+    return ranked.map((r) => {
+      const n = seen.get(r.id) ?? 0
+      seen.set(r.id, n + 1)
+      return `${at.key} ${r.id}#${n}`
     })
   }
-  const hide = () => (dotted.clear(), dot())
+  /** The key in the menu of the badge ranked `n`th. @param {number} n */
+  const badgeKey = (n) => `${at.key} badge:${n}`
+  /** What the last draw drew: the region's kept html (Dismiss and the exemptions), then its badges, lines and actions as ranked. */
+  let kept = ''
+  /** @type {RegionParts} */
+  let parts = { badges: () => '', lines: [], actions: () => '' }
+  /** The parts as drawn now, each action with its dot while it is new to the viewer or the region keeps it. @returns {RegionParts} */
+  const partsNow = (/** @type {AddedLine[]} */ lines) => ({
+    badges: (tucked) => kept + badges.map((b, n) => tuckableBadgeHtml(b, tucked(badgeKey(n)))).join(''),
+    lines,
+    actions: (tucked) => {
+      const offered = offeredIds(board())
+      const had = seenAmong(offered)
+      const keys = actionKeys()
+      return ranked.map((r, n) => regionActionHtml(board(), id, at.key, r.action, { fresh: dotOn(r, offered, had), tucked: tucked(keys[n]) })).join('')
+    },
+  })
+  const hide = () => (dotted.clear(), form.paint(parts))
   /** Each hold's html written in its place: `into` names the element a slot's html goes in. @param {(html: string, slot: HTMLElement, name: string) => void} into @param {{ badges: string, lines: string, actions: string }} parts */
   const paintParts = (into, parts) => {
     if (!marked.length) return into(`${parts.badges}${parts.actions}`, el, 'actions')
@@ -867,11 +877,11 @@ function kitRegion(el, id, subject, options) {
 
   /** The `wrap` form: every item drawn in place, the region growing as they wrap. @returns {RegionForm} */
   function drawWrap() {
-    const write = writer()
+    const none = () => false
     return {
       name: 'wrap',
       actionsAt: slots.actions ?? el,
-      paint: (parts) => paintParts((html, slot) => write(slot, html), { ...parts, lines: parts.lines.map(lineHtml).join('') }),
+      paint: (parts) => paintParts((html, slot) => morphPanel(slot, html), { badges: parts.badges(none), lines: parts.lines.map(lineHtml).join(''), actions: parts.actions(none) }),
       prepare: () => {},
       read: () => {
         const shown = actionEls().filter((b) => b.checkVisibility({ visibilityProperty: true }))
@@ -894,7 +904,6 @@ function kitRegion(el, id, subject, options) {
    * @returns {RegionForm}
    */
   function drawMenu() {
-    const write = writer()
     const host = slots.actions ?? el
     const items = document.createElement('span')
     items.className = 'region-items'
@@ -977,19 +986,13 @@ function kitRegion(el, id, subject, options) {
     const fillOrder = () => {
       const actionButtons = actionEls()
       const badgeEls = /** @type {HTMLElement[]} */ ([...badgesAt().children].filter((c) => !c.matches('[data-keep], [data-added]')))
-      const seen = new Map()
-      /** @param {Ranked} r */
-      const keyOf = (r) => {
-        const n = seen.get(r.id) ?? 0
-        seen.set(r.id, n + 1)
-        return `${at.key} ${r.id}#${n}`
-      }
+      const keys = actionKeys()
       return [
         ...tuckable().map((c) => ({ t: /** @type {const} */ ('core'), el: c, key: `${at.key} tuck:${c.dataset.tuck}` })),
         ...headRanked(badges, ranked).map((item) =>
           item.t === 'badge'
-            ? { ...item, el: badgeEls[badges.indexOf(item.badge)], key: `${at.key} badge:${badges.indexOf(item.badge)}` }
-            : { ...item, el: actionButtons[ranked.indexOf(item.ranked)], key: keyOf(item.ranked) },
+            ? { ...item, el: badgeEls[badges.indexOf(item.badge)], key: badgeKey(badges.indexOf(item.badge)) }
+            : { ...item, el: actionButtons[ranked.indexOf(item.ranked)], key: keys[ranked.indexOf(item.ranked)] },
         ),
       ]
     }
@@ -1133,7 +1136,9 @@ function kitRegion(el, id, subject, options) {
         const { drawn } = drawCount(parts.lines, budget, { noun: 'line', say: (l) => l.text, pinned: (l) => pins.includes(lineId(l)) })
         linesLeft = parts.lines.filter((l) => !drawn.includes(l))
         holding = parts.lines.length > 0 || ranked.length > 0
-        paintParts((html, slot, name) => write(name === 'actions' ? items : slot, html), { ...parts, lines: drawn.map(lineHtml).join('') })
+        const tucked = new Set(tuckedNow.map((i) => i.key))
+        const isTucked = (/** @type {string} */ key) => tucked.has(key)
+        paintParts((html, slot, name) => morphPanel(name === 'actions' ? items : slot, html), { badges: parts.badges(isTucked), lines: drawn.map(lineHtml).join(''), actions: parts.actions(isTucked) })
       },
       prepare: () => {
         if (!stale) return
@@ -1220,17 +1225,13 @@ function kitRegion(el, id, subject, options) {
     const entry = layout()[id]
     ranked = rankedActions(shownActions(s), entry)
     badges = holds.includes('badges') ? rankedBadges(board(), s) : []
-    const parts = {
-      badges: holds.includes('badges') ? `${keptHtml(id === 'card.head' ? dismissHtml(s.key) : '', exemptionsOf(board(), s))}${badges.map(badgeHtml).join('')}` : '',
-      lines: holds.includes('lines') && s.kind === 'card' ? rankedLines(board(), /** @type {Card} */ (s.value).id, entry) : [],
-      actions: actionsHtml(board(), s, ranked.map((r) => r.action)),
-    }
+    kept = holds.includes('badges') ? keptHtml(id === 'card.head' ? dismissHtml(s.key) : '', exemptionsOf(board(), s)) : ''
+    parts = partsNow(holds.includes('lines') && s.kind === 'card' ? rankedLines(board(), /** @type {Card} */ (s.value).id, entry) : [])
     const name = formName()
     if (form.name !== name) (form.close(), (form = formOf(name)))
     el.dataset.overflow = form.name
     for (const slot of marked.length ? marked : [el]) mark(slot, s)
     form.paint(parts)
-    dot()
     readNext(placed)
   }
   placedRegions.add(placed)
