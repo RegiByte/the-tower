@@ -2,7 +2,8 @@ import { can, type Card, conversationSubject, saidSubject, type Subject } from '
 import { type Brief, briefCss, briefHtml, briefKey, type BriefMarkdown, expandedSaid, openFolds, openTools, saidText, saidWhat, toolCallHtml, toolCallSettled, withWhole, withWholesRead } from '/lib/brief.js'
 import { addedActions } from '/lib/layout.js'
 import { fenceText, markdownCss, markdownHtml } from '/lib/markdown.js'
-import { copyTelling, drawPanel, type Mount, type Tab } from '/lib/view.js'
+import { copyTelling, drawPanel, type Mount, type RegionHandle, type Tab } from '/lib/view.js'
+import { domId } from '/lib/morph.js'
 import { esc } from '/lib/words.js'
 import { VIEWER_KEYS } from '/lib/viewer.js'
 import { saidOf } from '../shared/brief.ts'
@@ -26,6 +27,7 @@ const CSS = `:where([data-view="${ID}"]) {
   & .brief { flex: 1 1 0; min-height: 0; overflow: auto; padding: 0 var(--sp-xl) 40px; background: var(--panel); color: var(--ink);
     scrollbar-width: thin; scrollbar-color: var(--line) transparent; scrollbar-gutter: stable; }
   & .brief-view { max-width: 980px; margin: 0 auto; }
+  & :is([data-said-acts], [data-conversation-head]) { display: contents; }
   & .brief-foot { flex: 0 0 auto; max-height: min(40%, 320px); overflow: auto; border-top: 1px solid var(--line); padding: var(--sp-m) var(--sp-xl);
     scrollbar-width: thin; scrollbar-color: var(--line) transparent; scrollbar-gutter: stable; }
   & .brief-foot > .view-root { max-width: 980px; margin: 0 auto; }
@@ -49,7 +51,8 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit, scop
   let threads: Brief[] | undefined
   let readAt: string | undefined
   let markdown: BriefMarkdown = 'rendered'
-  let regions: { update(subject: Subject): void; close(): void }[] = []
+  /** What extensions draw in the brief's slots (`said.acts`, `conversation.head`), by the slot's id, and the slot each is mounted in. */
+  const regions = new Map<string, { region: RegionHandle; at: HTMLElement }>()
   /** The prompts and answers drawn, by key: published on the bus while drawn. */
   let said = new Map<string, Subject>()
   /** Whether anything is offered on a prompt or an answer: commands on `said` are offered by kind and type alone. */
@@ -79,28 +82,41 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit, scop
     const open = same ? openFolds(body) : new Set<string>()
     const expanded = same ? expandedSaid(body) : new Set<string>()
     const opened = same ? openTools(body) : new Set<string>()
-    regions.forEach((r) => r.close())
     for (const s of said.values()) kit.bus.clear(s.key)
     said = new Map(saidOf(threads, board.runtimes[card.runtime].label).map(({ key, text, what: _, ...s }) => [key, saidSubject({ ...s, card: card.id, project: card.project, body: text })]))
     for (const s of said.values()) kit.bus.publish(s, at.key)
     saidActs = actsOn(board)
-    const acts = (key: string) => (saidActs ? `<span data-said-acts="${esc(key)}"></span>` : '')
+    const acts = (key: string) => (saidActs ? `<span id="${esc(domId(`${scope}/said-acts`, key))}" data-said-acts="${esc(key)}" data-owned></span>` : '')
     const promptBy = (id: string) => card.conversations.find((v) => v.id === id)?.promptBy
     const adds = (id: string) => {
       const added = board.adds[`conversation:${id}`]
-      return added?.badges?.length || added?.actions?.length ? `<span data-conversation-head="${id}"></span>` : ''
+      return added?.badges?.length || added?.actions?.length ? `<span id="${esc(domId(`${scope}/conv-head`, `conversation:${id}`))}" data-conversation-head="${esc(id)}" data-owned></span>` : ''
     }
     drawPanel(body, briefHtml({ briefs: threads, agent: board.runtimes[card.runtime].label, said: markdownHtml, promptBy, open, expanded, markdown, working: card.status === 'working', adds, acts, openTools: opened, tools: (key) => tools.get(key), scope }), {})
-    regions = [...body.querySelectorAll<HTMLElement>('[data-conversation-head]')].flatMap((slot) => {
-      const conv = card.conversations.find((v) => v.id === slot.dataset.conversationHead)
-      if (!conv) return []
-      slot.style.display = 'contents'
-      return [kit.region(slot, 'conversation.head', conversationSubject(card, conv))]
-    }).concat([...body.querySelectorAll<HTMLElement>('[data-said-acts]')].map((slot) => {
-      slot.style.display = 'contents'
-      return kit.region(slot, 'said.acts', said.get(slot.dataset.saidActs!)!)
-    }))
+    placeRegions()
     if (atEnd) el.scrollTop = el.scrollHeight
+  }
+
+  /** A slot's region and its subject: what extensions add to a conversation's heading, or offer on a prompt or answer. */
+  const slotRegion = (slot: HTMLElement): { region: string; subject: Subject } | undefined => {
+    if (slot.dataset.saidActs !== undefined) return { region: 'said.acts', subject: said.get(slot.dataset.saidActs)! }
+    const conv = card.conversations.find((v) => v.id === slot.dataset.conversationHead)
+    return conv && { region: 'conversation.head', subject: conversationSubject(card, conv) }
+  }
+
+  /** Mounts a region in each slot the draw made, updates the region of each slot it kept, and closes those of slots gone. */
+  function placeRegions() {
+    const slots = new Map([...body.querySelectorAll<HTMLElement>('[data-said-acts], [data-conversation-head]')].flatMap((slot) => {
+      const wanted = slotRegion(slot)
+      return wanted ? [[slot.id, { slot, ...wanted }] as const] : []
+    }))
+    for (const [id, { region, at }] of regions)
+      if (slots.get(id)?.slot !== at) (region.close(), regions.delete(id))
+    for (const [id, { slot, region, subject }] of slots) {
+      const kept = regions.get(id)
+      if (kept) kept.region.update(subject)
+      else regions.set(id, { region: kit.region(slot, region, subject), at: slot })
+    }
   }
 
   /** Reads the conversations again when the card's moved since the last read, while the brief is seen. */
@@ -198,7 +214,7 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit, scop
       offStore()
       footSize.disconnect()
       composer.close()
-      regions.forEach((r) => r.close())
+      for (const { region } of regions.values()) region.close()
       for (const s of said.values()) kit.bus.clear(s.key)
     },
   }

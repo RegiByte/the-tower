@@ -45,8 +45,8 @@ region writer draws `data-tucked`, the `fresh` class and `aria-description` into
 (`renderers/page/added.js`); it still sets `data-region` and `data-subject` on the slots a view draws, and `data-tucked`
 on the view's own controls it tucks: a view that morphs such a slot owns it, and one that morphs such a control
 updates its region after, so the fit writes the mark again before the frame is painted (the card head,
-`src/views/card.ts`). The Brief view sets `display: contents` on its region slots (`src/views/brief.ts`);
-the floors form sets `disabled` on `[data-unrepo]` (`extensions/floors/client/repos.ts`). The extensions popover's spot
+`src/views/card.ts`). The Brief view's region slots are owned, with ids, their `display: contents` in its CSS
+(`src/views/brief.ts`); the floors form sets `disabled` on `[data-unrepo]` (`extensions/floors/client/repos.ts`). The extensions popover's spot
 class is already added again on every draw, and so are the tab row's scroller's faded edges (`more-before`,
 `more-after`), read from its layout right after each draw (`renderers/page/regions.js`).
 
