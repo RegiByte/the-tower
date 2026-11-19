@@ -195,6 +195,8 @@ export function regions(deps) {
    */
   function tabs(host, region, subject, options, scope) {
     const hostView = /** @type {HTMLElement | null} */ (host.closest('[data-view]'))?.dataset.view
+    /** The mount the strip is drawn in: its tabs' and panels' ids start with it, so a worker drawn twice repeats none. */
+    const mountScope = /** @type {HTMLElement} */ (host.closest('[data-scope]')).dataset.scope
     const slot = (/** @type {string} */ name) => /** @type {HTMLElement} */ ([...host.querySelectorAll(`[data-holds~="${name}"]`)].find((el) => el.closest('[data-view]') === host.closest('[data-view]')) ?? host)
     const strip = slot('tabs')
     const panels = slot('views')
@@ -268,8 +270,14 @@ export function regions(deps) {
     /** What a view's tab says it opens. @param {TabOf} t */
     const hintOf = (t) => wordsOf(t).hint ?? t.view.words.hint ?? t.view.words.label
 
+    /** A tab's panel's id. @param {TabOf} t */
+    const panelId = (t) => domId(`${mountScope}/panel`, t.key)
+
+    /** The id of a tab's `role=tab` button: a showing's names its subject, as the area around it does. @param {TabOf} t */
+    const tabId = (t) => (t.showing ? domId(`${mountScope}/tab/pick`, t.subject.key) : domId(`${mountScope}/tab`, t.key))
+
     /** @param {TabOf} t @param {boolean} on */
-    const tabHtml = (t, on) => (t.showing ? shownTabHtml(t.showing, on, t.key, `panel-${esc(t.key)}`) : viewTabHtml(t, on, hintOf(t)))
+    const tabHtml = (t, on) => (t.showing ? shownTabHtml(t.showing, on, t.key, tabId(t), panelId(t)) : viewTabHtml(t, on, hintOf(t)))
 
     /** A tab whose label may be cut short: its tip says its name first. @param {TabOf} t @param {boolean} on */
     const namedTabHtml = (t, on) => (t.showing ? tabHtml(t, on) : viewTabHtml(t, on, `${t.view.words.label} · ${hintOf(t)}`))
@@ -280,25 +288,25 @@ export function regions(deps) {
       const words = wordsOf(t)
       const tip = command ? keyedTip(board().keys, hint, command) : `data-tip="${esc(hint)}"`
       const tally = words.text ? `<small${words.tone ? ` class="${words.tone}"` : ''}${words.tip ? ` data-tip="${esc(words.tip)}"` : ''}>${esc(words.text)}</small>` : ''
-      return `<button class="pane-tab ${on ? 'on' : ''}" role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="panel-${esc(t.key)}" ${tip} data-tab="${esc(t.key)}"><span class="tab-word">${esc(t.view.words.label)}</span>${tally}</button>`
+      return `<button class="pane-tab ${on ? 'on' : ''}" role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" id="${esc(tabId(t))}" aria-controls="${esc(panelId(t))}" ${tip} data-tab="${esc(t.key)}"><span class="tab-word">${esc(t.view.words.label)}</span>${tally}</button>`
     }
 
     /**
      * What a worker showed, as a tab: a link opens in a browser tab, anything else also opens out of the tower. The tab is
      * the `role=tab` button naming the showing, with its icons and close beside it in one `.shown-tab`; the open one also
      * holds the ⋯ of its subject menu, a button of its own since a button holds no other.
-     * @param {CardShown} s @param {boolean} on @param {string} key @param {string} panel
+     * @param {CardShown} s @param {boolean} on @param {string} key @param {string} id @param {string} panel
      */
-    function shownTabHtml(s, on, key, panel) {
+    function shownTabHtml(s, on, key, id, panel) {
       const from = shownFrom(card.lineage, s)
       const what = `${card.callsign} showed ${s.target} · ${ago(Date.now() - s.at)} ago${from ? ` · in ${from.label}` : ''}`
       const subject = shownSubject(card, s)
-      return subjectAreaHtml('tab', subject.key, `<span class="pane-tab shown-tab ${on ? 'on' : ''}" data-tab="${esc(key)}">` +
-        `<button class="shown-pick" role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="${panel}" data-tip="${esc(what)}" data-tab="${esc(key)}">` +
+      return subjectAreaHtml(`${mountScope}/tab`, subject.key, `<span class="pane-tab shown-tab ${on ? 'on' : ''}" data-tab="${esc(key)}">` +
+        `<button class="shown-pick" role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" id="${esc(id)}" aria-controls="${esc(panel)}" data-tip="${esc(what)}" data-tab="${esc(key)}">` +
         `<span class="shown-name">${s.kind === 'link' ? `${ICON.remote} ` : ''}${esc(shownTitle(s))}</span>${from ? `<small>${from.mark}</small>` : ''}</button>` +
         (on ? tabPinsHtml(subject, s) : '') +
         (on && s.kind === 'file' ? fileSpansHtml(s.target) : '') +
-        (on ? subjectButtonHtml('tab', subject.key, `${shownTitle(s)}: menu`) : '') +
+        (on ? subjectButtonHtml(`${mountScope}/tab`, subject.key, `${shownTitle(s)}: menu`) : '') +
         `<span class="icon-btn" data-unshow="${esc(shownKey(s))}" aria-hidden="true" data-tip="close: it comes back if shown again">${ICON.close}</span></span>`)
     }
 
@@ -368,7 +376,7 @@ export function regions(deps) {
     function mountTab(t) {
       const panel = document.createElement('div')
       panel.className = 'pane-panel'
-      panel.id = `panel-${t.key}`
+      panel.id = panelId(t)
       panel.role = 'tabpanel'
       panel.ariaLabel = t.showing ? shownTitle(t.showing) : t.view.words.label
       panel.dataset.region = region.id
