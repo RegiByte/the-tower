@@ -14,8 +14,9 @@
  *   data-changes-tree          show or hide the changed files' tree beside the diffs, the viewer's, kept under `CHANGES_TREE_KEY`
  *   data-goto-file="<key>"     a file in the tree: scroll to its section (`spotSelector` with row -1)
  *   data-tree-fold="<key>"     a folder of the tree, or a repo's root: fold or unfold it, for this viewer only (`treeFolds`)
- *   data-changes-scope         what to compare (a select, drawn while the repos have commits since their base): its value
- *                              is a scope, `all`, `uncommitted` or a commit's hash; read again at `changesPath`
+ *   data-changes-scope         what to compare (around a `<tower-combobox>`, drawn while the repos have commits since their
+ *                              base): its `valuechange`'s value is a scope, `all`, `uncommitted` or a commit's hash; read
+ *                              again at `changesPath`
  *   data-landing-of="<branch>" show what landing changed on the branch, of the worker's project (`tower.landing`)
  *   data-since="<ms>"          a time: the renderer writes how long ago it was, and keeps it current; the element carries
  *                              translate="no", or a page translator fights the rewrite every second

@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-11-18",
+  "reviewed": "2026-11-19",
   "refs": ["hub/src/bridge/checkouts.ts#checkoutState", "hub/src/changed-files.ts#changedSince", "hub/src/changed-files.ts#sinceOf", "hub/src/worktrees.ts#againstChoice", "hub/src/shared/checkouts.ts#changedIn", "hub/src/views/changes.ts#tab", "hub/test/against.test.ts", "hub/src/changes.ts#changesIn", "hub/src/private-index.ts#throughCopy", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/changes-reads.ts#viewedKey", "hub/src/shared/changes-reads.ts#liveScope", "hub/src/bridge/diff.ts#parseDiff", "hub/src/bridge/diff.ts#withBefore", "hub/src/shared/changes-panel.ts#readsWhole", "hub/src/tower/http.ts#changes", "hub/src/worktrees.ts#againstFor", "hub/src/shared/changes-panel.ts#markedChangesHtml", "hub/src/views/changes.ts#mount", "hub/src/shared/changes-lines.ts#splitRows", "hub/src/shared/changes-panel.ts#treeHtml", "hub/src/shared/words.ts#wordRanges", "hub/test/diff.test.ts", "hub/src/shared/changes-reads.ts#changesHandlers", "hub/src/shared/changes-reads.ts#readChanges"],
   "links": [
     { "to": "tower-server", "verb": "uses", "carries": "GET /changes/<id>?scope: each of the session's repos with its commits since its base, and its files and hunks as the scope shows them" }
@@ -58,7 +58,9 @@ request, never kept:
   each repo carries its `commits` since the base; a hash that isn't one of them shows nothing, so no ref but those
   reaches git. A scope that no longer exists falls back to All ([`liveScope`](ref:hub/src/shared/changes-reads.ts#liveScope)).
   Each scope keeps its own marks ([`viewedKey`](ref:hub/src/shared/changes-reads.ts#viewedKey)), since a file's diff differs
-  between them. Notes anchor to the working tree's line numbers, so a commit's scope picks no lines.
+  between them. Notes anchor to the working tree's line numbers, so a commit's scope picks no lines. The viewer
+  chooses the scope in a `<tower-combobox>` in the panel's head ([[tower-elements]]), its commits grouped by repo, so a
+  long list of commits is filtered by typing.
 - **Layouts.** Unified or split ([`splitRows`](ref:hub/src/shared/changes-lines.ts#splitRows) lays rows side by side as
   indexes into the unified rows, so picking, the note box and anchors are the unified ones), and a tree of the changed
   files beside the diffs ([`treeHtml`](ref:hub/src/shared/changes-panel.ts#treeHtml)), both the viewer's choices kept in
