@@ -344,8 +344,10 @@ dialog.palette[open] { display: flex; flex-direction: column; max-height: min(56
 .shown-pick:focus-visible { outline-offset: -2px; }
 .shown-tab tower-menu-button button { min-width: calc(var(--control) - 2px); min-height: calc(var(--control) - 2px); }
 
-/* A worker's tablist owns its tabs from an element of its own, which takes no room. */
-.tab-row > .tab-owner { position: absolute; }
+/* A worker's tablist owns its tabs from an element of its own, which takes no room in the row and lies over all of
+   it, so the tablist has a box around its tabs; presses go through it. */
+.tab-row:has(> .tab-owner) { position: relative; }
+.tab-row > .tab-owner { position: absolute; inset: 0; pointer-events: none; }
 
 /* A worker's tabs in the scroll form: past the pane commands' tabs, the rest scroll above a thin scrollbar that always
    keeps its track, so the row is as tall whether or not they overflow, or there are any; its thumb shows while the
