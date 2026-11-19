@@ -292,7 +292,8 @@ export function regions(deps) {
     /**
      * What a worker showed, as a tab: a link opens in a browser tab, anything else also opens out of the tower. The tab is
      * the `role=tab` button naming the showing, with its icons and close beside it in one `.shown-tab`; the open one also
-     * holds the ⋯ of its subject menu, a button of its own since a button holds no other.
+     * holds the ⋯ of its subject menu, a button of its own since a button holds no other. The tablist owns the button
+     * alone (`ownerHtml`), so what sits beside it is no child of the tablist.
      * @param {CardShown} s @param {boolean} on @param {string} key @param {string} id @param {string} panel
      */
     function shownTabHtml(s, on, key, id, panel) {
@@ -441,8 +442,17 @@ export function regions(deps) {
       return adds && `<span class="shown-adds" role="group" aria-label="on ${esc(shownTitle(showing))}">${adds}</span>`
     }
 
-    /** The worker's tablist around `inner`, the tabs as form `form` lays them out. @param {keyof typeof forms} form @param {string} inner */
-    const tablistHtml = (form, inner) => `<span class="tab-set tabs-${form}" role="tablist" aria-label="views of ${esc(card.callsign)}">${inner}</span>`
+    /**
+     * The worker's tablist: the tabs `tabs`, in their order, owned by an element of their own, so the tablist holds only
+     * tabs while the open shown tab's ⋯ and pins stay drawn beside its button. @param {TabOf[]} tabs
+     */
+    const ownerHtml = (tabs) => `<span class="tab-owner" role="tablist" aria-label="views of ${esc(card.callsign)}" aria-owns="${esc(ownsOf(tabs))}"></span>`
+
+    /** The ids of the `role=tab` buttons of `tabs`, as `aria-owns` lists them. @param {TabOf[]} tabs */
+    const ownsOf = (tabs) => tabs.map(tabId).join(' ')
+
+    /** The worker's tabs around `inner`, as form `form` lays them out. @param {keyof typeof forms} form @param {string} inner */
+    const tabSetHtml = (form, inner) => `<span class="tab-set tabs-${form}">${inner}</span>`
 
     /** @param {TabOf[]} tabs */
     const tabsHtml = (tabs) => tabs.map((t) => tabHtml(t, t.key === open)).join('')
@@ -457,7 +467,7 @@ export function regions(deps) {
     function tabsScroll(all, adds) {
       const fixed = all.filter((t) => !t.showing && paneCommand(t.view.id))
       const rest = all.filter((t) => !fixed.includes(t))
-      morphPanel(strip, tablistHtml('scroll', `${tabsHtml(fixed)}<span class="tab-scroll">${tabsHtml(rest)}</span>`) + adds)
+      morphPanel(strip, ownerHtml([...fixed, ...rest]) + tabSetHtml('scroll', `${tabsHtml(fixed)}<span class="tab-scroll">${tabsHtml(rest)}</span>`) + adds)
       const scroller = /** @type {HTMLElement} */ (scrollerOf())
       if (scroller !== brought.scroller || open !== brought.open) bringOpen(scroller)
       brought.scroller = scroller
@@ -467,30 +477,32 @@ export function regions(deps) {
 
     /** The wrap form: every tab in the layout's order, on as many rows as they take. @param {TabOf[]} all @param {string} adds */
     function tabsWrap(all, adds) {
-      morphPanel(strip, tablistHtml('wrap', tabsHtml(all)) + adds)
+      morphPanel(strip, ownerHtml(all) + tabSetHtml('wrap', tabsHtml(all)) + adds)
     }
 
     /**
-     * The menu form: the tabs that fit on one row, the rest behind "+n ▾" after the tablist, a menu of them
+     * The menu form: the tabs that fit on one row, the rest behind "+n ▾" after them, a menu of them
      * (`/menu.js`). The tabs a pane chord opens and the open tab are always drawn, their labels cut short when even they
      * don't fit; the tab last picked from the menu is drawn next while it fits, then the others fill what room is left
      * in the layout's order, each drawn where that order puts it. Each tab's width is read while every tab is drawn,
      * and remembered by what it draws until the row's width or the type changes.
-     * The tablist, "+n ▾" and the showing's adds are the row's own while it is in this form, made once: the tabs and the
-     * adds are morphed into theirs, never replaced.
+     * The tablist, the tabs' row, "+n ▾" and the showing's adds are the row's own while it is in this form, made once:
+     * the tabs and the adds are morphed into theirs, never replaced.
      * @returns {TabsForm}
      */
     function tabsMenu() {
       strip.replaceChildren()
+      const owner = document.createElement('span')
+      owner.className = 'tab-owner'
+      owner.role = 'tablist'
       const list = document.createElement('span')
       list.className = 'tab-set tabs-menu'
-      list.role = 'tablist'
       const more = document.createElement('button')
       more.className = 'pane-tab tabs-more'
       more.hidden = true
       const addsAt = document.createElement('span')
       addsAt.className = 'tabs-adds'
-      strip.append(list, more, addsAt)
+      strip.append(owner, list, more, addsAt)
       const listed = menu(more, {
         run: (item) => {
           const t = tabsOf().find((t) => itemKey(t) === item.key)
@@ -556,12 +568,13 @@ export function regions(deps) {
       return {
         draw(all, adds) {
           morphPanel(addsAt, adds)
-          list.setAttribute('aria-label', `views of ${card.callsign}`)
+          owner.setAttribute('aria-label', `views of ${card.callsign}`)
           if (strip.clientWidth !== room) widths.clear(), (room = strip.clientWidth)
           if (all.some((t) => !widths.has(drawsOf(t)))) measure(all)
           const { drawn, tucked, tight } = fit(all)
           list.classList.toggle('tight', tight)
           morphPanel(list, drawn.map((t) => (tight ? namedTabHtml : tabHtml)(t, t.key === open)).join(''))
+          owner.setAttribute('aria-owns', ownsOf(drawn))
           more.hidden = !tucked.length
           more.textContent = `+${tucked.length} ▾`
           const said = `More tabs of ${card.callsign}: ${tucked.length}`

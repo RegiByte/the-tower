@@ -95,7 +95,8 @@ The row is morphed on each board ([`morphPanel`](ref:hub/src/shared/panel-kit.ts
 the tabs' row and the adds it makes once, so where the scroll form's strip is scrolled, focus on a tab or on the open
 tab's ⋯, and "+n ▾"'s list open hold through boards. Its ids carry the mount's scope, as the head's do: a tab `<scope>/tab:<view>|<subject>`, a shown tab's area
 `<scope>/tab:shown:<card>/<at>` and its button `<scope>/tab/pick:…`, a panel `<scope>/panel:<view>|<subject>`, which
-its tab's `aria-controls` names.
+its tab's `aria-controls` names. The tablist owns its tabs from an empty element of its own (`aria-owns`), so it holds
+only tabs while the open shown tab's ⋯ and pins are drawn inside its pill.
 A worker that runs opens on its terminal and a stopped one on its Brief; a terminal that ends while its tab is open,
 picked or not, gives way to the Brief, and pressing Terminal then shows the last screen.
 
