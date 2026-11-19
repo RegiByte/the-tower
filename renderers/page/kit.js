@@ -66,13 +66,6 @@ const scrollerOf = (el) => {
   return /** @type {Element} */ (document.scrollingElement)
 }
 
-/** The `[data-hold]` row at a scrolled list's top edge, the last to start at or above it, and its offset from the edge. @param {HTMLElement} list */
-const topAnchorOf = (list) => {
-  const top = scrollerOf(list).getBoundingClientRect().top
-  const row = [...list.querySelectorAll('[data-hold]')].findLast((el) => el.getBoundingClientRect().top <= top) ?? list.querySelector('[data-hold]')
-  return row && { key: /** @type {string} */ (row.dataset.hold), offset: row.getBoundingClientRect().top - top }
-}
-
 /** The `[data-hold="key"]` row and its offset from a scrolled list's top edge, while any of it is in sight. @param {HTMLElement} list @param {string | undefined} key */
 const sightAnchorOf = (list, key) => {
   const row = key && list.querySelector(`[data-hold="${CSS.escape(key)}"]`)
@@ -83,8 +76,8 @@ const sightAnchorOf = (list, key) => {
 }
 
 /**
- * Keeps the `anchor` row of a scrolled list where it was before the list's content was replaced: a browser's scroll
- * anchoring holds a list still while rows above change height, and loses its anchor when the rows are replaced.
+ * Keeps the `anchor` row of a scrolled list where it was before the list was redrawn: a browser's scroll anchoring
+ * holds the list still around a node of its own choosing, which rows changing height between it and `anchor` move.
  * @param {HTMLElement} list
  * @param {{ key: string, offset: number } | null | undefined} anchor
  */
@@ -125,4 +118,4 @@ const closableNotice = closableNoticer($('toasts'))
  */
 const told = (request) => request.catch((err) => (toast(err.message), undefined))
 
-export { onDuty, lineOf, toolHtml, when, $, byStart, signHtml, fillOf, keyedText, closeHomeHtml, shownKey, shownHref, topAnchorOf, sightAnchorOf, holdRow, paintOnce, repaint, announce, toast, notice, closableNotice, told }
+export { onDuty, lineOf, toolHtml, when, $, byStart, signHtml, fillOf, keyedText, closeHomeHtml, shownKey, shownHref, sightAnchorOf, holdRow, paintOnce, repaint, announce, toast, notice, closableNotice, told }
