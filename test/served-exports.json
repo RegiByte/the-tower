@@ -2102,6 +2102,14 @@
     "/lib/palette.js": {
       "runtime": "browser",
       "values": {
+        "MENU_LINE_IDS": {
+          "since": "2.20",
+          "stability": "provisional"
+        },
+        "menuPins": {
+          "since": "2.20",
+          "stability": "provisional"
+        },
         "paletteEntries": {
           "since": "2.0",
           "stability": "provisional"
@@ -2138,6 +2146,10 @@
         },
         "MenuPick": {
           "since": "2.16",
+          "stability": "provisional"
+        },
+        "MenuPin": {
+          "since": "2.20",
           "stability": "provisional"
         },
         "MenuSub": {
@@ -2540,6 +2552,9 @@
         },
         "Hosted": {
           "since": "2.0"
+        },
+        "IconName": {
+          "since": "2.20"
         },
         "Kit": {
           "since": "2.0"

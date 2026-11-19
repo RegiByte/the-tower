@@ -128,7 +128,10 @@ worker's processes are one line, "End 3 processes…", which asks through the ca
 only once the worker has stopped, since in a turn or watching its processes are its own work in flight; its earlier conversations are a group of
 their own, each by its first prompt on one line. A
 menu's line ids are each its own, and `subjectMenu` throws on two alike. Their ids follow the id rule: `sign:floor:<p>`,
-`row:card:<id>`, `tab:shown:<card>/<at>`, each ⋯ its place's `/menu`. While the menu is open the sidebar's floors and
+`row:card:<id>`, `tab:shown:<card>/<at>`, each ⋯ its place's `/menu`. The open shown tab draws, before its ⋯, what
+its layout pins in `shown.tab` of its menu, an extension's command or one of the menu's own lines run as the menu
+runs it ([[region-overflow]]), but a link's tab no `out`, its name's ↗ saying it opens outside already, and the menu's "Pin to the tab" submenu pins or unpins any of them through
+[`pinIn`](ref:hub/renderers/page/page.js#pinIn), a check closing the menu so the tab is drawn again with it. While the menu is open the sidebar's floors and
 the tab row are not painted, and are painted once as it closes: a ⋯-opened menu is anchored to its button, which the
 SDK closes it on losing, and both are drawn by innerHTML until the morph reaches them.
 

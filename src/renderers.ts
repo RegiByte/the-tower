@@ -6,6 +6,7 @@ import { hiddenBelow } from './shelf.ts'
 import { chordProblem } from './shared/keymap.ts'
 import { BUILT_IN_RENDERERS, ConfigError, type Config, type ContributedRenderer, type Renderer, type RendererConfig } from './shared/model.ts'
 import { capabilityOf, type Manifest } from './shared/extensions.ts'
+import { MENU_LINE_IDS } from './shared/subject-menu.ts'
 import { addsLinesOn, BUDGETS, HOLDS, KIT_MEMBERS, OVERFLOWS, overflowOf, REGION_ID, SCALES, type Declared, type Hold, type Layout, type LayoutEntry, type LayoutProblem, type Overflow, type Region, type RendererRegions } from './shared/regions.ts'
 
 /** The default of `renderer` in the config. */
@@ -146,6 +147,9 @@ export const layoutProblems = (renderer: string, configLayout: Layout, declared:
   })
 }
 
+/** The lines of its subject's own menu a region can pin: one holding commands, beside a subject whose menu has them. */
+const ownLines = (region: Region): readonly string[] => (region.holds.includes('commands') ? (MENU_LINE_IDS[region.subject] ?? []) : [])
+
 /** The problems of one region's entry in the config's layout; `own`, the renderer's own entry for it, the layer below. */
 const regionProblems = (renderer: string, at: string, region: Region, entry: LayoutEntry, own: LayoutEntry | undefined, offered: readonly string[]): LayoutProblem[] => {
   const fail = (key: string, problem: string): LayoutProblem => ({ level: 'fail', key: `${at}.${key}`, problem })
@@ -178,7 +182,9 @@ const regionProblems = (renderer: string, at: string, region: Region, entry: Lay
       : !pins
         ? [fail('pinned', nothingToPin)]
         : entry.pinned.flatMap((id, n) =>
-            offered.includes(id) ? [] : [warn(`pinned[${n}]`, `no extension that would start offers "${id}"${offered.length ? `: they offer ${offered.join(', ')}` : ''}`)],
+            offered.includes(id) || ownLines(region).includes(id)
+              ? []
+              : [warn(`pinned[${n}]`, `no extension that would start offers "${id}"${offered.length ? `: they offer ${offered.join(', ')}` : ''}${ownLines(region).length ? `, and ${region.subject}'s menu offers ${ownLines(region).join(', ')}` : ''}`)],
           )),
     ...(entry.unpinned === undefined
       ? []

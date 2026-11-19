@@ -510,7 +510,11 @@ function openedViews() {
   return [{ view: v.location.view, subject: v.location.subject ?? 'board' }, ...(tab ? [tab] : [])]
 }
 
-const subjectMenu = subjectMenus({ board, opened: openedViews, origins, pick: doMenuPick, closed: render })
+/** The region a subject's menu lines pin into, beside it: an open shown tab's own. @param {string} key */
+const menuPinning = (key) =>
+  key.startsWith('shown:') ? { region: 'shown.tab', holds: placing().regions.find((r) => r.id === 'shown.tab')?.holds ?? [], pinned: layout()['shown.tab']?.pinned ?? [], label: 'Pin to the tab' } : undefined
+
+const subjectMenu = subjectMenus({ board, opened: openedViews, origins, pick: doMenuPick, closed: render, pins: menuPinning, pin: pinIn })
 paintHeld = subjectMenu.open
 
 /** A capability shown: its words, with the verb it names on the selected worker's floor when that floor offers it. @param {string} id */
@@ -1294,6 +1298,7 @@ const mainRegion = regions({
   gone: () => goHome(),
   left: () => void subjectLeft(),
   bus,
+  runLine: (subject, line) => subjectMenu.runLine(subject, line),
 })
 /** A floor's trays, a view per collection (`floor.trays`), mounted by the main pane's region code and placed in the sidebar's paint. */
 const floorTrays = mainRegion.rows('floor.trays')

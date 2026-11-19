@@ -5,9 +5,12 @@
  * here runs anything.
  */
 import type { Board, Card, CardShown, Floor } from '../bridge/board.ts'
+import { actionId, heldActions } from './adds.ts'
 import { actionWords, addedActions, base, can, cardSubject, floorSubject, offersReap, pastCount, reapLine, shownHref, shownSubject, shownTitle } from './cards.ts'
 import { PANES } from './keymap.ts'
+import type { IconName } from './icons.ts'
 import type { ActionPick, AddedPick, GoTarget, OpenPick } from './palette.ts'
+import type { Hold } from './regions.ts'
 import type { Subject } from './subjects.ts'
 import { earlierLabel, VERB_WORDS, verbHint, verbId, type VerbId } from './verb-words.ts'
 
@@ -31,9 +34,10 @@ export type MenuPick = ActionPick | AddedPick | OpenPick | GoPick | DisplayPick 
 
 /**
  * One line: its `id`, unique in the menu; `open`, on what can be open, whether the renderer has it open (a tick),
- * absent on a line that does something.
+ * absent on a line that does something; `icon`, the face it is drawn with where it is pinned beside its subject, its
+ * label when it has none (`icon` @since 2.20).
  */
-export type MenuLine = { id: string; label: string; hint?: string; destructive?: true; open?: boolean; does: MenuPick }
+export type MenuLine = { id: string; label: string; hint?: string; destructive?: true; open?: boolean; icon?: IconName; does: MenuPick }
 
 /** Lines under one name, drawn as a submenu. */
 export type MenuSub = { id: string; label: string; lines: MenuLine[] }
@@ -155,20 +159,50 @@ const cardMenu = (board: Board, c: Card, ctx: MenuContext): SubjectMenu => {
 const workerLine = (c: Card): MenuLine[] => {
   const verb = can(c, 'drive') ? 'drive' : can(c, 'brief') ? 'brief' : undefined
   if (!verb) return []
-  return [{ id: `worker:${c.id}`, label: `Show ${c.callsign}'s ${verb === 'drive' ? 'terminal' : 'brief'}`, hint: verbHint('card', verb, c), does: { t: 'action', subject: 'card', verb, id: c.id } }]
+  return [{ id: 'worker', label: `Show ${c.callsign}'s ${verb === 'drive' ? 'terminal' : 'brief'}`, hint: verbHint('card', verb, c), icon: verb === 'drive' ? 'shell' : 'thread', does: { t: 'action', subject: 'card', verb, id: c.id } }]
 }
+
+/** A showing's own lines, by id: a browser tab and its worker's tab. */
+const SHOWN_LINES = {
+  out: (_: Card, s: CardShown): MenuLine[] => [{ id: 'out', label: 'Open in a browser tab', hint: s.target, icon: 'remote', does: { t: 'link', href: shownHref(s) } }],
+  worker: (c: Card): MenuLine[] => workerLine(c),
+} satisfies Record<string, (c: Card, s: CardShown) => MenuLine[]>
+
+/**
+ * The ids of a subject's own menu lines, the same on every subject of its kind, by kind: what a region beside the
+ * subject can pin of its menu besides extensions' actions. @since 2.20
+ */
+export const MENU_LINE_IDS: Readonly<Record<string, readonly string[]>> = { shown: Object.keys(SHOWN_LINES) }
 
 /** A showing's menu, which a click on the showing opens already: so it offers a browser tab and its worker, not itself. */
 const shownMenu = (board: Board, c: Card, s: CardShown): SubjectMenu => ({
   title: shownTitle(s),
   groups: groups(
-    { label: shownTitle(s), lines: [{ id: 'out', label: 'Open in a browser tab', hint: s.target, does: { t: 'link', href: shownHref(s) } }, ...workerLine(c)] },
+    { label: shownTitle(s), lines: Object.values(SHOWN_LINES).flatMap((line) => line(c, s)) },
     { label: 'Extensions', lines: addedLines(board, shownSubject(c, s)) },
   ),
 })
 
 /** Every line of `m`, its submenus' included. */
 const linesOf = (m: SubjectMenu): MenuLine[] => m.groups.flatMap((g) => g.lines.flatMap((l) => ('lines' in l ? l.lines : [l])))
+
+/** A line a region can draw beside the menu's subject, by the id the layout pins it by. @since 2.20 */
+export type MenuPin = { pin: string; line: MenuLine }
+
+/**
+ * The lines of `m` a region holding `holds` can draw, each once, by the id its layout pins it by: an extension's action
+ * by its own id (`actionId`) where the region holds its kind, any other line by the line's id. Submenus are left out.
+ * @since 2.20
+ */
+export const menuPins = (m: SubjectMenu, holds: readonly Hold[]): MenuPin[] => {
+  const pins = m.groups
+    .flatMap((g) => g.lines.flatMap((l) => ('lines' in l ? [] : [l])))
+    .flatMap((line): MenuPin[] => {
+      if (line.does.t !== 'added') return [{ pin: line.id, line }]
+      return heldActions(holds, [line.does.action]).length ? [{ pin: actionId(line.does.action), line }] : []
+    })
+  return pins.filter((p, n) => pins.findIndex((q) => q.pin === p.pin) === n)
+}
 
 /** `m`, its line ids each once: a renderer finds a picked line by its id, so two alike would run one for the other. */
 const unique = (key: string, m: SubjectMenu): SubjectMenu => {
