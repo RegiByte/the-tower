@@ -1,9 +1,10 @@
 import { can, findCard, parentOf, shownSubject } from '/lib/board.js'
 import { shownFrom } from '/lib/brief.js'
 import { subjectAreaHtml, subjectButtonHtml } from '/lib/elements.js'
-import { heldActions, shownHref, shownKey, shownTitle } from '/lib/cards.js'
+import { heldActions, shownKey, shownTitle } from '/lib/cards.js'
 import { addedActions, offeredIn, ordered, overflowOf, paneShows, pickView, shownOf } from '/lib/layout.js'
 import { panesOf } from '/lib/keys.js'
+import { menuPins, subjectMenu } from '/lib/palette.js'
 import { mountTermView } from '/lib/terminal.js'
 import { fileSpansHtml, ICON, keyedTip, viewHost } from '/lib/view.js'
 import { ago, esc } from '/lib/words.js'
@@ -19,6 +20,7 @@ import { menu } from './menu.js'
  * @import { KitMember, Layout, Overflow, Region } from '/lib/layout.js'
  * @import { JobStream, ShellStream, TermFont, TermViewHandle } from '/lib/terminal.js'
  * @import { Bus, CommandKit, Hosted, Location, Pane, RegionHandle, Tab, TabWords, View } from '/lib/view.js'
+ * @import { MenuPin } from '/lib/palette.js'
  * @import { MenuItem } from './menu.js'
  */
 
@@ -49,6 +51,7 @@ import { menu } from './menu.js'
  *   left: () => void,
  *   bus: Bus,
  *   now: () => number,
+ *   runLine: (subject: string, line: string) => void,
  * }} RegionsDeps
  */
 
@@ -62,6 +65,9 @@ const CARDS_KEPT = 4
 const SHOWN_KEPT = 8
 
 const WORKER = 'tower/card'
+
+/** The region inside an open shown tab: what the layout pins there of its subject menu's lines, drawn on the tab. */
+const SHOWN_TAB = 'shown.tab'
 
 /** A tab's key: its view and its subject. @param {string} view @param {string} subject */
 const tabKey = (view, subject) => `${view}|${subject}`
@@ -289,11 +295,34 @@ export function regions(deps) {
       return subjectAreaHtml('tab', subject.key, `<span class="pane-tab shown-tab ${on ? 'on' : ''}" data-tab="${esc(key)}">` +
         `<button class="shown-pick" role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="${panel}" data-tip="${esc(what)}" data-tab="${esc(key)}">` +
         `<span class="shown-name">${s.kind === 'link' ? `${ICON.remote} ` : ''}${esc(shownTitle(s))}</span>${from ? `<small>${from.mark}</small>` : ''}</button>` +
-        (on ? heldHtml('shown.tab', subject, iconActionsHtml) : '') +
-        (on && s.kind !== 'link' ? `<span class="icon-btn" data-out="${esc(shownHref(s))}" aria-hidden="true" data-tip="open in a browser tab">${ICON.remote}</span>` : '') +
+        (on ? tabPinsHtml(subject, s) : '') +
         (on && s.kind === 'file' ? fileSpansHtml(s.target) : '') +
         (on ? subjectButtonHtml('tab', subject.key, `${shownTitle(s)}: menu`) : '') +
         `<span class="icon-btn" data-unshow="${esc(shownKey(s))}" aria-hidden="true" data-tip="close: it comes back if shown again">${ICON.close}</span></span>`)
+    }
+
+    /**
+     * What the open shown tab draws of its subject menu's lines (`shown.tab`): those its layout pins, in the pins' order,
+     * then the extensions' commands it doesn't, as many as its `actions` budget lets, all of them with none; less the
+     * hidden. The rest stay in the menu. An extension's command runs as its button does, any other line as its menu runs it.
+     * A link's tab draws no `out`: the link opens outside the tower, and its name's ↗ already says so.
+     * @param {Subject} subject @param {CardShown} s
+     */
+    function tabPinsHtml(subject, s) {
+      const m = subjectMenu(board(), subject.key, { open: [], origins: {} })
+      if (!m) return ''
+      const entry = layout()[SHOWN_TAB]
+      const pins = entry?.pinned ?? []
+      const shown = menuPins(m, declared().find((r) => r.id === SHOWN_TAB)?.holds ?? []).filter((p) => !entry?.hidden?.includes(p.pin) && !(s.kind === 'link' && p.pin === 'out'))
+      const pinned = pins.flatMap((pin) => shown.filter((p) => p.pin === pin))
+      const added = shown.filter((p) => p.line.does.t === 'added' && !pins.includes(p.pin)).slice(0, entry?.actions ?? Infinity)
+      return [...pinned, ...added].map((p) => pinHtml(subject, p)).join('')
+    }
+
+    /** One line pinned on a shown tab: its icon alone, its label where it has none, its label the tip. @param {Subject} subject @param {MenuPin} p */
+    function pinHtml(subject, { line }) {
+      if (line.does.t === 'added') return iconActionsHtml(board(), subject, [line.does.action])
+      return `<span class="icon-btn" data-menu-line="${esc(line.id)}" aria-hidden="true" data-tip="${esc(line.label)}">${line.icon ? ICON[line.icon] : esc(line.label)}</span>`
     }
 
     /**
@@ -619,6 +648,8 @@ export function regions(deps) {
 
     strip.addEventListener('click', (e) => {
       const target = /** @type {Element} */ (e.target)
+      const line = /** @type {HTMLElement | null} */ (target.closest('[data-menu-line]'))
+      if (line) return deps.runLine(/** @type {string} */ (/** @type {HTMLElement} */ (line.closest('tower-menu-area')).getAttribute('payload')), /** @type {string} */ (line.dataset.menuLine))
       if (target.closest('[data-unshow], [data-out], [data-file-call], [data-added], .shown-adds, tower-menu-button')) return
       const key = /** @type {HTMLElement | null} */ (target.closest('[data-tab]'))?.dataset.tab
       const t = key && tabsOf().find((t) => t.key === key)

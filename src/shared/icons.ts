@@ -53,6 +53,9 @@ export const ICON = {
   tower: stroke('<path d="M4 14.5V2.5h8v12M2.5 14.5h11"/><path d="M6 5h1M9 5h1M6 8h1M9 8h1M6 11h1M9 11h1"/>', 1.4),
 }
 
+/** The name of one of `ICON`'s icons. @since 2.20 */
+export type IconName = keyof typeof ICON
+
 /** An extension's own glyph, by its path below its client folder: an SVG file, named relative, without "..". */
 export const SVG_PATH = /^(?!\/)(?!.*\.\.)[A-Za-z0-9._/-]+\.svg$/
 

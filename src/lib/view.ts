@@ -19,6 +19,9 @@ export {
   SHELF_ICON,
   withIcons,
 } from '../shared/icons.ts'
+export type {
+  IconName,
+} from '../shared/icons.ts'
 export {
   collectionTrayHtml,
   deleteAsk,

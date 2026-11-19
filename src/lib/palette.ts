@@ -11,12 +11,15 @@ export type {
   Pick,
 } from '../shared/palette.ts'
 export {
+  /** @provisional */ MENU_LINE_IDS,
+  /** @provisional */ menuPins,
   /** @provisional */ subjectMenu,
 } from '../shared/subject-menu.ts'
 export type {
   /** @provisional */ MenuContext,
   /** @provisional */ MenuGroup,
   /** @provisional */ MenuLine,
+  /** @provisional */ MenuPin,
   /** @provisional */ MenuPick,
   /** @provisional */ MenuSub,
   /** @provisional */ Opened,
