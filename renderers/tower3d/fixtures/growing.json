@@ -31,6 +31,7 @@
             "?"
           ],
           "spawn": [],
+          "spawn-pick": [],
           "pane-terminal": [
             "Ctrl+Shift+1"
           ],
@@ -681,6 +682,7 @@
             "?"
           ],
           "spawn": [],
+          "spawn-pick": [],
           "pane-terminal": [
             "Ctrl+Shift+1"
           ],
@@ -1409,6 +1411,7 @@
             "?"
           ],
           "spawn": [],
+          "spawn-pick": [],
           "pane-terminal": [
             "Ctrl+Shift+1"
           ],
@@ -2293,6 +2296,7 @@
             "?"
           ],
           "spawn": [],
+          "spawn-pick": [],
           "pane-terminal": [
             "Ctrl+Shift+1"
           ],
@@ -3178,6 +3182,7 @@
             "?"
           ],
           "spawn": [],
+          "spawn-pick": [],
           "pane-terminal": [
             "Ctrl+Shift+1"
           ],
