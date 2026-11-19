@@ -69,9 +69,10 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit, scop
 
   const actsOn = (b: typeof board) => addedActions(b, saidSubject({ session: '', conversation: '', startedAt: 0, side: 'prompt', card: card.id, project: card.project, body: '' })).length > 0
 
-  /** The tool calls read, by key, as last drawn; those that had ended are read no more. */
+  /** The tool calls read, by key, as last drawn; those that had ended are read no more, those being read not twice at once. */
   const tools = new Map<string, string>()
   const settled = new Set<string>()
+  const reading = new Set<string>()
   /** The conversations read whole: drawn in place of their last turns, joined to each read's last turns of them. */
   let wholes: Brief[] = []
 
@@ -95,6 +96,7 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit, scop
     drawPanel(body, briefHtml({ briefs: threads, agent: board.runtimes[card.runtime].label, said: markdownHtml, promptBy, open, expanded, markdown, working: card.status === 'working', adds, acts, openTools: opened, tools: (key) => tools.get(key), scope }), {})
     placeRegions()
     if (atEnd) el.scrollTop = el.scrollHeight
+    for (const details of body.querySelectorAll<HTMLDetailsElement>('details[data-tool][open]')) readTool(details.dataset.tool!)
   }
 
   /** A slot's region and its subject: what extensions add to a conversation's heading, or offer on a prompt or answer. */
@@ -167,22 +169,25 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit, scop
     }, (err: Error) => kit.toast(err.message))
   }
 
-  /** A tool call opened: read, drawn in its body, and kept for every draw after, read no more once it ended. */
-  function readTool(details: HTMLDetailsElement) {
-    const key = details.dataset.tool!
-    if (!details.open || settled.has(key)) return
+  /**
+   * A tool call open: read, drawn in its body, and kept for every draw after, which draws it from `tools`. Read when
+   * opened and again after each draw while it runs, drawn as last read meanwhile; read no more once it ended.
+   */
+  function readTool(key: string) {
+    if (settled.has(key) || reading.has(key)) return
+    reading.add(key)
     void tower.toolCall(...(key.split(':') as [string, string])).then((call) => {
       const html = toolCallHtml(call)
       tools.set(key, html)
       if (toolCallSettled(call)) settled.add(key)
       for (const drawn of body.querySelectorAll<HTMLElement>('details[data-tool]'))
         if (drawn.dataset.tool === key) drawn.querySelector('[data-tool-body]')!.innerHTML = html
-    }, (err: Error) => kit.toast(err.message))
+    }, (err: Error) => kit.toast(err.message)).finally(() => reading.delete(key))
   }
 
   host.addEventListener('toggle', (e) => {
     const details = e.target as HTMLElement
-    if (details instanceof HTMLDetailsElement && details.dataset.tool) readTool(details)
+    if (details instanceof HTMLDetailsElement && details.dataset.tool && details.open) readTool(details.dataset.tool)
   }, true)
 
   const offStore = tower.store.on(() => void chooseMarkdown())

@@ -17,8 +17,8 @@
  *   data-brief-markdown="<choice>"   draw words rendered or raw (`BRIEF_MARKDOWNS`), the viewer's, kept under `BRIEF_MARKDOWN_KEY`
  *   data-tool="<session>:<call>" opened   read the call (`tower.toolCall`), draw it in its `[data-tool-body]`
  *                                         (`toolCallHtml`), hand it to the next draw as `tools`, and read it no more
- *                                         once it ended (`toolCallSettled`): a call drawn open fires `toggle` again as
- *                                         it is drawn, and one still running is read again, drawn as last read meanwhile
+ *                                         once it ended (`toolCallSettled`): one still running is read again after
+ *                                         each draw while it is open, drawn as last read meanwhile
  *   data-brief-earlier="<session>:<conversation>"   read the conversation whole (`tower.conversation`) and draw it in place
  *                                                   of its last turns (`withWhole`), joined to each later
  *                                                   read's last turns (`joinedWholes`, `withWholesRead`)
