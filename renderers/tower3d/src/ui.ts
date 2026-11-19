@@ -3,7 +3,7 @@ import type { Draft } from '../../../extensions/drafts/client/drafts.ts'
 import { type TabWords, collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, failedHtml, fileButtonsHtml, fileSpansHtml, ICON, SHELF_ICON, originIcon, withIcons } from '/lib/view.js'
 import { type FloorCollection, type FloorItem, defaultLimits } from '/lib/board.js'
 import { usd } from '/lib/stats.js'
-import { documentHtml, markdownHtml } from '/lib/markdown.js'
+import { documentHtml, markdownKept } from '/lib/markdown.js'
 import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel, sessionWhen, shownFrom, type BriefView } from '/lib/brief.js'
 import { drawerLabel, type Archive, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, type Act, type CatNames, type Offer } from './acts.ts'
@@ -452,12 +452,13 @@ export function shellHeadHtml(sh: Shell, floor: Floor | undefined) {
 /** What a viewer opened in a drawn logbook (`openFolds`, `expandedSaid`, `openTools`), the tool calls read, and how they read its words. */
 export type BriefLook = Pick<BriefView, 'open' | 'expanded' | 'markdown' | 'openTools' | 'tools'>
 
-/** The worker's conversations by session (`lineageBriefHtml`), their markdown safe in the panel. */
-const briefHtml = (board: Board, c: Card, threads: Brief[], look: BriefLook) =>
+/** The worker's conversations by session (`lineageBriefHtml`), their markdown safe in the panel, its ids under `scope`: the container it is drawn in. */
+const briefHtml = (board: Board, c: Card, threads: Brief[], look: BriefLook, scope: string) =>
   lineageBriefHtml({
+    scope,
     briefs: threads,
     agent: board.runtimes[c.runtime].label,
-    said: markdownHtml,
+    said: markdownKept,
     promptBy: (id) => c.conversations.find((conv) => conv.id === id)?.promptBy,
     working: c.status === 'working',
     adds: (id) => {
@@ -481,13 +482,13 @@ export const sessionsHtml = (c: Card, on: string | undefined, threads: Brief[] |
     return `<button class="${[live && 'live', idle && 'idle', (live ? on === undefined : on === l.id) && 'on'].filter(Boolean).join(' ')}" data-replay="${live ? '' : esc(l.id)}" data-tip="${esc(tip)}">${label}</button>`
   }).join('')}</div>`
 
-/** A worker's conversations by session; `threads` undefined while they are read. */
-export const logbookBriefHtml = (board: Board, c: Card, threads: Brief[] | undefined, look: BriefLook) =>
-  threads ? briefHtml(board, c, threads, look) : '<p><i>reading the logbook…</i></p>'
+/** A worker's conversations by session, their ids under `scope`, the container they are drawn in; `threads` undefined while they are read. */
+export const logbookBriefHtml = (board: Board, c: Card, threads: Brief[] | undefined, look: BriefLook, scope: string) =>
+  threads ? briefHtml(board, c, threads, look, scope) : '<p><i>reading the logbook…</i></p>'
 
-/** The logbook: the worker's sessions to replay, over its conversations by session. */
-export const logbookHtml = (board: Board, c: Card, threads: Brief[] | undefined, look: BriefLook, on: string | undefined) =>
-  sessionsHtml(c, on, threads) + logbookBriefHtml(board, c, threads, look)
+/** The logbook: the worker's sessions to replay, over its conversations by session, their ids under `scope`. */
+export const logbookHtml = (board: Board, c: Card, threads: Brief[] | undefined, look: BriefLook, on: string | undefined, scope: string) =>
+  sessionsHtml(c, on, threads) + logbookBriefHtml(board, c, threads, look, scope)
 
 /** "REPLAY · Oct 6, 21:40": a past session's screen, with the way back to the live one when there is one. */
 export const stampHtml = (startedAt: number, back: boolean) =>
