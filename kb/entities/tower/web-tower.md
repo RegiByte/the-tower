@@ -96,7 +96,9 @@ comes in the ranked order every renderer shares, and a region too full for it ov
 remembering. Each region's holds are morphed ([`morphPanel`](ref:hub/src/shared/panel-kit.ts#morphPanel)), what is
 new to the viewer (the `fresh` dot and the description "new") and what is tucked (`data-tucked`) drawn into their html
 ([`regionActionHtml`](ref:hub/renderers/page/added.js#regionActionHtml)), each action by its id
-`<region>/act:<subject key>/<action id>`, so a redraw keeps an action's focus, its dot and its busy mark. The `menu`
+`<place>/act:<subject key>/<action id>#<n>`, its place the region's id under the nearest mount's `data-scope`
+(`v7/card.head`, or `card.row` outside any view) and `n` its number among the actions of the same id, so no id
+repeats in the document and a redraw keeps an action's focus, its dot and its busy mark. The `menu`
 form's slot on a worker's head, holding the nodes ⋯ and its menu are made of, is `data-owned` with an id. The fit
 reads every region drawn in one frame: untucking them first when they must be measured afresh, reading them, then
 writing. It also tucks the view's own controls (`data-tuck`), which the view draws: a view updates its region after
