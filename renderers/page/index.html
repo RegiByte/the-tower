@@ -344,6 +344,9 @@ dialog.palette[open] { display: flex; flex-direction: column; max-height: min(56
 .shown-pick:focus-visible { outline-offset: -2px; }
 .shown-tab tower-menu-button button { min-width: calc(var(--control) - 2px); min-height: calc(var(--control) - 2px); }
 
+/* A worker's tablist owns its tabs from an element of its own, which takes no room. */
+.tab-row > .tab-owner { position: absolute; }
+
 /* A worker's tabs in the scroll form: past the pane commands' tabs, the rest scroll above a thin scrollbar that always
    keeps its track, so the row is as tall whether or not they overflow, or there are any; its thumb shows while the
    pointer is over them, and they fade at an edge past which more hide. The tabs keep a focus ring's room on each side,
