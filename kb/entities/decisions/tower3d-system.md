@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-11-16",
-  "reviewed": "2026-11-18",
+  "reviewed": "2026-11-19",
   "refs": [
     "hub/renderers/tower3d/src/system.ts",
     "hub/renderers/tower3d/src/sim.ts#startSim",
