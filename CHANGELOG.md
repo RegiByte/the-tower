@@ -12,6 +12,26 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.14.0
+
+A shown tab's menu sits on the tab and pins what you want drawn there (#694, #696), and more of the page keeps what you
+hold while it redraws (pass 3b, the morph: #692, #693, #695). API 2.20. Nothing to restart beyond the tower
+(`tower update` does it).
+
+- **A shown tab's ⋯ is on the tab it acts on,** beside its title and close, instead of at the far end of the tab row.
+- **A shown tab draws only what you pin.** Its ⋯ has "Pin to the tab": the tab's own lines and extensions' commands,
+  each a check. "Open in a browser tab" is pinned by default, so a tab reads title, ↗, ⋯, ×; unpin it and it stays
+  unpinned. Everything else stays in the ⋯. A link's tab, which already opens outside, draws no second ↗.
+- **Focus, caret, selection and scroll survive a redraw** in the reviews thread (a note being typed keeps its text,
+  caret and selection while notes arrive), the Changes view (the pick's note box, a file's sideways scroll), the card
+  head and every region's actions (a narrow head keeps what it tucked behind ⋯; a new action keeps its dot).
+- **The Changes view's scope picker is a combobox,** chosen by mouse or keyboard. A button's tooltip no longer shows
+  when it gets focus from a press.
+- For renderer and extension authors (2.20): `MenuLine.icon`, `MenuPin`, `menuPins` and `MENU_LINE_IDS` in
+  `/lib/palette.js`, `IconName` in `/lib/view.js`. A region whose subject has menu lines can pin them by id. The view
+  host writes each mount's scope as `data-scope`, and a region's action ids carry it, so no id repeats when a view is
+  mounted twice.
+
 ## v2.13.0
 
 The tower's panels start keeping what you hold while they redraw (pass 3b, the morph: #683, #685–#688), and two fixes
