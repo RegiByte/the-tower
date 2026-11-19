@@ -73,8 +73,8 @@ same palette, and only the drawing is a renderer's.
   ([[region-overflow]]): the renderer's handler does it, never the shared palette code.
 - The palette also opens over one thing alone: the floors a worker can start on, on the keymap command `spawn-pick`
   ([`spawnPickEntries`](ref:hub/src/shared/palette.ts#spawnPickEntries)), for a new worker on another floor without
-  searching the whole catalog. Each is its floor's name; its id is the floor's spawn entry's, so a pick there is
-  recent in both. With nothing typed they are one group, the selected worker's floor first, then the floors picked
+  searching the whole catalog. Each is its floor's name, its id its own (`spawn-pick@<floor>`), so its picks are
+  recent in it alone: in the palette's Recent one would be its floor's "New worker", which doesn't name the floor. With nothing typed they are one group, the selected worker's floor first, then the floors picked
   lately; typed, they rank as the palette does ([`rankSpawnPick`](ref:hub/src/shared/palette.ts#rankSpawnPick)). A
   pick is the floor's `spawn`, the new-worker form. It has no default chord, as `spawn` has none: a browser keeps ⌘N
   and ⌘⇧N for its windows, so the config's `keys` binds them where a renderer receives them (Tower.app).

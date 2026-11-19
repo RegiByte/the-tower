@@ -408,11 +408,12 @@ export const rankPalette = (entries: Entry[], query: string, r: Ranking): Palett
 
 /**
  * The floors a worker can start on, each an entry that opens the new-worker form there: what the keymap's `spawn-pick`
- * lists. Each id is its floor's spawn entry's in the palette, so a pick in either is recent in both. @since 2.23
+ * lists. Its ids are its own, `spawn-pick@<floor>`, so its picks are recent in it alone: in the palette's Recent, one
+ * would show as its floor's "New worker", which doesn't name the floor. @since 2.23
  */
 export const spawnPickEntries = (board: Board): Entry[] =>
   board.floors.filter((f) => f.actions.some((a) => a.verb === 'spawn')).map((f) => ({
-    id: `${verbId('floor', 'spawn')}@${f.id}`,
+    id: `spawn-pick@${f.id}`,
     group: 'New worker on',
     label: f.name,
     hint: `${f.cards.filter((c) => c.onDuty).length} on duty`,
