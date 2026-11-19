@@ -91,6 +91,9 @@ main pane at once. Under the
 head sits one tab row, the shared panels then the worker's showings ([[agent-show]]), drawn in the form the layout
 picks among `card.panes`' (`scroll`, `wrap`, `menu`: [`tabsScroll`](ref:hub/renderers/page/regions.js#tabsScroll),
 [`tabsWrap`](ref:hub/renderers/page/regions.js#tabsWrap), [`tabsMenu`](ref:hub/renderers/page/regions.js#tabsMenu)).
+Its ids carry the mount's scope, as the head's do: a tab `<scope>/tab:<view>|<subject>`, a shown tab's area
+`<scope>/tab:shown:<card>/<at>` and its button `<scope>/tab/pick:…`, a panel `<scope>/panel:<view>|<subject>`, which
+its tab's `aria-controls` names.
 A worker that runs opens on its terminal and a stopped one on its Brief; a terminal that ends while its tab is open,
 picked or not, gives way to the Brief, and pressing Terminal then shows the last screen.
 
@@ -132,7 +135,7 @@ worker's processes are one line, "End 3 processes…", which asks through the ca
 only once the worker has stopped, since in a turn or watching its processes are its own work in flight; its earlier conversations are a group of
 their own, each by its first prompt on one line. A
 menu's line ids are each its own, and `subjectMenu` throws on two alike. Their ids follow the id rule: `sign:floor:<p>`,
-`row:card:<id>`, `tab:shown:<card>/<at>`, each ⋯ its place's `/menu`. The open shown tab draws, before its ⋯, what
+`row:card:<id>`, `<scope>/tab:shown:<card>/<at>`, each ⋯ its place's `/menu`. The open shown tab draws, before its ⋯, what
 its layout pins in `shown.tab` of its menu, an extension's command or one of the menu's own lines run as the menu
 runs it ([[region-overflow]]), but a link's tab no `out`, its name's ↗ saying it opens outside already, and the menu's "Pin to the tab" submenu pins or unpins any of them through
 [`pinIn`](ref:hub/renderers/page/page.js#pinIn), a check closing the menu so the tab is drawn again with it. A ⋯-opened menu is anchored to its button, which the SDK
