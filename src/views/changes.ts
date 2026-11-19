@@ -2,7 +2,7 @@ import { type Board, type Card, type Lines, linesAt, linesSubject } from '/lib/b
 import { changedFiles, type ChangesEvent, changesFailure, changesHandlers, changesOf, changesPath, type ChangesScope, type DiffFile, type DiffLayout, fileKey, isFolded, keepingFileTop, keepingViewedFileTop, type LinePick, livePick, marksToggled, noChanges, picked, readChanges, type RepoChanges, scopeOf, spanned, spotSelector, watchPickDrag } from '/lib/changes.js'
 import { addedActions, marksOf, viewsOf } from '/lib/layout.js'
 import { loop, reading, timers } from '/lib/machine.js'
-import { drawPanel, fileCall, type Mount, panelsCss, type RegionHandle, type Tab } from '/lib/view.js'
+import { fileCall, morphPanel, type Mount, panelsCss, type RegionHandle, type Tab } from '/lib/view.js'
 import { VIEWER_KEYS } from '/lib/viewer.js'
 import { changedIn } from '../shared/checkouts.ts'
 import { linesSpot, markedChangesHtml, type NamedLines, pickedLines, viewedCount } from '../shared/panels.ts'
@@ -44,7 +44,7 @@ export const tab: Tab = (board, subject) => {
 const folds = new Set<string>()
 const treeFolds = new Set<string>()
 
-export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
+export const mount: Mount = (host, { tower, board: first, subject, kit, scope: mountScope }) => {
   let board = first
   let card = subject.value as Card
   host.innerHTML = `<style>${CSS}${panelsCss}</style><div class="changes"></div>`
@@ -78,17 +78,20 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
   const desk: { pick: LinePick | undefined; picking: boolean; jump: Pick<NamedLines, 'repo' | 'path' | 'from' | 'to'> | undefined } = { pick: undefined, picking: false, jump: undefined }
 
   /**
-   * What acts on the picked lines (`lines.acts`), drawn in `acts` under them: kept through every redraw, so what is
-   * written there stays. Something there that is `done` with the lines lets the pick go.
+   * What acts on the picked lines (`lines.acts`), mounted in the box drawn under them (`at`), which the morph keeps
+   * while the pick stays, so what is written there stays. Something there that is `done` with the lines lets the pick go.
    */
-  const acts = document.createElement('div')
-  acts.className = 'pick-acts'
-  let picks: RegionHandle | undefined
-  acts.addEventListener('done', (e) => (e.stopPropagation(), dropPick(), draw()))
+  let picks: { region: RegionHandle; at: HTMLElement } | undefined
+  el.addEventListener('done', (e) => {
+    if (!(e.target as Element).closest('[data-pick-acts]')) return
+    e.stopPropagation()
+    dropPick()
+    draw()
+  })
 
   const dropPick = () => {
     desk.pick = undefined
-    picks?.close()
+    picks?.region.close()
     picks = undefined
   }
 
@@ -98,13 +101,14 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
     return linesSubject(lines)
   }
 
-  /** The region under the pick, placed where the redraw left its row, then on the lines picked now: what it holds takes focus in the document. */
+  /** The region under the pick on the lines picked now, mounted again when the box under them is new: what it holds takes focus in the document. */
   function placeActs() {
-    if (!desk.pick || desk.picking) return
-    el.querySelector('[data-pick-acts]')?.replaceWith(acts)
+    const at = el.querySelector<HTMLElement>('[data-pick-acts]')
+    if (!desk.pick || !at) return
     const subject = pickedSubject()
-    if (picks) picks.update(subject)
-    else picks = kit.region(acts, 'lines.acts', subject)
+    if (picks?.at === at) return picks.region.update(subject)
+    picks?.region.close()
+    picks = { region: kit.region(at, 'lines.acts', subject), at }
   }
 
   /** Follows the worker while the view is seen. */
@@ -117,17 +121,14 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
     const live = shown && livePick(shown, desk.pick)
     if (shown && desk.pick && !live) (kit.toast('The file changed under your pick: pick its lines again'), dropPick())
     const failed = shown ? undefined : changesFailure(changeReads.state(), card.id)
-    const focused = acts.contains(document.activeElement) ? (document.activeElement as HTMLElement) : undefined
-    drawPanel(
+    morphPanel(
       el,
       markedChangesHtml({
-        read: shown, failed, folds, pick: desk.pick, picking: desk.picking, marks: marksOf(board, card.id), checkout: card.checkout,
+        mount: mountScope, card: card.id, read: shown, failed, folds, pick: desk.pick, picking: desk.picking, marks: marksOf(board, card.id), checkout: card.checkout,
         state: card.checkoutState, pickable: card.checkoutState.is === 'live' && actsOnLines(board, card), layout, scope: scope(), tree, treeFolds,
       }),
-      {},
     )
     placeActs()
-    if (focused && document.activeElement !== focused) focused.focus({ preventScroll: true })
     retally()
     if (desk.jump && shown) jump()
   }
@@ -256,7 +257,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
     tab: tally,
     close() {
       offStore()
-      picks?.close()
+      picks?.region.close()
       changeReads.dispatch({ type: 'follow', card: undefined })
     },
   }
