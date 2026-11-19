@@ -29,7 +29,11 @@ their extensions'.
 its workers by crew ([[crews]]), each row with its lamp, callsign, status word
 ([`statusWord`](ref:hub/src/shared/status-words.ts#statusWord)), time in state, and what extensions add, drawn in the
 form the layout picks for `card.row` ([[region-overflow]], [`drawCount`](ref:hub/renderers/page/added.js#drawCount));
-running subagents hang under it as satellites ([`satellitesOf`](ref:hub/src/shared/subagents.ts#satellitesOf)). The
+running subagents hang under it as satellites ([`satellitesOf`](ref:hub/src/shared/subagents.ts#satellitesOf)), one
+that ended fading out on a row drawn once (`data-owned`, `sub:<agent id>`). The floors are morphed on each board
+([`morphPanel`](ref:hub/src/shared/panel-kit.ts#morphPanel)), each floor, crew, directory and worktree by its id
+(`floor:floor:<p>`, `crew:<head's key>`, `dir:<path>`, `wt:<name>`), so focus on a row, a sign or a tray, what is
+unfolded and where the list is scrolled hold through boards. The
 rate limits fold into one chip naming the tightest limit, whose popover holds the limits and the probe that reads
 them ([[probes]]). The foot's Extensions entry ([`extensionsEntry`](ref:hub/renderers/page/extensions-entry.js#extensionsEntry))
 lamps as loud as the loudest extension: a pointer resting on it or a keyboard reaching it lists every extension with
@@ -131,9 +135,9 @@ menu's line ids are each its own, and `subjectMenu` throws on two alike. Their i
 `row:card:<id>`, `tab:shown:<card>/<at>`, each ⋯ its place's `/menu`. The open shown tab draws, before its ⋯, what
 its layout pins in `shown.tab` of its menu, an extension's command or one of the menu's own lines run as the menu
 runs it ([[region-overflow]]), but a link's tab no `out`, its name's ↗ saying it opens outside already, and the menu's "Pin to the tab" submenu pins or unpins any of them through
-[`pinIn`](ref:hub/renderers/page/page.js#pinIn), a check closing the menu so the tab is drawn again with it. While the menu is open the sidebar's floors and
-the tab row are not painted, and are painted once as it closes: a ⋯-opened menu is anchored to its button, which the
-SDK closes it on losing, and both are drawn by innerHTML until the morph reaches them.
+[`pinIn`](ref:hub/renderers/page/page.js#pinIn), a check closing the menu so the tab is drawn again with it. A ⋯-opened menu is anchored to its button, which the SDK
+closes it on losing: the floors' morph keeps a row's or a sign's ⋯ through boards, and while the menu is open the tab
+row, drawn by innerHTML until the morph reaches it, is not painted, and is painted once as it closes.
 
 **Frames** that run a floor's own page (a shelf `html` or `renderer` entry, an `html` item, a shown file) are
 sandboxed at an opaque origin and granted `clipboard-write`, so a copy button inside works framed; a `url` frame may

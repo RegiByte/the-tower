@@ -13,7 +13,7 @@ import { wireSpawn } from '/lib/spawn.js'
 import '/lib-ui/combobox.js'
 import { STATS_ALL } from '/lib/stats.js'
 import { loadTerminalFont } from '/lib/terminal.js'
-import { pressOf, copyTelling, fileButtonsHtml, fileCall, itemsCss, keepingFocus, morphPanel, panelsCss, pressing, pressingAs } from '/lib/view.js'
+import { pressOf, copyTelling, fileButtonsHtml, fileCall, itemsCss, morphPanel, panelsCss, pressing, pressingAs } from '/lib/view.js'
 import { readViewer, seenMarker, seenOf, VIEWER_KEYS } from '/lib/viewer.js'
 import { ago, esc, plural } from '/lib/words.js'
 import { domId } from '/lib/morph.js'
@@ -34,7 +34,7 @@ import { subjectMenus } from './subject-menus.js'
 import { archive } from './archive.js'
 import { EXTENSIONS_VIEW, extensionsEntry } from './extensions-entry.js'
 import { boardKit } from './board.js'
-import { onDuty, $, signHtml, topAnchorOf, sightAnchorOf, holdRow, paintOnce, announce, toast, notice, closableNotice, told } from './kit.js'
+import { onDuty, $, signHtml, topAnchorOf, sightAnchorOf, holdRow, announce, toast, notice, closableNotice, told } from './kit.js'
 import { DRAFTS, draftsOf, keepUnsent, titleOf } from './clients.js'
 import { palette } from './palette.js'
 import { asksHtml, badgeHtml, drawCount, regionActionHtml, tuckableBadgeHtml } from './added.js'
@@ -82,7 +82,7 @@ const pageNow = () => lostAt() ?? Date.now()
 const view = () => page.state().view
 /** The worker the main pane is on. */
 const selected = () => cardIdOf(view())
-/** Whether the page holds its sidebar's and tab row's markup as they are: while the subject menu is open. */
+/** Whether the page holds its tab row's markup as it is: while the subject menu is open. */
 let paintHeld = () => false
 /** The main pane's view while it is a `t`. @template {MainView['t']} T @param {T} t */
 const viewing = (t) => {
@@ -121,13 +121,9 @@ function render() {
   const floors = $('floors')
   // The selected worker's row stays where a move or a click left it while in sight, so a move key's target stays in view.
   const anchor = sightAnchorOf(floors, selected()) ?? topAnchorOf(floors)
-  // A board that changes nothing drawn here keeps every control, so a press already down on one still clicks it.
-  // While the subject menu is open the floors keep their markup, which holds the ⋯ button it is anchored to.
-  if (!paintHeld()) keepingFocus(floors, () => {
-    if (!paintOnce(floors, floorsTopDown().map(floorHtml).join(''))) return floorTrays.place(floors)
-    floorTrays.place(floors)
-    holdRow(floors, anchor)
-  })
+  morphPanel(floors, floorsTopDown().map(floorHtml).join(''))
+  floorTrays.place(floors)
+  holdRow(floors, anchor)
   drawSideView()
   morphPanel($('rail'), railHtml(waiting))
   extensionsFoot.paint()

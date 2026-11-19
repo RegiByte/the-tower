@@ -288,7 +288,7 @@ export async function sidebar(deps) {
     const key = workerKeyOf(c)
     const cls = [drag?.key === key ? 'dragged' : '', drag?.before === key ? 'drop-before' : ''].filter(Boolean).join(' ')
     const grip = count > 1 ? `<button class="crew-grip" data-crew-drag="${esc(key)}" data-floor="${esc(f.id)}" aria-label="move ${esc(callsign(c.id))}'s crew: ↑ and ↓" data-tip="drag, or ↑ and ↓, to put this crew where you want it">${ICON.grip}</button>` : ''
-    return `<div class="crew-group${cls ? ` ${cls}` : ''}" data-floor="${esc(f.id)}" data-key="${esc(key)}">${grip}${crewHtml(crews, c)}</div>`
+    return `<div class="crew-group${cls ? ` ${cls}` : ''}" id="${esc(domId('crew', key))}" data-floor="${esc(f.id)}" data-key="${esc(key)}">${grip}${crewHtml(crews, c)}</div>`
   }
 
   /** @param {string} id */
@@ -309,7 +309,7 @@ export async function sidebar(deps) {
 
   /** @param {Floor} f @param {string} dir @param {boolean} hub */
   const dirHtml = (f, dir, hub) =>
-    `<div class="dir"><span class="dname" data-tip="${esc(dir)}">${hub ? ICON.hub : ICON.repo} ${esc(base(dir))}</span>
+    `<div class="dir" id="${esc(domId('dir', dir))}"><span class="dname" data-tip="${esc(dir)}">${hub ? ICON.hub : ICON.repo} ${esc(base(dir))}</span>
     ${mainUnreadHtml(f, dir)}
     ${shellButtonHtml(f, dir, base(dir))}
     ${can(f, 'editor') ? `<button class="icon-btn" data-open="${esc(dir)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(base(dir))} in your editor" data-tip="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
@@ -336,7 +336,7 @@ export async function sidebar(deps) {
     const title = [`${w.repos.map((r) => r.path).join('\n')}`, ...risk, ...goneBases(w.repos), w.state === 'carried' ? carriedLine(w.repos) : '', w.sessions.length ? `in use by ${w.sessions.join(', ')}` : ''].filter(Boolean).join('\n')
     const workers = workersIn(f, w.name)
     const resumable = workers.find((c) => can(c, 'resume'))
-    return `<div class="wt ${w.state}" data-tip="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ${ICON.branch} ${esc(worktreeBranch(w))}</span>
+    return `<div class="wt ${w.state}" id="${esc(domId('wt', w.name))}" data-tip="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ${ICON.branch} ${esc(worktreeBranch(w))}</span>
     <span class="st">${WORKTREE_STATE_NAME[w.state]}</span>
     ${w.state === 'carried' ? landingButtonHtml({ project: f.id, branch: worktreeBranch(w) }) : ''}
     ${!resumable ? '' : heldWhy('resume') ? heldHtml('resume', `resume ${resumable.callsign}`, ICON.resume, 'icon-btn') : `<button class="icon-btn" data-resume="${esc(JSON.stringify(callOf(resumable, 'resume')))}" aria-label="resume ${resumable.callsign}" data-tip="resume ${resumable.callsign}, its last worker">${ICON.resume}</button>`}
@@ -481,7 +481,7 @@ export async function sidebar(deps) {
     const open = isOpen(f)
     const n = String(all.length - i).padStart(2, '0')
     const spawn = heldWhy('spawn') ? heldHtml('spawn', `new session on ${f.name}`, ICON.plus) : can(f, 'spawn') ? `<button data-spawn="${f.id}" aria-label="new session on ${esc(f.name)}" data-tip="new session">${ICON.plus}</button>` : ''
-    return `<section class="floor${open ? '' : ' folded'}" style="${paint(f.id)}" data-hold="floor:${esc(f.id)}">
+    return `<section class="floor${open ? '' : ' folded'}" id="${esc(domId('floor', `floor:${f.id}`))}" style="${paint(f.id)}" data-hold="floor:${esc(f.id)}">
     <div class="sign">${subjectHtml('sign', `floor:${f.id}`, `${f.name}: menu`, `<span class="fold" role="heading" aria-level="2"><button data-floor-fold="${esc(f.id)}" aria-expanded="${open}" data-tip="${esc(`${f.name}: ${open ? 'fold' : 'unfold'}`)}"><span class="num">${n}</span><span class="name">${esc(f.name)}</span>${ICON.caret}</button></span>${open ? signHtml(f) : floorSummaryHtml(f)}${spawn}`)}</div>
     ${open ? floorBodyHtml(f, heads, floorCrews(f)) : ''}
   </section>`
