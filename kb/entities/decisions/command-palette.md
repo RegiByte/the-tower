@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-21",
   "reviewed": "2026-11-19",
-  "refs": ["hub/src/shared/palette.ts#paletteEntries", "hub/src/shared/palette.ts#addedEntries", "hub/src/shared/adds.ts#unboundCommands", "hub/src/shared/palette.ts#rankPalette", "hub/src/shared/palette.ts#WEIGHTS", "hub/src/shared/palette.ts#matchScore", "hub/src/shared/waits.ts#heededWaits", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/renderers/page/palette.js#palette", "hub/renderers/page/page.js#doPick", "hub/renderers/page/page.js#runAddedAt", "hub/test/palette.test.ts"]
+  "refs": ["hub/src/shared/palette.ts#paletteEntries", "hub/src/shared/palette.ts#addedEntries", "hub/src/shared/adds.ts#unboundCommands", "hub/src/shared/palette.ts#rankPalette", "hub/src/shared/palette.ts#spawnPickEntries", "hub/src/shared/palette.ts#rankSpawnPick", "hub/src/shared/palette.ts#WEIGHTS", "hub/src/shared/palette.ts#matchScore", "hub/src/shared/waits.ts#heededWaits", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/renderers/page/palette.js#palette", "hub/renderers/page/page.js#doPick", "hub/renderers/page/page.js#runAddedAt", "hub/test/palette.test.ts"]
 }
 ---
 **Problem.** The tower's capabilities were reachable only by the mouse, by chords nobody had learned yet, or by tips
@@ -39,8 +39,7 @@ same palette, and only the drawing is a renderer's.
 - No arguments, no forms: an entry runs something ready or opens the UI that exists for it (the new-worker form, a
   draft, a confirm). A pick goes through the same handler as its button or key, so destructive verbs ask through the
   same confirm and the palette can't drift from the buttons. A verb a keymap command does runs as that command and
-  shows its chords, listed once (`drive`, `brief`, `send-home`), and `send-home`'s command isn't listed when no worker
-  offers it; `submit` and `prompt`, `kill` and `cut` are left out (typed in the terminal, ended by
+  shows its chords, listed once; `submit` and `prompt`, `kill` and `cut` are left out (typed in the terminal, ended by
   `send-home` per [[crews]], chosen in the new-worker form).
 - No word soup: a capability that names a command is that command's hint, not a row; on a typed query Learn entries
   show only when it matches them, capped; patterns are one entry that opens a sheet of `GET /patterns`.
@@ -72,6 +71,13 @@ same palette, and only the drawing is a renderer's.
   an extension's action runs it through the handler its button runs
   ([`runAddedAt`](ref:hub/renderers/page/page.js#runAddedAt)), which marks it seen for the viewer
   ([[region-overflow]]): the renderer's handler does it, never the shared palette code.
+- The palette also opens over one thing alone: the floors a worker can start on, on the keymap command `spawn-pick`
+  ([`spawnPickEntries`](ref:hub/src/shared/palette.ts#spawnPickEntries)), for a new worker on another floor without
+  searching the whole catalog. Each is its floor's name; its id is the floor's spawn entry's, so a pick there is
+  recent in both. With nothing typed they are one group, the selected worker's floor first, then the floors picked
+  lately; typed, they rank as the palette does ([`rankSpawnPick`](ref:hub/src/shared/palette.ts#rankSpawnPick)). A
+  pick is the floor's `spawn`, the new-worker form. It has no default chord, as `spawn` has none: a browser keeps ⌘N
+  and ⌘⇧N for its windows, so the config's `keys` binds them where a renderer receives them (Tower.app).
 
 **Alternatives considered.**
 - Patterns as entries: stories don't fit a one-line list, and they turn the palette into reading matter.
