@@ -1,6 +1,7 @@
 import { type Board, callOf, can, type Card, type Floor, noLongerOffered, offeredCall, sentHome, type Subject } from '/lib/board.js'
 import { BLOCKED_TEXT, type DaemonVerb, detailsOf, gistLine, lampOf, LET_GO_MEANS, letGoAsk, letGoneLine, reapAsk, resumesRow, sendHomeAsk, statusName, statusTitle, verbHint, verbLabel, whereLineOf, whyNot } from '/lib/cards.js'
-import { ICON, keyedTip, type Mount, paintOnce, pressing, withIcons } from '/lib/view.js'
+import { ICON, keyedTip, morphPanel, type Mount, pressing, withIcons } from '/lib/view.js'
+import { domId } from '/lib/morph.js'
 import { esc, modelName, when } from '/lib/words.js'
 
 /**
@@ -141,7 +142,7 @@ const fillOf = (pct: number, hot: number) => (pct > hot ? 'var(--broken)' : 'var
 /** How many cards were mounted on this page: each one's popovers get ids of their own. */
 let mounts = 0
 
-export const mount: Mount = (host, { tower, board: first, subject, kit, options, scale }) => {
+export const mount: Mount = (host, { tower, board: first, subject, kit, options, scale, scope }) => {
   let board = first
   let at = subject
   let card = subject.value as Card
@@ -152,7 +153,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
   host.innerHTML = `<style>${CSS}</style><div class="bar">
     ${cell ? '<span class="mini"></span>' : ''}<div class="bar-top"${head ? '' : ' hidden'}>
       <div class="bar-main"><div class="bar-info"><span class="who"><span class="part lead"></span><span class="part stats-part"></span></span><span data-holds="badges"></span></div>
-        <div class="bar-actions"><span class="part details-part"></span><span data-holds="actions"></span><span class="part own"></span></div></div>
+        <div class="bar-actions"><span class="part details-part"></span><span data-holds="actions" id="${esc(domId(`${scope}/card.head`, subject.key))}" data-owned></span><span class="part own"></span></div></div>
       <div class="bar-sub"><span class="part where-part"></span><span data-holds="lines"></span></div></div>
     <div class="tab-row bar-line" data-holds="tabs"></div>${cell ? '<span class="acts"></span>' : ''}</div>
   <div class="bar-details" id="${pop}-details" popover></div><div class="bar-left" id="${pop}-left" popover></div>${cell ? `<div class="bar-pick" id="${pop}-pick" popover></div>` : ''}
@@ -198,8 +199,11 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
   const verbHtml = (v: { verb: 'resume' | 'let-go' | 'send-home'; mark: string; icon: string; tip: string; tuck: number; tone: string }) => {
     const label = verbLabel('card', v.verb)
     const held = v.verb === 'send-home' ? undefined : heldWhy(v.verb)
-    return `<button class="verb ${v.tone}${held ? ' held' : ''}" ${held ? 'aria-disabled="true"' : v.mark} aria-label="${esc(label)}" data-tip="${esc(held ?? v.tip)}" data-tuck="${v.tuck}">${v.icon}<span class="word">${label}</span></button>`
+    return `<button class="verb ${v.tone}${held ? ' held' : ''}" id="${esc(verbId(v.verb))}" ${held ? 'aria-disabled="true"' : v.mark} aria-label="${esc(label)}" data-tip="${esc(held ?? v.tip)}" data-tuck="${v.tuck}">${v.icon}<span class="word">${label}</span></button>`
   }
+
+  /** A head button's id: the mount's scope first, since one worker's head can be mounted in several views at once. */
+  const verbId = (name: string) => domId(`${scope}/verb`, name)
 
   const sendHomeTitle = (c: Card) => {
     const sent = sentHome(cards(), c)
@@ -238,8 +242,8 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
 
   /** The cell's own row parts: the lamp and callsign while the head is hidden, and the acts of the view holding it. */
   function drawCell(c: Card) {
-    paintOnce($('.mini'), `<span class="lamp ${lampOf(c)}" data-tip="${esc(statusName(c))}"></span><span role="heading" aria-level="2">${c.callsign}</span>${pickHtml()}`)
-    paintOnce(
+    morphPanel($('.mini'), `<span class="lamp ${lampOf(c)}" data-tip="${esc(statusName(c))}"></span><span role="heading" aria-level="2">${c.callsign}</span>${pickHtml()}`)
+    morphPanel(
       $('.acts'),
       (opts.acts ?? [])
         .map((a) =>
@@ -249,7 +253,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
         )
         .join(''),
     )
-    if (opts.pick) paintOnce($('.bar-pick'), pickMenuHtml(opts.pick))
+    if (opts.pick) morphPanel($('.bar-pick'), pickMenuHtml(opts.pick))
   }
 
   function draw() {
@@ -258,13 +262,13 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
     const orphan = c.resources.some((r) => r.orphan)
     const ctx = c.context
     if (cell) drawCell(c)
-    paintOnce(
+    morphPanel(
       $('.lead'),
       `<span class="call" role="heading" aria-level="2">${c.callsign}</span>${cell ? pickHtml() : ''}
     <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}"><span class="lamp"></span><span class="status-word">${statusName(c)} ·</span><span translate="no" data-since="${c.enteredAt}"></span></span>`,
     )
-    paintOnce($('.where-part'), `<span class="where" data-tuck-text data-tip="${esc(c.cwd)}">${withIcons(esc(whereLineOf(c, floor() as Floor, undefined)))}</span>`)
-    paintOnce(
+    morphPanel($('.where-part'), `<span class="where" data-tuck-text data-tip="${esc(c.cwd)}">${withIcons(esc(whereLineOf(c, floor() as Floor, undefined)))}</span>`)
+    morphPanel(
       $('.stats-part'),
       `<span class="stats">
       ${ctx === undefined ? '' : `<span class="meter" data-tip="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${fillOf(ctx, 80)}"><i style="width:${ctx}%"></i><span class="sr-only">context window, ${esc(modelName(c.model))}:</span></span><b>${ctx}%</b>`}
@@ -272,18 +276,18 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
       ${can(c, 'reap') ? `<button class="ports ${orphan ? 'orphan' : ''}" popovertarget="${pop}-left" data-tip="processes left running: click to see them and end them">${c.resources.length}▪ ${ports}</button>` : ''}
     </span>`,
     )
-    paintOnce($('.details-part'), `<button class="icon-btn" popovertarget="${pop}-details" aria-label="details" data-tip="everything else about ${c.callsign}" data-tuck="1">${ICON.info}</button>`)
-    paintOnce(
+    morphPanel($('.details-part'), `<button class="icon-btn" id="${esc(verbId('details'))}" popovertarget="${pop}-details" aria-label="details" data-tip="everything else about ${c.callsign}" data-tuck="1">${ICON.info}</button>`)
+    morphPanel(
       $('.own'),
       `${can(c, 'resume') ? verbHtml({ verb: 'resume', mark: 'data-resume', icon: ICON.resume, tip: verbHint('card', 'resume', c), tuck: 3, tone: 'primary' }) : ''}
     ${can(c, 'let-go') ? verbHtml({ verb: 'let-go', mark: 'data-let-go', icon: ICON.letGo, tip: `let ${c.callsign} go: ${LET_GO_MEANS}`, tuck: 2, tone: '' }) : ''}
     ${can(c, 'send-home') ? verbHtml({ verb: 'send-home', mark: 'data-send-home', icon: ICON.sendHome, tip: sendHomeTitle(c), tuck: 4, tone: 'danger' }) : ''}
-    ${scale !== 'cell' ? `<button class="icon-btn" data-home aria-label="back to the skyline" ${keyedTip(board.keys, 'back to the skyline', 'home')}>${ICON.close}</button>` : ''}`,
+    ${scale !== 'cell' ? `<button class="icon-btn" id="${esc(verbId('home'))}" data-home aria-label="back to the skyline" ${keyedTip(board.keys, 'back to the skyline', 'home')}>${ICON.close}</button>` : ''}`,
     )
-    paintOnce(details, detailsHtml(c))
-    paintOnce(left, leftHtml(c))
+    morphPanel(details, detailsHtml(c))
+    morphPanel(left, leftHtml(c))
     host.classList.toggle('asking', head && (c.status === 'needs_input' || c.status === 'blocked'))
-    paintOnce(
+    morphPanel(
       $('.ask'),
       `<span class="what"><span class="call">${c.callsign}</span> ${c.blocked ? esc(BLOCKED_TEXT[c.blocked]) : c.tool ? `asks to ${toolHtml(c.tool)}` : 'needs you'}</span>
     ${can(c, 'drive') ? `<button class="primary" data-drive ${keyedTip(board.keys, 'answer in its terminal', 'pane-terminal')}>${verbLabel('card', 'drive')}</button>` : ''}`,
