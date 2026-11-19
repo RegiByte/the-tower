@@ -2,7 +2,7 @@ import { CAPABILITIES } from '/lib/capabilities.js'
 import { domId } from '/lib/morph.js'
 import { chordLabel } from '/lib/keys.js'
 import { markdownHtml } from '/lib/markdown.js'
-import { paletteEntries, rankingOf, rankPalette } from '/lib/palette.js'
+import { paletteEntries, rankingOf, rankPalette, rankSpawnPick, spawnPickEntries } from '/lib/palette.js'
 import { morphPanel } from '/lib/view.js'
 import { esc } from '/lib/words.js'
 import { draftsOf } from './clients.js'
@@ -33,7 +33,8 @@ const RECENT_MAX = 20
 /**
  * The command palette (`/lib/palette.js`): one input over the entries for where the viewer stands, grouped, each with its
  * hint and the chords that do the same; ↑↓ move, Enter or a click picks, Esc closes. A pick closes it and goes through
- * `pick`, the page's own handlers. The patterns sheet lists `GET /patterns`.
+ * `pick`, the page's own handlers. It opens over everything (`openPalette`) or over the floors a worker can start on
+ * (`openSpawnPick`), one listing at a time. The patterns sheet lists `GET /patterns`.
  * @param {PaletteDeps} deps
  */
 export async function palette(deps) {
@@ -48,6 +49,33 @@ export async function palette(deps) {
   let active
 
   const context = () => ({ board: board(), selected: selected(), capabilities: CAPABILITIES, recent, heed: heed(), draftsOf, draftTitle, opens: opens(), stale: tower.stale() !== null })
+
+  /**
+   * What the open palette lists: `rank`, its entries in groups for what is typed; `ask`, the input's placeholder and
+   * name; `none`, what it says with nothing typed and nothing to list.
+   * @typedef {{ rank: (query: string) => PaletteGroup[], ask: string, name: string, none: string }} Listing
+   */
+
+  /** @type {Listing} */
+  const everything = {
+    rank: (query) => {
+      const ctx = context()
+      return rankPalette(paletteEntries(ctx), query, rankingOf(ctx))
+    },
+    ask: 'Go to a worker, run a command…',
+    name: 'Go to or run',
+    none: 'Type to go to a worker, a floor or a draft, or to run a command',
+  }
+
+  /** @type {Listing} */
+  const floors = {
+    rank: (query) => rankSpawnPick(spawnPickEntries(board()), query, rankingOf(context())),
+    ask: 'Floor for a new worker…',
+    name: 'Floor for a new worker',
+    none: 'No floor can start a worker now',
+  }
+
+  let listing = everything
 
   /** @param {Entry} e */
   const rowHtml = (e) => `<div class="pal-item${e.destructive ? ' danger' : ''}${e.learn ? ' learn' : ''}" role="option" id="${esc(domId('pal', e.id))}" aria-selected="${e.id === active}" data-palette-entry="${esc(e.id)}">
@@ -65,11 +93,10 @@ export async function palette(deps) {
   const entryOf = (row) => /** @type {HTMLElement} */ (row).dataset.paletteEntry
 
   function draw() {
-    const ctx = context()
-    const groups = rankPalette(paletteEntries(ctx), input.value, rankingOf(ctx))
+    const groups = listing.rank(input.value)
     shown = groups.flatMap((g) => g.entries)
     if (!shown.some((e) => e.id === active)) active = shown[0]?.id
-    morphPanel($('palette-list'), shown.length ? listHtml(groups) : `<div class="pal-empty">${input.value.trim() ? 'Nothing matches' : 'Type to go to a worker, a floor or a draft, or to run a command'}</div>`)
+    morphPanel($('palette-list'), shown.length ? listHtml(groups) : `<div class="pal-empty">${input.value.trim() ? 'Nothing matches' : esc(listing.none)}</div>`)
     drawActive()
   }
 
@@ -93,14 +120,22 @@ export async function palette(deps) {
     pick(e.does, row)
   }
 
-  function openPalette() {
-    if (dialog.open) return dialog.close()
+  /** Opens the palette over `over`, or closes it when it is open over `over` already. @param {Listing} over */
+  function openOver(over) {
+    if (dialog.open && listing === over) return dialog.close()
+    listing = over
     input.value = ''
+    input.placeholder = over.ask
+    input.setAttribute('aria-label', over.name)
     active = undefined
     draw()
-    dialog.showModal()
+    if (!dialog.open) dialog.showModal()
     input.focus()
   }
+
+  const openPalette = () => openOver(everything)
+  /** The floors a worker can start on, picked by typing a name: the new-worker form opens on the one picked. */
+  const openSpawnPick = () => openOver(floors)
 
   input.addEventListener('input', () => ((active = undefined), draw()))
   input.addEventListener('keydown', (e) => {
@@ -140,5 +175,5 @@ export async function palette(deps) {
   /** Draws the entries again while the palette is open, as a draft's title arrives. */
   const redraw = () => dialog.open && draw()
 
-  return { openPalette, redraw, showPatterns }
+  return { openPalette, openSpawnPick, redraw, showPatterns }
 }

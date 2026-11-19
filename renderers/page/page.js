@@ -520,7 +520,7 @@ function learnPick(id) {
   toast(capability.text.replace(/`/g, ''), action)
 }
 
-const { openPalette, redraw, showPatterns } = await palette({ board, selected, draftTitle, heed, pick: (does, row) => doPick(does, pressOf(row)), opens: () => opensHere() })
+const { openPalette, openSpawnPick, redraw, showPatterns } = await palette({ board, selected, draftTitle, heed, pick: (does, row) => doPick(does, pressOf(row)), opens: () => opensHere() })
 redrawPalette = redraw
 
 /** This renderer's name, from the path it is served at: `/r/<name>/`. */
@@ -1731,6 +1731,7 @@ function run(id, e) {
   if (id === 'sidebar') return (toggleSide(), true)
   if (id === 'help') return (showKeys(), true)
   if (id === 'palette') return (openPalette(), true)
+  if (id === 'spawn-pick') return (openSpawnPick(), true)
   if (id === 'leave-terminal') return (leaveTerminal(), true)
   if (id === 'shell-here') return e.repeat || shellHere()
   if (id === 'home' && !isHome(view())) return (goHome(), true)

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { WEIGHTS, matchScore, rankPalette, type Entry, type GoTarget, type Ranking } from '../src/shared/palette.ts'
+import { WEIGHTS, matchScore, rankPalette, rankSpawnPick, type Entry, type GoTarget, type Ranking } from '../src/shared/palette.ts'
 
 const entry = (id: string, label: string, more: Partial<Entry> = {}): Entry => ({ id, group: 'Commands', label, keywords: [], does: { t: 'command', id: 'help' }, ...more })
 
@@ -103,4 +103,13 @@ test('a Learn entry shows on an empty query only at the bottom, and on a match a
   const learn = Array.from({ length: 4 }, (_, n) => entry(`learn:${n}`, `Shells keep running ${n}`, { group: 'Learn', learn: true }))
   assert.deepEqual(ids(rankPalette([...learn, entry('command:help', 'Keys')], '', nowhere)), ['command:help', ...learn.map((e) => e.id)])
   assert.equal(rankPalette(learn, 'shells', nowhere)[0].entries.length, WEIGHTS.learnCap)
+})
+
+test('the floor picker, with nothing typed: the selected worker’s floor, then recent picks, the latest first, then the rest; typed, ranked by name', () => {
+  const floor = (id: string, label: string): Entry => entry(`floor/spawn@${id}`, label, { group: 'New worker on', project: id, keywords: [id], does: { t: 'action', subject: 'floor', verb: 'spawn', project: id } })
+  const floors = [floor('a', 'Alpha'), floor('b', 'Beta'), floor('c', 'Gamma'), floor('d', 'Delta')]
+  const here: Ranking = { ...nowhere, selected: 'w1', floor: 'c', recent: ['floor/spawn@d', 'floor/spawn@b'] }
+  assert.deepEqual(ids(rankSpawnPick(floors, '', here)), ['floor/spawn@c', 'floor/spawn@d', 'floor/spawn@b', 'floor/spawn@a'])
+  assert.equal(rankSpawnPick(floors, '', here).length, 1)
+  assert.deepEqual(ids(rankSpawnPick(floors, 'del', here)), ['floor/spawn@d'])
 })
