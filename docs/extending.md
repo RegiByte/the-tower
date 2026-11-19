@@ -521,7 +521,8 @@ meant (commit it).
 
 Draw Claude's answers, prompts and anything a worker wrote with `markdownHtml` of `/lib/markdown.js`, never with a
 markdown library's own `parse`: those words can carry what a web page Claude read put in them, and your renderer runs
-at the tower's origin, which holds every verb. `documentHtml` keeps a file's raw HTML as written, its links and
+at the tower's origin, which holds every verb. `markdownKept` is the same function, remembered for the texts the page
+drew most lately: draw through it what is drawn again on every event, as a brief at work is. `documentHtml` keeps a file's raw HTML as written, its links and
 scripts included (only markdown links are checked), so frame its html without `allow-scripts`.
 
 Copy with `copyText(text)` of `/lib/view.js`, or `copyTelling(text, what, toast)` to toast the outcome, never with
