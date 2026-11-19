@@ -46,6 +46,7 @@ export const COMMANDS = [
   { id: 'help', label: 'Keys and statuses', scope: 'global', group: 'Page', chords: ['?'], does: 'this sheet: the keys and what the statuses mean' },
   { id: 'spawn', label: 'New worker', scope: 'global', group: 'Page', chords: [], does: 'the new-worker form, on the floor in focus, or on the draft in focus to start a worker on it' },
   { id: 'send-home', label: 'Send home', scope: 'global', group: 'Page', chords: ['Alt+W'], does: 'send the selected worker home, with every worker under it that runs, asked first' },
+  { id: 'spawn-pick', label: 'New worker on a floor', scope: 'global', group: 'Page', chords: [], does: "the floors, to pick one by typing its name, then the new-worker form on it; the selected worker's floor comes first" },
   { id: 'pane-terminal', label: 'Terminal', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+1'], does: "the selected worker's terminal, focused", pane: { view: 'tower/terminal', name: 'screen' } },
   { id: 'pane-brief', label: 'Brief', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+2'], does: "the selected worker's brief", pane: { view: 'tower/brief', name: 'brief' } },
   { id: 'pane-changes', label: 'Changes', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+3'], does: "the selected worker's changes", pane: { view: 'tower/changes', name: 'changes' } },

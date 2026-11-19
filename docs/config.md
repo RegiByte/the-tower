@@ -353,6 +353,7 @@ Modifiers match exactly: `Alt+J` doesn't fire on ⌥⇧J. Where a chord fires is
 | `help` (the `?` sheet) | global | `?` |
 | `spawn` (the new-worker form on the floor in focus, or on the draft in focus) | global | none |
 | `send-home` (send the selected worker home with every worker under it that runs, asked first) | global | `Alt+W` |
+| `spawn-pick` (the floors, picked by typing a name, then the new-worker form on the one picked) | global | none |
 | `pane-terminal`, `pane-brief`, `pane-changes` | global | `Ctrl+Shift+1` … `Ctrl+Shift+3` |
 | `reviews/thread` (the reviews extension's tab) | global | `Ctrl+Shift+4` |
 | `shell-here` (a shell in the selected worker's directory; from any shell, hides the dock and goes back) | global | `Meta+J`, `Ctrl+Backquote` |
