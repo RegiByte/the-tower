@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-11-18",
+  "reviewed": "2026-11-19",
   "refs": [
     "hub/src/shared/prefs.ts",
     "hub/src/shared/prefs.ts#PREFS_DEFAULT",
@@ -111,7 +111,8 @@ they are written once in shared code and a next renderer gets them by importing 
   reads [`reducedMotion`](ref:hub/src/shared/prefs.ts#reducedMotion); the text it paints on canvas in the world keeps
   the shipped faces, as art.
 - *One tooltip* ([`tips.ts`](ref:hub/src/shared/tips.ts), `tips.ts`): [`watchTips`](ref:hub/src/shared/tips.ts#watchTips)
-  puts one element in the top layer and shows any `data-tip`'s text at once on keyboard focus and on a resting hover,
+  puts one element in the top layer and shows any `data-tip`'s text at once on keyboard focus (not on the focus a
+  press gives, which a text field takes as `:focus-visible`) and on a resting hover,
   with `aria-describedby` while shown. [`placeNear`](ref:hub/src/shared/tips.ts#placeNear) keeps it beside its
   element inside the viewport, and [`placeOnOpen`](ref:hub/src/shared/tips.ts#placeOnOpen) stands a popover by its
   button the same way.
