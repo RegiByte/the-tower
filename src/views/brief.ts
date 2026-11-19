@@ -105,9 +105,9 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit, scop
     saidActs = actsOn(board)
     const acts = (key: string) => (saidActs ? `<span id="${esc(domId(`${scope}/said-acts`, key))}" data-said-acts="${esc(key)}" data-owned></span>` : '')
     const promptBy = (id: string) => card.conversations.find((v) => v.id === id)?.promptBy
-    const adds = (id: string) => {
+    const adds = (id: string, session: string) => {
       const added = board.adds[`conversation:${id}`]
-      return added?.badges?.length || added?.actions?.length ? `<span id="${esc(domId(`${scope}/conv-head`, `conversation:${id}`))}" data-conversation-head="${esc(id)}" data-owned></span>` : ''
+      return added?.badges?.length || added?.actions?.length ? `<span id="${esc(domId(`${scope}/conv-head`, `${session}:conversation:${id}`))}" data-conversation-head="${esc(id)}" data-owned></span>` : ''
     }
     morphPanel(body, briefHtml({ briefs: threads, agent: board.runtimes[card.runtime].label, said: markdownOf, promptBy, open, expanded, markdown, working: card.status === 'working', adds, acts, openTools: opened, tools: (key) => tools.get(key), scope }))
     placeRegions()
