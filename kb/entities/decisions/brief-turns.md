@@ -153,7 +153,7 @@ renderer can draw the brief alike, inline.
   full once a later turn comes ([`expandedSaid`](ref:hub/src/shared/brief.ts#expandedSaid)), so what arrives folds
   nothing the viewer reads.
   A renderer passes `adds` to draw what extensions contribute to a conversation (its badges, its actions) on that
-  conversation's heading, and `acts` (since 1.118) what is offered on a prompt, an answer, or Claude's words or message
+  conversation's heading, by its id and (since 2.21) the session it is drawn in, and `acts` (since 1.118) what is offered on a prompt, an answer, or Claude's words or message
   on the way (`said`, side `step.<n>` since 1.133, [[ui-model]]) beside
   its copy, each by the key [`saidOf`](ref:hub/src/shared/brief.ts#saidOf) gives it: the view is pure and draws
   nothing when they are not given. Each part a viewer holds carries an id by the morph's rule
