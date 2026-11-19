@@ -7,9 +7,8 @@ import { panesOf } from '/lib/keys.js'
 import { domId } from '/lib/morph.js'
 import { menuPins, subjectMenu } from '/lib/palette.js'
 import { mountTermView } from '/lib/terminal.js'
-import { fileSpansHtml, ICON, keyedTip, viewHost } from '/lib/view.js'
+import { fileSpansHtml, ICON, keyedTip, morphPanel, viewHost } from '/lib/view.js'
 import { ago, esc } from '/lib/words.js'
-import { repaint } from './kit.js'
 import { actionsHtml, badgesHtml, iconActionsHtml } from './added.js'
 import { menu } from './menu.js'
 
@@ -46,7 +45,6 @@ import { menu } from './menu.js'
  *   contributions: (el: HTMLElement, id: string, subject: Subject, options: { omit?: string[] }) => RegionHandle,
  *   subjectOf: (key: string) => Subject | undefined,
  *   unshown: () => ReadonlySet<string>,
- *   held: () => boolean,
  *   mainPane: () => Pane | undefined,
  *   gone: () => void,
  *   left: () => void,
@@ -82,7 +80,7 @@ const tabKey = (view, subject) => `${view}|${subject}`
  * @param {RegionsDeps} deps
  */
 export function regions(deps) {
-  const { board, views, layout, declared, termFont, scheme, run, commandKit, tower, contributions, subjectOf, unshown, held, mainPane, gone, left } = deps
+  const { board, views, layout, declared, termFont, scheme, run, commandKit, tower, contributions, subjectOf, unshown, mainPane, gone, left } = deps
 
   /** The command that opens the view `id` where it is a pane. @param {string} id */
   const paneCommand = (id) => panesOf(board()).find((p) => p.view === id)?.command
@@ -410,7 +408,7 @@ export function regions(deps) {
       handOpen(all)
       const name = formOf()
       if (name !== formNow.name) formNow.close(), (formNow = { name, ...forms[name]() })
-      if (!held()) formNow.draw(all, shownAddsHtml(all))
+      formNow.draw(all, shownAddsHtml(all))
     }
 
     /**
@@ -452,24 +450,24 @@ export function regions(deps) {
     /**
      * The scroll form: the tabs of the panes stay put, and every other tab, extension views and
      * showings alike, scrolls sideways in a `.tab-scroll` past them, with a thin scrollbar and a fade at an edge past
-     * which more hide. The open tab is brought into view as it opens and as the row resizes.
+     * which more hide. The open tab is brought into view as it opens, as the scroller is first drawn and as the row
+     * resizes; the morph keeps the scroller, and where the viewer left it, through every other draw.
      * @param {TabOf[]} all @param {string} adds
      */
     function tabsScroll(all, adds) {
       const fixed = all.filter((t) => !t.showing && paneCommand(t.view.id))
       const rest = all.filter((t) => !fixed.includes(t))
-      repaint(strip, tablistHtml('scroll', `${tabsHtml(fixed)}<span class="tab-scroll">${tabsHtml(rest)}</span>`) + adds)
+      morphPanel(strip, tablistHtml('scroll', `${tabsHtml(fixed)}<span class="tab-scroll">${tabsHtml(rest)}</span>`) + adds)
       const scroller = /** @type {HTMLElement} */ (scrollerOf())
-      if (scroller !== scrolled.drawn) scroller.scrollLeft = scrolled.left
-      if (scrolled.open !== open) bringOpen(scroller)
-      scrolled.drawn = scroller
-      scrolled.open = open
+      if (scroller !== brought.scroller || open !== brought.open) bringOpen(scroller)
+      brought.scroller = scroller
+      brought.open = open
       markEdges(scroller)
     }
 
     /** The wrap form: every tab in the layout's order, on as many rows as they take. @param {TabOf[]} all @param {string} adds */
     function tabsWrap(all, adds) {
-      repaint(strip, tablistHtml('wrap', tabsHtml(all)) + adds)
+      morphPanel(strip, tablistHtml('wrap', tabsHtml(all)) + adds)
     }
 
     /**
@@ -478,11 +476,12 @@ export function regions(deps) {
      * don't fit; the tab last picked from the menu is drawn next while it fits, then the others fill what room is left
      * in the layout's order, each drawn where that order puts it. Each tab's width is read while every tab is drawn,
      * and remembered by what it draws until the row's width or the type changes.
-     * The tablist, "+n ▾" and the showing's adds are the row's own while it is in this form: drawn into, never replaced.
+     * The tablist, "+n ▾" and the showing's adds are the row's own while it is in this form, made once: the tabs and the
+     * adds are morphed into theirs, never replaced.
      * @returns {TabsForm}
      */
     function tabsMenu() {
-      repaint(strip, '')
+      strip.replaceChildren()
       const list = document.createElement('span')
       list.className = 'tab-set tabs-menu'
       list.role = 'tablist'
@@ -516,7 +515,7 @@ export function regions(deps) {
       /** Draws every tab and "+n ▾" at its widest, and keeps their widths. @param {TabOf[]} all */
       function measure(all) {
         list.classList.remove('tight')
-        repaint(list, tabsHtml(all))
+        morphPanel(list, tabsHtml(all))
         more.hidden = false
         more.textContent = `+${all.length} ▾`
         const gap = gapOf(list)
@@ -556,13 +555,13 @@ export function regions(deps) {
 
       return {
         draw(all, adds) {
-          repaint(addsAt, adds)
+          morphPanel(addsAt, adds)
           list.setAttribute('aria-label', `views of ${card.callsign}`)
           if (strip.clientWidth !== room) widths.clear(), (room = strip.clientWidth)
           if (all.some((t) => !widths.has(drawsOf(t)))) measure(all)
           const { drawn, tucked, tight } = fit(all)
           list.classList.toggle('tight', tight)
-          repaint(list, drawn.map((t) => (tight ? namedTabHtml : tabHtml)(t, t.key === open)).join(''))
+          morphPanel(list, drawn.map((t) => (tight ? namedTabHtml : tabHtml)(t, t.key === open)).join(''))
           more.hidden = !tucked.length
           more.textContent = `+${tucked.length} ▾`
           const said = `More tabs of ${card.callsign}: ${tucked.length}`
@@ -577,12 +576,8 @@ export function regions(deps) {
       }
     }
 
-    /**
-     * Where the scroll form's scroller was left, the scroller last drawn and the tab open then. A scroller a draw left in
-     * place already sits where the viewer left it: only one a draw put in its place takes the offset back.
-     * @type {{ left: number, drawn?: HTMLElement, open?: string }}
-     */
-    const scrolled = { left: 0 }
+    /** The scroller the scroll form last brought the open tab into view in, and the tab open then. @type {{ scroller?: HTMLElement, open?: string }} */
+    const brought = {}
 
     const scrollerOf = () => /** @type {HTMLElement | null} */ (strip.querySelector(':scope > .tab-set > .tab-scroll'))
 
@@ -607,9 +602,8 @@ export function regions(deps) {
       else if (at.right > box.right - fade) scroller.scrollLeft += at.right - box.right + fade
     }
 
-    /** Keeps where the scroller is, and fades each edge past which more tabs hide, but not over an open tab shown from its start that fills it. @param {HTMLElement} scroller */
+    /** Fades each edge of the scroller past which more tabs hide, but not over an open tab shown from its start that fills it. @param {HTMLElement} scroller */
     function markEdges(scroller) {
-      scrolled.left = scroller.scrollLeft
       const tab = openIn(scroller)
       const whole = !!tab && fills(scroller, tab) && Math.abs(tab.getBoundingClientRect().left - scroller.getBoundingClientRect().left) < 1
       scroller.classList.toggle('more-before', !whole && scroller.scrollLeft > 0)

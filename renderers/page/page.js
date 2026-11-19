@@ -82,8 +82,6 @@ const pageNow = () => lostAt() ?? Date.now()
 const view = () => page.state().view
 /** The worker the main pane is on. */
 const selected = () => cardIdOf(view())
-/** Whether the page holds its tab row's markup as it is: while the subject menu is open. */
-let paintHeld = () => false
 /** The main pane's view while it is a `t`. @template {MainView['t']} T @param {T} t */
 const viewing = (t) => {
   const v = view()
@@ -511,8 +509,7 @@ function openedViews() {
 const menuPinning = (key) =>
   key.startsWith('shown:') ? { region: 'shown.tab', holds: placing().regions.find((r) => r.id === 'shown.tab')?.holds ?? [], pinned: layout()['shown.tab']?.pinned ?? [], label: 'Pin to the tab' } : undefined
 
-const subjectMenu = subjectMenus({ board, opened: openedViews, origins, pick: doMenuPick, closed: render, pins: menuPinning, pin: pinIn })
-paintHeld = subjectMenu.open
+const subjectMenu = subjectMenus({ board, opened: openedViews, origins, pick: doMenuPick, pins: menuPinning, pin: pinIn })
 
 /** A capability shown: its words, with the verb it names on the selected worker's floor when that floor offers it. @param {string} id */
 function learnPick(id) {
@@ -1277,7 +1274,6 @@ function started(reply) {
 
 const mainRegion = regions({
   board,
-  held: () => paintHeld(),
   views: () => viewsOf(board()),
   layout,
   declared: () => placing().regions,

@@ -15,7 +15,6 @@ import { menuPins, subjectMenu } from '/lib/palette.js'
  *   opened: () => Opened[],
  *   origins: () => Record<string, string>,
  *   pick: (does: MenuPick, press: Press) => void,
- *   closed: () => void,
  *   pins: (key: string) => Pinning | undefined,
  *   pin: (region: string, pin: string, on: boolean) => void,
  * }} SubjectMenusDeps
@@ -64,13 +63,12 @@ const linePress = (key, line) => ({ key: `menu ${key} ${line.id}`, marks: `tower
  * The page's one subject menu, drawn once at the end of the body, where no redraw reaches it: filled from
  * `subjectMenu` for the subject it opens for, as the board and the page's open views stand then, and a chosen line run
  * through `pick` as its press (`linePress`). A subject drawn beside a region its lines pin into (`pins`) has a submenu
- * pinning them there, each toggled through `pin`. `closed` is told as it closes. Answers whether it is open, and runs a
- * line pinned beside its subject.
+ * pinning them there, each toggled through `pin`. Answers what runs a line pinned beside its subject.
  * @param {SubjectMenusDeps} deps
  */
-export function subjectMenus({ board, opened, origins, pick, closed, pins, pin }) {
+export function subjectMenus({ board, opened, origins, pick, pins, pin }) {
   document.body.insertAdjacentHTML('beforeend', subjectMenuHtml())
-  const menu = /** @type {HTMLElement & { items: unknown, open: boolean }} */ (document.getElementById(SUBJECT_MENU))
+  const menu = /** @type {HTMLElement & { items: unknown }} */ (document.getElementById(SUBJECT_MENU))
   /** The subject the menu was filled for, its lines by id, and the region its lines pin into. */
   let filled = { key: '', lines: /** @type {Map<string, MenuLine>} */ (new Map()), pinning: /** @type {Pinning | undefined} */ (undefined) }
 
@@ -93,11 +91,7 @@ export function subjectMenus({ board, opened, origins, pick, closed, pins, pin }
     if (filled.pinning && value.startsWith(PIN)) return pin(filled.pinning.region, value.slice(PIN.length), checked)
     run(e)
   })
-  menu.addEventListener('openchange', (e) => {
-    if (!(/** @type {CustomEvent<{ value: boolean }>} */ (e).detail.value)) queueMicrotask(closed)
-  })
   return {
-    open: () => menu.open,
     /** Runs the line `id` of the menu of the subject `key` as picking it in the menu does: a line pinned beside its subject. @param {string} key @param {string} id */
     runLine: (key, id) => {
       const m = subjectMenu(board(), key, { open: opened(), origins: origins() })
