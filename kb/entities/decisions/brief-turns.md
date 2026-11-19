@@ -156,7 +156,11 @@ renderer can draw the brief alike, inline.
   conversation's heading, and `acts` (since 1.118) what is offered on a prompt, an answer, or Claude's words or message
   on the way (`said`, side `step.<n>` since 1.133, [[ui-model]]) beside
   its copy, each by the key [`saidOf`](ref:hub/src/shared/brief.ts#saidOf) gives it: the view is pure and draws
-  nothing when they are not given.
+  nothing when they are not given. Each part a viewer holds carries an id by the morph's rule
+  ([[drawn-or-owned]]), its place under the view model's `scope` (since 2.21: a view's mount, or the container a
+  renderer draws it in): a conversation, a turn, a bubble and its expand box, an earlier session's fold, a tool call
+  or a run of them. A tool call's id is keyed by the session it is drawn in as well as its own key, since a resumed
+  conversation's turns are drawn again in the session that resumed it.
 - *Rendered or raw* is a viewer's choice in `tower.store`
   ([`BRIEF_MARKDOWN_KEY`](ref:hub/src/shared/brief.ts#BRIEF_MARKDOWN_KEY),
   [`markdownSection`](ref:hub/src/shared/settings.ts#markdownSection)): view state, not config
