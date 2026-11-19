@@ -4,8 +4,8 @@
   "name": "Tower page",
   "summary": "The tower page, the renderer / opens by default: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf.",
   "in": "tower-core",
-  "reviewed": "2026-11-18",
-  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/clients.js", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/added.js#drawCount", "hub/renderers/page/regions.js#regions", "hub/renderers/page/stats.js#stats", "hub/renderers/page/extensions-entry.js#extensionsEntry", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster", "hub/src/views/card.ts#mount", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/page.js#markSeen", "hub/renderers/page/menu.js#menu", "hub/renderers/page/fit.js#lineWidth", "hub/renderers/page/page.js#pinIn", "hub/src/shared/adds.ts#rankedActions", "hub/src/shared/viewer.ts#seenOf", "hub/renderers/page/page.js#subjectLeft", "hub/renderers/page/subject-menus.js#subjectMenus", "hub/renderers/page/page.js#doMenuPick", "hub/renderers/page/page.js#MENU_PICKS", "hub/src/shared/subject-menu.ts#subjectMenu", "hub/src/shared/spawn-form.ts#spawnFormHtml"]
+  "reviewed": "2026-11-19",
+  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/clients.js", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/added.js#drawCount", "hub/renderers/page/regions.js#regions", "hub/renderers/page/stats.js#stats", "hub/renderers/page/extensions-entry.js#extensionsEntry", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster", "hub/src/views/card.ts#mount", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/added.js#regionActionHtml", "hub/src/shared/panel-kit.ts#morphPanel", "hub/renderers/page/page.js#markSeen", "hub/renderers/page/menu.js#menu", "hub/renderers/page/fit.js#lineWidth", "hub/renderers/page/page.js#pinIn", "hub/src/shared/adds.ts#rankedActions", "hub/src/shared/viewer.ts#seenOf", "hub/renderers/page/page.js#subjectLeft", "hub/renderers/page/subject-menus.js#subjectMenus", "hub/renderers/page/page.js#doMenuPick", "hub/renderers/page/page.js#MENU_PICKS", "hub/src/shared/subject-menu.ts#subjectMenu", "hub/src/shared/spawn-form.ts#spawnFormHtml"]
 }
 ---
 Built to learn from and throw away ([[renderer-is-disposable]]): it draws the board the [[tower-server]] serves and
@@ -90,8 +90,13 @@ picked or not, gives way to the Brief, and pressing Terminal then shows the last
 **Regions.** What extensions add to a region the page fills ([`kitRegion`](ref:hub/renderers/page/page.js#kitRegion))
 comes in the ranked order every renderer shares, and a region too full for it overflows in the form the layout picks
 ([[region-overflow]] owns the rules: ranking, pins, budgets, what is new). The page's part is measuring and
-remembering. The fit reads every region drawn in one frame: untucking them first when they must be measured afresh,
-reading them, then writing. It remembers each item's width while tucked
+remembering. Each region's holds are morphed ([`morphPanel`](ref:hub/src/shared/panel-kit.ts#morphPanel)), what is new to the viewer (the `fresh` dot and
+the description "new") and what is tucked (`data-tucked`) drawn into their html
+([`regionActionHtml`](ref:hub/renderers/page/added.js#regionActionHtml)), each action by its id
+`<region>/act:<subject key>/<action id>`, so a redraw keeps an action's focus, its dot and its busy mark. The fit reads every region
+drawn in one frame: untucking them first when they must be measured afresh, reading them, then writing; it writes
+`data-tucked` on the view's own controls it tucks, which the view draws, after each update the view makes following
+its own redraw. It remembers each item's width while tucked
 ([`lineWidth`](ref:hub/renderers/page/fit.js#lineWidth)) and forgets the widths when the row's inline size changes,
 fonts load or the viewer's text size changes, never on the clock's tick (the pill's time has a reserved width). A
 region not drawn is neither measured nor fitted. Tucked items are reached through ⋯
