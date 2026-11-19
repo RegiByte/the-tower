@@ -1661,8 +1661,6 @@ document.addEventListener('click', async (e) => {
   if (worker) return select(worker)
   const unshowKey = target.closest('[data-unshow]')?.dataset.unshow
   if (unshowKey) return unshow(unshowKey)
-  const out = target.closest('[data-out]')?.dataset.out
-  if (out) return window.open(out, '_blank', 'noreferrer')
   const open = target.closest('[data-open]')
   if (open) return openInEditor(pressOf(open), /** @type {Floor} */ (floorOf(/** @type {string} */ (open.dataset.openProject))), /** @type {string} */ (open.dataset.open))
   const shelved = target.closest('[data-shelf]')
