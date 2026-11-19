@@ -1,7 +1,7 @@
 import { extensionsAttention, extensionsListHtml, extensionsSummary, brokenExtensions } from '/lib/extensions-panel.js'
 import { placeOnOpen } from '/lib/chrome.js'
 import { morphPanel } from '/lib/view.js'
-import { $, paintOnce } from './kit.js'
+import { $ } from './kit.js'
 
 /**
  * @import { Board } from '/lib/board.js'
@@ -80,7 +80,7 @@ export function extensionsEntry({ board, open, isOpen }) {
     const broken = brokenExtensions(extensions).length
     button.className = `extensions-open ${extensionsAttention(extensions)}${isOpen() ? ' on' : ''}`
     button.setAttribute('aria-label', `${extensionsSummary(extensions)}: open every extension's status`)
-    paintOnce(button, `<span class="lamp"></span>Extensions <b>${broken ? `${broken} not running` : extensions.length}</b>`)
+    morphPanel(button, `<span class="lamp"></span>Extensions <b>${broken ? `${broken} not running` : extensions.length}</b>`)
     morphPanel(pop, `${extensionsListHtml(extensions)}<small class="more">click for the full view: what each declares, and what fixes each problem</small>`)
   }
 
