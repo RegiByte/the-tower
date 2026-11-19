@@ -79,7 +79,9 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, scope: m
 
   /**
    * What acts on the picked lines (`lines.acts`), mounted in the box drawn under them (`at`), which the morph keeps
-   * while the pick stays, so what is written there stays. Something there that is `done` with the lines lets the pick go.
+   * while the pick stays or moves by a click, so what is written there stays. A drag draws no box until the drop, which
+   * mounts it anew: what it holds keeps only what it keeps itself (the reviews composer, its draft). Something there that
+   * is `done` with the lines lets the pick go.
    */
   let picks: { region: RegionHandle; at: HTMLElement } | undefined
   el.addEventListener('done', (e) => {
