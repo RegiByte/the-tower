@@ -285,7 +285,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
       $('.own'),
       `${can(c, 'resume') ? verbHtml({ verb: 'resume', mark: 'data-resume', icon: ICON.resume, tip: verbHint('card', 'resume', c), tuck: 3, tone: 'primary' }) : ''}
     ${can(c, 'let-go') ? verbHtml({ verb: 'let-go', mark: 'data-let-go', icon: ICON.letGo, tip: `let ${c.callsign} go: ${LET_GO_MEANS}`, tuck: 2, tone: '' }) : ''}
-    ${can(c, 'send-home') ? verbHtml({ verb: 'send-home', mark: `data-send-home aria-keyshortcuts="${keyshortcuts(board.keys, 'send-home')}"`, icon: ICON.sendHome, tip: sendHomeTitle(c), tuck: 4, tone: 'danger' }) : ''}
+    ${can(c, 'send-home') ? verbHtml({ verb: 'send-home', mark: `data-send-home${keysHint(board.keys, 'send-home') ? ` aria-keyshortcuts="${keyshortcuts(board.keys, 'send-home')}"` : ''}`, icon: ICON.sendHome, tip: sendHomeTitle(c), tuck: 4, tone: 'danger' }) : ''}
     ${scale !== 'cell' ? `<button class="icon-btn" id="${esc(verbId('home'))}" data-home aria-label="back to the skyline" ${keyedTip(board.keys, 'back to the skyline', 'home')}>${ICON.close}</button>` : ''}`,
     )
     morphPanel(details, detailsHtml(c))
