@@ -91,7 +91,9 @@ main pane at once. Under the
 head sits one tab row, the shared panels then the worker's showings ([[agent-show]]), drawn in the form the layout
 picks among `card.panes`' (`scroll`, `wrap`, `menu`: [`tabsScroll`](ref:hub/renderers/page/regions.js#tabsScroll),
 [`tabsWrap`](ref:hub/renderers/page/regions.js#tabsWrap), [`tabsMenu`](ref:hub/renderers/page/regions.js#tabsMenu)).
-Its ids carry the mount's scope, as the head's do: a tab `<scope>/tab:<view>|<subject>`, a shown tab's area
+The row is morphed on each board ([`morphPanel`](ref:hub/src/shared/panel-kit.ts#morphPanel)), the menu form's into
+the tabs' row and the adds it makes once, so where the scroll form's strip is scrolled, focus on a tab or on the open
+tab's ⋯, and "+n ▾"'s list open hold through boards. Its ids carry the mount's scope, as the head's do: a tab `<scope>/tab:<view>|<subject>`, a shown tab's area
 `<scope>/tab:shown:<card>/<at>` and its button `<scope>/tab/pick:…`, a panel `<scope>/panel:<view>|<subject>`, which
 its tab's `aria-controls` names.
 A worker that runs opens on its terminal and a stopped one on its Brief; a terminal that ends while its tab is open,
@@ -139,8 +141,8 @@ menu's line ids are each its own, and `subjectMenu` throws on two alike. Their i
 its layout pins in `shown.tab` of its menu, an extension's command or one of the menu's own lines run as the menu
 runs it ([[region-overflow]]), but a link's tab no `out`, its name's ↗ saying it opens outside already, and the menu's "Pin to the tab" submenu pins or unpins any of them through
 [`pinIn`](ref:hub/renderers/page/page.js#pinIn), a check closing the menu so the tab is drawn again with it. A ⋯-opened menu is anchored to its button, which the SDK
-closes it on losing: the floors' morph keeps a row's or a sign's ⋯ through boards, and while the menu is open the tab
-row, drawn by innerHTML until the morph reaches it, is not painted, and is painted once as it closes.
+closes it on losing: the floors' and the tab row's morphs keep a row's, a sign's or a tab's ⋯ through boards, so a
+board drawn while the menu is open leaves it open where it was.
 
 **Frames** that run a floor's own page (a shelf `html` or `renderer` entry, an `html` item, a shown file) are
 sandboxed at an opaque origin and granted `clipboard-write`, so a copy button inside works framed; a `url` frame may
