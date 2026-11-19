@@ -152,7 +152,7 @@ export function startPanels(started: PanelsDeps) {
       show('logbook-shot', panel.tab === 'screen')
       show('logbook-text', panel.tab === 'brief')
       $('logbook-sessions').innerHTML = sessionsHtml(c, panel.on, panel.threads)
-      $('logbook-text').innerHTML = logbookBriefHtml(board, c, panel.threads, briefLook($('logbook-text')))
+      $('logbook-text').innerHTML = logbookBriefHtml(board, c, panel.threads, briefLook($('logbook-text')), 'logbook')
     }
     if (panel.kind === 'draft') {
       const d = draft!
@@ -1044,7 +1044,7 @@ export function startPanels(started: PanelsDeps) {
   function drawDeskBrief(same: boolean) {
     const c = findCard(boardNow()!, deskBrief!.id)!
     const look = same ? briefLook($('desk-brief')) : { open: new Set<string>(), expanded: new Set<string>(), tools: toolRead, markdown: port.state().viewer.briefMarkdown }
-    $('desk-brief').innerHTML = logbookHtml(boardNow()!, c, deskBrief!.threads, look, replayNow()?.id === c.id ? replayNow()!.session : undefined)
+    $('desk-brief').innerHTML = logbookHtml(boardNow()!, c, deskBrief!.threads, look, replayNow()?.id === c.id ? replayNow()!.session : undefined, 'desk')
   }
 
   /** The logbook again, if the desk shows it, in your `viewer.briefMarkdown`. */
