@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-11-18",
+  "reviewed": "2026-11-19",
   "refs": [
     "hub/src/shared/panels.ts",
     "hub/src/shared/changes-panel.ts#markedChangesHtml",
@@ -64,8 +64,8 @@ are the same view in every renderer; only where they sit, their state and a few 
   `reviews/thread` at its desk, and the reviews extension's `reviews/checkout-thread` view in its reader, on a
   checkout's `reviews.thread` subject ([`hosting.ts`](ref:hub/renderers/tower3d/src/hosting.ts)). The Changes panel
   knows nothing of review threads: it draws the card's `marks` on their lines, picks lines where a renderer says
-  something acts on them, and leaves an element under the pick (`data-pick-acts`) the renderer fills with the
-  `lines.acts` region ([[ui-model]]). Both draw through one core,
+  something acts on them, and leaves an element under the pick (`data-pick-acts`, owned and given an id, so a morph
+  keeps what is mounted in it while the pick stays) the renderer fills with the `lines.acts` region ([[ui-model]]). Both draw through one core,
   [`changesPanelHtml`](ref:hub/src/shared/changes-panel.ts#changesPanelHtml), which takes what each line says it is
   marked with and the row drawn under a pick. `panels.ts` holds no anchor or note helpers: the reviews extension's
   client holds them (`/x/reviews/anchors.js`).

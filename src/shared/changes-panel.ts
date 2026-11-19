@@ -15,6 +15,7 @@ import { isCommitScope, type ChangesRead, type ChangesScope } from './changes-re
 import { changedFiles, fileKey, fileRows, isFolded, isViewed, livePick, pickRange, splitRows, viewedCount, type LinePick, type Row } from './changes-lines.ts'
 import { fileButtonsHtml } from './file-acts.ts'
 import { failedHtml, settledHtml } from './panel-html.ts'
+import { domId } from './dom-id.ts'
 
 /**
  * What every Changes panel draws from: `folds` are the files folded or unfolded against what their viewed mark says, by
@@ -23,9 +24,11 @@ import { failedHtml, settledHtml } from './panel-html.ts'
  * worker's checkout stands (`card.checkoutState`). `layout`: each file's diff as one column of lines, or its old side
  * and new side by side. `scope`: what the read compares, the picker's choice; on a commit no lines are picked or
  * marked. `tree`: the changed files drawn as a tree beside the diffs, each going to its file; `treeFolds` its folders
- * folded, by the `data-tree-fold` they were clicked on.
+ * folded, by the `data-tree-fold` they were clicked on. `mount`: the mount drawing it (a view's `ctx.scope`), and `card`
+ * the worker's card, first in each id's place and key: one worker's Changes can be drawn in several views at once.
  */
 type ChangesBase = {
+  mount: string; card: string
   read: ChangesRead | undefined; failed: string | undefined; folds: ReadonlySet<string>; pick: LinePick | undefined; picking: boolean; checkout: string
   state: CheckoutState; layout: DiffLayout; scope: ChangesScope; tree: boolean; treeFolds: ReadonlySet<string>
 }
@@ -64,8 +67,9 @@ export function markedLines(marks: AddedMark[], repo: RepoChanges, f: DiffFile) 
 
 const PICK_TIP = 'click to pick this line, drag or ⇧-click for more'
 
-/** What a renderer offers on picked lines goes here, under them. */
-const pickActsHtml = (_: ReadView, cols: number) => `<tr class="note-row"><td colspan="${cols}"><div class="pick-acts" data-pick-acts></div></td></tr>`
+/** What a renderer offers on picked lines goes here, under them: owned by what it mounts there, which a redraw keeps. */
+const pickActsHtml = (v: ReadView, cols: number) =>
+  `<tr class="note-row"><td colspan="${cols}"><div class="pick-acts" id="${esc(domId(`${v.mount}/pick-acts`, `card:${v.card}`))}" data-pick-acts data-owned></div></td></tr>`
 
 /** What changed in a worker's repos, its lines marked by what extensions add to its card. @since 1.116 */
 export const markedChangesHtml = (v: MarkedChangesView) =>
@@ -275,7 +279,7 @@ function fileHtml(v: ReadView, repo: RepoChanges, f: DiffFile) {
   const viewed = isViewed(v.read.viewed, repo, f)
   const folded = isFolded(v.read, v.folds, repo, f)
   const dir = f.path.includes('/') ? f.path.slice(0, f.path.lastIndexOf('/') + 1) : ''
-  return `<section class="file ${viewed ? 'viewed' : ''} ${folded ? 'folded' : ''}" data-file="${key}">
+  return `<section class="file ${viewed ? 'viewed' : ''} ${folded ? 'folded' : ''}" id="${esc(domId(`${v.mount}/file`, fileKey(repo, f)))}" data-file="${key}">
     <header data-fold="${key}"><button class="icon-btn caret" data-fold="${key}" aria-expanded="${!folded}" aria-label="${esc(f.path)}">${ICON.caret}</button><span class="mark ${f.change}">${CHANGE_MARK[f.change]}</span>
       ${v.manyRepos ? `<span class="repo-chip" data-tip="${esc(repo.dir)}">${ICON.repo}${esc(repoName(repo.dir))}</span>` : ''}<span class="path">${f.from ? `<i>${esc(f.from)} → </i>` : ''}<i>${esc(dir)}</i>${esc(f.path.slice(dir.length))}</span>
       ${f.change === 'deleted' ? '' : fileButtonsHtml(`${repo.dir}/${f.path}`)}
