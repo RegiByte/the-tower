@@ -80,7 +80,10 @@ and drafts'. A user's extension can replace either and serve no such file, and a
 what that file drew. Any other failure of those imports fails as an import does.
 
 **A worker's head** ([`tower/card`](ref:hub/src/views/card.ts#mount)) never crops what identifies the worker: its
-density follows its own width through a container query, so a grid cell and a narrow window look alike. Under the
+density follows its own width through a container query, so a grid cell and a narrow window look alike. Its parts
+are morphed on each board, so focus on a head button and a selection in its open details stay; its buttons' ids carry
+the mount's scope (`<scope>/verb:send-home`), since one worker's head can be mounted in a grid cell and kept in the
+main pane at once. Under the
 head sits one tab row, the shared panels then the worker's showings ([[agent-show]]), drawn in the form the layout
 picks among `card.panes`' (`scroll`, `wrap`, `menu`: [`tabsScroll`](ref:hub/renderers/page/regions.js#tabsScroll),
 [`tabsWrap`](ref:hub/renderers/page/regions.js#tabsWrap), [`tabsMenu`](ref:hub/renderers/page/regions.js#tabsMenu)).
@@ -90,13 +93,14 @@ picked or not, gives way to the Brief, and pressing Terminal then shows the last
 **Regions.** What extensions add to a region the page fills ([`kitRegion`](ref:hub/renderers/page/page.js#kitRegion))
 comes in the ranked order every renderer shares, and a region too full for it overflows in the form the layout picks
 ([[region-overflow]] owns the rules: ranking, pins, budgets, what is new). The page's part is measuring and
-remembering. Each region's holds are morphed ([`morphPanel`](ref:hub/src/shared/panel-kit.ts#morphPanel)), what is new to the viewer (the `fresh` dot and
-the description "new") and what is tucked (`data-tucked`) drawn into their html
+remembering. Each region's holds are morphed ([`morphPanel`](ref:hub/src/shared/panel-kit.ts#morphPanel)), what is
+new to the viewer (the `fresh` dot and the description "new") and what is tucked (`data-tucked`) drawn into their html
 ([`regionActionHtml`](ref:hub/renderers/page/added.js#regionActionHtml)), each action by its id
-`<region>/act:<subject key>/<action id>`, so a redraw keeps an action's focus, its dot and its busy mark. The fit reads every region
-drawn in one frame: untucking them first when they must be measured afresh, reading them, then writing; it writes
-`data-tucked` on the view's own controls it tucks, which the view draws, after each update the view makes following
-its own redraw. It remembers each item's width while tucked
+`<region>/act:<subject key>/<action id>`, so a redraw keeps an action's focus, its dot and its busy mark. The `menu`
+form's slot on a worker's head, holding the nodes ⋯ and its menu are made of, is `data-owned` with an id. The fit
+reads every region drawn in one frame: untucking them first when they must be measured afresh, reading them, then
+writing. It also tucks the view's own controls (`data-tuck`), which the view draws: a view updates its region after
+each redraw, so the fit marks them again before the frame is painted. It remembers each item's width while tucked
 ([`lineWidth`](ref:hub/renderers/page/fit.js#lineWidth)) and forgets the widths when the row's inline size changes,
 fonts load or the viewer's text size changes, never on the clock's tick (the pill's time has a reserved width). A
 region not drawn is neither measured nor fitted. Tucked items are reached through ⋯
