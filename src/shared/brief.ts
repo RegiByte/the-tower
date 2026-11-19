@@ -209,11 +209,13 @@ export async function withWholesRead(read: Brief[], wholes: () => Brief[], conve
 }
 
 /**
- * What a worker's brief is read at: its status, its tool, its conversations and what extensions add to them. A brief
- * shown is read again when this moves. @since 1.161
+ * What a worker's brief is read at: its status, when its runtime was last heard from, its conversations and what
+ * extensions add to them. A brief shown is read again when this moves. Every event that changes a turn is heard (a tool
+ * call starting or ending, a step, a message arriving), while the status and the latest tool's label stay as they were
+ * through most of them. @since 1.161 @since 2.21 read at what was last heard, not the latest tool
  */
 export const briefKey = (board: Pick<Board, 'adds'>, c: Card) =>
-  `${c.status} ${c.tool} ${JSON.stringify(c.conversations)} ${JSON.stringify(c.conversations.map((v) => board.adds[`conversation:${v.id}`]))}`
+  `${c.status} ${c.heardAt} ${JSON.stringify(c.conversations)} ${JSON.stringify(c.conversations.map((v) => board.adds[`conversation:${v.id}`]))}`
 
 /** Whether a tool call read is how it ended, to keep for every draw after: one still running is read again when opened. @since 1.133 */
 export const toolCallSettled = (call: ToolCall) => call.outcome !== 'running'

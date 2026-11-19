@@ -143,7 +143,8 @@ renderer can draw the brief alike, inline.
   fails to read is let go and said, and the brief is drawn as read. So a worker at work, its
   latest turn moving with each tool call and message, keeps it whole and what the viewer expanded in it open. A
   tool call opened while it runs is drawn as last read until it is read again. A
-  brief shown is read again whenever its card's status, tool, conversations or their additions move
+  brief shown is read again whenever its card's status, when its runtime was last heard from (`heardAt`: every tool call
+  starting or ending, every step and message is heard), its conversations or their additions move
   ([`briefKey`](ref:hub/src/shared/brief.ts#briefKey)), in the page's Brief and Tower 3D's logbook alike. A message to a subagent is its `SendMessage` call, its
   address no worker's. Each bubble copies
   its text as written, read from the reply the renderer holds ([`saidText`](ref:hub/src/shared/brief.ts#saidText),
