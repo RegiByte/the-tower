@@ -106,10 +106,10 @@ test('a Learn entry shows on an empty query only at the bottom, and on a match a
 })
 
 test('the floor picker, with nothing typed: the selected worker’s floor, then recent picks, the latest first, then the rest; typed, ranked by name', () => {
-  const floor = (id: string, label: string): Entry => entry(`floor/spawn@${id}`, label, { group: 'New worker on', project: id, keywords: [id], does: { t: 'action', subject: 'floor', verb: 'spawn', project: id } })
+  const floor = (id: string, label: string): Entry => entry(`spawn-pick@${id}`, label, { group: 'New worker on', project: id, keywords: [id], does: { t: 'action', subject: 'floor', verb: 'spawn', project: id } })
   const floors = [floor('a', 'Alpha'), floor('b', 'Beta'), floor('c', 'Gamma'), floor('d', 'Delta')]
-  const here: Ranking = { ...nowhere, selected: 'w1', floor: 'c', recent: ['floor/spawn@d', 'floor/spawn@b'] }
-  assert.deepEqual(ids(rankSpawnPick(floors, '', here)), ['floor/spawn@c', 'floor/spawn@d', 'floor/spawn@b', 'floor/spawn@a'])
+  const here: Ranking = { ...nowhere, selected: 'w1', floor: 'c', recent: ['spawn-pick@d', 'spawn-pick@b'] }
+  assert.deepEqual(ids(rankSpawnPick(floors, '', here)), ['spawn-pick@c', 'spawn-pick@d', 'spawn-pick@b', 'spawn-pick@a'])
   assert.equal(rankSpawnPick(floors, '', here).length, 1)
-  assert.deepEqual(ids(rankSpawnPick(floors, 'del', here)), ['floor/spawn@d'])
+  assert.deepEqual(ids(rankSpawnPick(floors, 'del', here)), ['spawn-pick@d'])
 })
