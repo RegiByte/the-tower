@@ -124,7 +124,7 @@ function render() {
   // A board that changes nothing drawn here keeps every control, so a press already down on one still clicks it.
   // While the subject menu is open the floors keep their markup, which holds the ⋯ button it is anchored to.
   if (!paintHeld()) keepingFocus(floors, () => {
-    if (!paintOnce(floors, floorsTopDown().map(floorHtml).join(''))) return floorTrays.refresh(floors)
+    if (!paintOnce(floors, floorsTopDown().map(floorHtml).join(''))) return floorTrays.place(floors)
     floorTrays.place(floors)
     holdRow(floors, anchor)
   })
@@ -1301,19 +1301,17 @@ const mainRegion = regions({
   runLine: (subject, line) => subjectMenu.runLine(subject, line),
 })
 /** A floor's trays, a view per collection (`floor.trays`), mounted by the main pane's region code and placed in the sidebar's paint. */
-const floorTrays = mainRegion.rows('floor.trays')
+const floorTrays = mainRegion.rows('floor.trays', 'tray')
 
 /** The strip at the top of the sidebar (`board.strip`): a view on the board, mounted for as long as the page is open. */
-const boardStrip = mainRegion.rows('board.strip')
+const boardStrip = mainRegion.rows('board.strip', 'strip')
 
-/** The strip's view in its place, when a view draws it: its focus kept across the paint, as the floors' is. */
+/** The strip's view in its place, when a view draws it. */
 const paintStrip = () => {
   const strip = $('strip')
   const subject = /** @type {Subject} */ (subjectAt(board(), 'board'))
-  keepingFocus(strip, () => {
-    strip.innerHTML = boardStrip.draws(subject) ? boardStrip.slotHtml(subject) : ''
-    boardStrip.place(strip)
-  })
+  morphPanel(strip, boardStrip.draws(subject) ? boardStrip.slotHtml(subject) : '')
+  boardStrip.place(strip)
 }
 
 /** Where each of a floor's collections goes in its row of trays, in the order the region places them. @param {Floor} f */
