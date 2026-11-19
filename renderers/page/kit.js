@@ -1,12 +1,12 @@
 import { gistOf, shownHref, shownKey } from '/lib/cards.js'
 import { closableNoticer, noticer, toaster } from '/lib/chrome.js'
 import { keysHint } from '/lib/keys.js'
-import { GIST_ICON, ICON, keepingFocus, keyedTip } from '/lib/view.js'
+import { GIST_ICON, ICON, keyedTip } from '/lib/view.js'
 import { esc, when } from '/lib/words.js'
 
 /**
- * What the tower page's panes draw with alike: a card's gist, times, the close of a view, a toast, painting only
- * what changed and keeping a scrolled list's row in place, and a showing's key, pane and address.
+ * What the tower page's panes draw with alike: a card's gist, times, the close of a view, a toast, keeping a scrolled
+ * list's row in place, and a showing's key, pane and address.
  * @import { Card } from '/lib/board.js'
  * @import { Keys } from '/lib/keys.js'
  */
@@ -88,16 +88,6 @@ function holdRow(list, anchor) {
   scroller.scrollTop += row.getBoundingClientRect().top - scroller.getBoundingClientRect().top - anchor.offset
 }
 
-/** Writes `html` into `el` only when it changed, so a focused or hovered control in it survives a render. @type {WeakMap<HTMLElement, string>} */
-const painted = new WeakMap()
-
-/** Whether it wrote. @param {HTMLElement} el @param {string} html */
-const paintOnce = (el, html) => painted.get(el) !== html && (painted.set(el, html), (el.innerHTML = html), true)
-
-/** `paintOnce`, the control that had focus in `el` keeping it. */
-/** @param {HTMLElement} el @param {string} html */
-const repaint = (el, html) => keepingFocus(el, () => paintOnce(el, html))
-
 /** Says `msg` to a screen reader, through the polite live region: a new node each time, so the same words are said again. @param {string} msg */
 const announce = (msg) => $('announce').replaceChildren(Object.assign(document.createElement('p'), { textContent: msg }))
 
@@ -118,4 +108,4 @@ const closableNotice = closableNoticer($('toasts'))
  */
 const told = (request) => request.catch((err) => (toast(err.message), undefined))
 
-export { onDuty, lineOf, toolHtml, when, $, byStart, signHtml, fillOf, keyedText, closeHomeHtml, shownKey, shownHref, sightAnchorOf, holdRow, paintOnce, repaint, announce, toast, notice, closableNotice, told }
+export { onDuty, lineOf, toolHtml, when, $, byStart, signHtml, fillOf, keyedText, closeHomeHtml, shownKey, shownHref, sightAnchorOf, holdRow, announce, toast, notice, closableNotice, told }
