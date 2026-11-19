@@ -134,14 +134,14 @@ export async function sidebar(deps) {
 
   /**
    * The worker's subagents running now, a fork marked as its twin, and those that just ended fading out: the fade is an
-   * animation started `left` ms in, so a redraw picks it up where it stands.
+   * animation started `left` ms in, on a row drawn once (`data-owned`), so a redraw leaves it running where it stands.
    * @param {Card} c
    */
   const satellitesHtml = (c) => {
     const now = pageNow()
     const drawn = satellitesOf(c, now)
     if (!drawn.length) return ''
-    return `<div class="subs" style="--fade:${SUBAGENT_FADE_MS}ms">${drawn.map(({ run, left }) => `<div class="sub${run.type === 'fork' ? ' fork' : ''}${left === undefined ? '' : ` ended${run.ended === 'aborted' ? ' stopped' : ''}`}"${left === undefined ? '' : ` style="animation-delay:-${left}ms"`} data-tip="${esc(subagentTitle(run))}">
+    return `<div class="subs" style="--fade:${SUBAGENT_FADE_MS}ms">${drawn.map(({ run, left }) => `<div class="sub${run.type === 'fork' ? ' fork' : ''}${left === undefined ? '' : ` ended${run.ended === 'aborted' ? ' stopped' : ''}`}"${left === undefined ? '' : ` id="${esc(domId('sub', run.id))}" data-owned style="animation-delay:-${left}ms"`} data-tip="${esc(subagentTitle(run))}">
     <span class="mark">${run.type === 'fork' ? ICON.branch : ''}</span><span class="what">${esc(run.description)}</span>${left === undefined ? `<span class="since" translate="no" data-since="${run.startedAt}"></span>` : ''}</div>`).join('')}</div>`
   }
 
