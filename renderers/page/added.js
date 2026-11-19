@@ -1,5 +1,5 @@
 import { DISMISS_ASK_TITLE } from '/lib/cards.js'
-import { actionId, actionWords, badgesOf, glyphOf } from '/lib/layout.js'
+import { actionWords, badgesOf, glyphOf } from '/lib/layout.js'
 import { ICON } from '/lib/view.js'
 import { domId } from '/lib/morph.js'
 import { esc, plural, span } from '/lib/words.js'
@@ -79,12 +79,14 @@ const buttonOf = (board, key, action, classes, more) => {
 const actionHtml = (board, key, action) => buttonOf(board, key, action, '', '')
 
 /**
- * One action as a region of contributions draws it, its id `domId(<region>/act, <subject key>/<action id>)`: `fresh`, a
- * dot and the description "new", while it is new to the viewer; `data-tucked` while it is behind ⋯.
- * @param {Board} board @param {string} region @param {string} key @param {Added<Action>} action @param {{ fresh: boolean, tucked: boolean }} state
+ * One action as a region of contributions draws it, on the subject of key `key`: its id `domId(<place>/act, <key>/<item>)`,
+ * `place` where the region is drawn (`v7/card.head`, `card.row`) and `item` its action id numbered among those of the same
+ * id (`reviews/hire#0`); `fresh`, a dot and the description "new", while it is new to the viewer; `data-tucked` while it
+ * is behind ⋯.
+ * @param {Board} board @param {string} place @param {string} item @param {string} key @param {Added<Action>} action @param {{ fresh: boolean, tucked: boolean }} state
  */
-export const regionActionHtml = (board, region, key, action, state) =>
-  buttonOf(board, key, action, state.fresh ? ' fresh' : '', ` id="${esc(domId(`${region}/act`, `${key}/${actionId(action)}`))}"${state.fresh ? ' aria-description="new"' : ''}${state.tucked ? ' data-tucked' : ''}`)
+export const regionActionHtml = (board, place, item, key, action, state) =>
+  buttonOf(board, key, action, state.fresh ? ' fresh' : '', ` id="${esc(domId(`${place}/act`, `${key}/${item}`))}"${state.fresh ? ' aria-description="new"' : ''}${state.tucked ? ' data-tucked' : ''}`)
 
 /** Actions on a subject as buttons. @param {Board} board @param {Subject} subject @param {Added<Action>[]} actions */
 export const actionsHtml = (board, subject, actions) => actions.map((a) => actionHtml(board, subject.key, a)).join('')

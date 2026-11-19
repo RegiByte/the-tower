@@ -822,6 +822,9 @@ function kitRegion(el, id, subject, options) {
   const declaredRegion = () => placing().regions.find((r) => r.id === id)
   const holds = declaredRegion()?.holds ?? []
   const slots = { badges: slotIn(el, 'badges'), lines: slotIn(el, 'lines'), actions: slotIn(el, 'actions') }
+  /** Where the region is drawn, its actions' ids' place: inside a mounted view, its mount's scope first (`data-scope`), since a view can be mounted twice at once. */
+  const scope = /** @type {HTMLElement | null} */ (el.closest('[data-scope]'))?.dataset.scope
+  const place = scope ? `${scope}/${id}` : id
   const marked = Object.values(slots).filter((s) => s !== undefined)
   /** The actions as the last draw ranked them, one button each in the form's `actionsAt`. @type {Ranked[]} */
   let ranked = []
@@ -842,15 +845,17 @@ function kitRegion(el, id, subject, options) {
   const actionEls = () => /** @type {HTMLElement[]} */ ([...form.actionsAt.querySelectorAll(':scope > [data-added]')])
   /** Whether the action ranked `r` carries the dot. @param {Ranked} r @param {readonly string[]} offered @param {readonly string[]} had */
   const dotOn = (r, offered, had) => dotted.has(r.id) || isFresh(offered, had, r.id)
-  /** Each ranked action's key in the menu: its id, numbered among the actions of the same id. */
-  const actionKeys = () => {
+  /** Each ranked action by its id, numbered among the actions of the same id: `reviews/hire#0`. */
+  const actionItems = () => {
     const seen = new Map()
     return ranked.map((r) => {
       const n = seen.get(r.id) ?? 0
       seen.set(r.id, n + 1)
-      return `${at.key} ${r.id}#${n}`
+      return `${r.id}#${n}`
     })
   }
+  /** Each ranked action's key in the menu. */
+  const actionKeys = () => actionItems().map((item) => `${at.key} ${item}`)
   /** The key in the menu of the badge ranked `n`th. @param {number} n */
   const badgeKey = (n) => `${at.key} badge:${n}`
   /** What the last draw drew: the region's kept html (Dismiss and the exemptions), then its badges, lines and actions as ranked. */
@@ -864,8 +869,8 @@ function kitRegion(el, id, subject, options) {
     actions: (tucked) => {
       const offered = offeredIds(board())
       const had = seenAmong(offered)
-      const keys = actionKeys()
-      return ranked.map((r, n) => regionActionHtml(board(), id, at.key, r.action, { fresh: dotOn(r, offered, had), tucked: tucked(keys[n]) })).join('')
+      const items = actionItems()
+      return ranked.map((r, n) => regionActionHtml(board(), place, items[n], at.key, r.action, { fresh: dotOn(r, offered, had), tucked: tucked(`${at.key} ${items[n]}`) })).join('')
     },
   })
   const hide = () => (dotted.clear(), form.paint(parts))

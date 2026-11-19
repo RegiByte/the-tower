@@ -245,6 +245,7 @@ export function viewHost(deps: HostDeps) {
   function mountView(view: View, el: HTMLElement, subject: Subject, { scale, options, showing, args }: Placed) {
     el.dataset.view = view.id
     const scope = `v${++mounts}`
+    el.dataset.scope = scope
     const own = new Set<TermViewHandle>()
     const inner = new Set<RegionHandle>()
     /** The keys it published on the bus, once per publish: cleared with it. */
