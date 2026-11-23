@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "The tower's elements wrap the UI SDK's parts, loaded eagerly on one core",
-  "summary": "Menus and comboboxes are tower-* outer elements that build the UI SDK's own ui-* parts inside themselves at connect, bundled once and imported eagerly: the SDK's behavior is kept whole, the morph stays lossless, and only the outer tags are contract.",
+  "summary": "Menus, comboboxes and the dialog are tower-* outer elements that build the UI SDK's own ui-* parts inside themselves at connect, bundled once and imported eagerly: the SDK's behavior is kept whole, the morph stays lossless, and only the outer tags are contract.",
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-11-18",

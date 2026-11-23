@@ -2,16 +2,17 @@
 {
   "type": "library",
   "name": "The tower's elements (/lib-ui/)",
-  "summary": "The tower-* custom elements a page or an extension's client draws as tags, served at /lib-ui/<module>.js: each builds the UI SDK's ui-* parts inside itself, so menus and comboboxes get the SDK's keyboard, focus, placement and dismissal while views keep drawing html as strings through the morph.",
+  "summary": "The tower-* custom elements a page or an extension's client draws as tags, served at /lib-ui/<module>.js: each builds the UI SDK's ui-* parts inside itself, so menus, comboboxes and the dialog get the SDK's keyboard, focus, placement and dismissal while views keep drawing html as strings through the morph.",
   "in": "tower-core",
   "reviewed": "2026-11-23",
-  "refs": ["hub/src/lib-ui/menu.ts#elements", "hub/src/lib-ui/combobox.ts#elements", "hub/src/lib-ui/sdk.ts#relay", "hub/src/lib-ui/sdk.ts#ElementContract", "hub/src/lib-ui/look.css", "hub/src/tower/served.ts#uiSdkModule", "hub/src/tower/served.ts#servedModule", "hub/src/tower/served.ts#libUiUrls", "hub/src/shared/elements.ts#subjectHtml", "hub/src/shared/elements.ts#comboboxHtml", "hub/src/shared/elements.ts#subjectAreaHtml", "hub/src/shared/elements.ts#subjectButtonHtml", "hub/src/shared/dom-id.ts#domId", "hub/src/lib/elements.ts", "hub/test/lib-ui.test.ts", "hub/test/library.ts#elementsOf", "hub/scripts/lib-ui-check.ts", "hub/docs/extending.md"]
+  "refs": ["hub/src/lib-ui/menu.ts#elements", "hub/src/lib-ui/combobox.ts#elements", "hub/src/lib-ui/dialog.ts#elements", "hub/src/lib-ui/sdk.ts#relay", "hub/src/lib-ui/sdk.ts#ElementContract", "hub/src/lib-ui/look.css", "hub/src/tower/served.ts#uiSdkModule", "hub/src/tower/served.ts#servedModule", "hub/src/tower/served.ts#libUiUrls", "hub/src/shared/elements.ts#subjectHtml", "hub/src/shared/elements.ts#comboboxHtml", "hub/src/shared/elements.ts#subjectAreaHtml", "hub/src/shared/elements.ts#subjectButtonHtml", "hub/src/shared/dom-id.ts#domId", "hub/src/lib/elements.ts", "hub/test/lib-ui.test.ts", "hub/test/library.ts#elementsOf", "hub/scripts/lib-ui-check.ts", "hub/docs/extending.md"]
 }
 ---
 Each module of `src/lib-ui/` is served at `/lib-ui/<module>.js`
 ([`servedModule`](ref:hub/src/tower/served.ts#servedModule)); importing it defines its elements:
 [`/lib-ui/menu.js`](ref:hub/src/lib-ui/menu.ts#elements) `<tower-menu>`, `<tower-menu-button>` and
-`<tower-menu-area>`, [`/lib-ui/combobox.js`](ref:hub/src/lib-ui/combobox.ts#elements) `<tower-combobox>`. Why they
+`<tower-menu-area>`, [`/lib-ui/combobox.js`](ref:hub/src/lib-ui/combobox.ts#elements) `<tower-combobox>`,
+[`/lib-ui/dialog.js`](ref:hub/src/lib-ui/dialog.ts#elements) `<tower-dialog>`. Why they
 wrap the SDK this way is [[tower-elements-wrap-the-sdk]].
 
 - **The outer tag is the contract.** Its attributes, properties, events and custom states, each listed with what it
@@ -43,6 +44,12 @@ menu to copy, and its `checkedchange`, which doesn't bubble, is fired again on t
   which reads the SDK's `--ui-*` variables, each set on the outer element from a design token: the mapping in the
   design's cascade layer, so a component of the design can re-point one on an element it holds, the parts' rules in
   the elements' layer ([[cascade-layers]]).
+- **A dialog the page fills.** `<tower-dialog>` holds the SDK's modal dialog: its backdrop, focus taken as it opens
+  (onto the dialog itself, so reading starts at the top) and kept inside, Escape, a press outside and the page made
+  inert are the SDK's, and focus goes back where it was when it closes. Its `label` is its title and its accessible
+  name; a close button after its body closes it. The page puts what it shows in its `body` property, which scrolls
+  inside a box sized for reading beside an index and never past the window; `open` opens and closes it, and its
+  `openchange` is fired again on it. The page's `board.dialog` region draws in it ([[ui-model]]).
 - **A combobox named from outside.** `labelledby` names a label the form draws itself (an eyebrow, an optional mark, a
   hint): the element then draws no label part and points its input's `aria-labelledby` at it. A `<label>` around it
   would take a press in its list for one on the box.

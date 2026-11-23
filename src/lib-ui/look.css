@@ -6,7 +6,7 @@
  */
 
 @layer tower.design {
-  :where(tower-menu, tower-menu-button, tower-combobox) {
+  :where(tower-menu, tower-menu-button, tower-combobox, tower-dialog) {
     --ui-background: var(--panel);
     --ui-foreground: var(--ink);
     --ui-muted: var(--panel-2);
@@ -42,7 +42,7 @@
     -webkit-touch-callout: none;
   }
 
-  :is(tower-menu, tower-menu-button, tower-combobox) [data-slot][hidden]:not([hidden="until-found"]) {
+  :is(tower-menu, tower-menu-button, tower-combobox, tower-dialog) [data-slot][hidden]:not([hidden="until-found"]) {
     display: none;
   }
 
@@ -285,6 +285,84 @@
     &:focus-visible {
       outline: 2px solid var(--ui-ring);
       outline-offset: -1px;
+    }
+  }
+
+  /* Like a menu, its parts open in the top layer, so the host takes no place in the page. */
+  :where(tower-dialog) {
+    position: fixed;
+  }
+
+  tower-dialog [data-slot="dialog-backdrop"] {
+    position: fixed;
+    inset: 0;
+    background: var(--backdrop);
+  }
+
+  /* Sized for reading beside an index, never past the window: its body scrolls inside, the title stays in view. */
+  tower-dialog [data-slot="dialog-content"] {
+    --gutter: clamp(var(--sp-s), 4vw, var(--sp-3xl));
+    position: fixed;
+    inset: 0;
+    box-sizing: border-box;
+    width: min(64rem, calc(100vw - 2 * var(--gutter)));
+    height: min(44rem, calc(100dvh - 2 * var(--gutter)));
+    margin: auto;
+    padding: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--radius-card);
+    background: var(--ui-background);
+    box-shadow: var(--ui-shadow);
+    color: var(--ui-foreground);
+    outline: none;
+  }
+
+  tower-dialog [data-slot="dialog-title"] {
+    display: block;
+    margin: 0;
+    padding: var(--sp-l) calc(var(--control) + 2 * var(--sp-l)) var(--sp-l) var(--sp-xl);
+    border-bottom: 1px solid var(--ui-border);
+    font: var(--display-weight) var(--fs-l) / 1.2 var(--display);
+    text-transform: var(--heading-case);
+    letter-spacing: var(--heading-tracking);
+    overflow-wrap: anywhere;
+  }
+
+  tower-dialog [data-tower-dialog="body"] {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: var(--sp-l);
+  }
+
+  tower-dialog [data-tower-dialog="close"] button {
+    position: absolute;
+    top: var(--sp-s);
+    inset-inline-end: var(--sp-s);
+    display: inline-grid;
+    place-items: center;
+    min-width: var(--control);
+    min-height: var(--control);
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--ui-radius);
+    background: none;
+    color: var(--ui-muted-foreground);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--hover);
+      color: var(--ui-foreground);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ui-ring);
+      outline-offset: 1px;
     }
   }
 }
