@@ -21,6 +21,7 @@ Installed by `npm ci`. Tower 3D's bundle embeds three.js; the tower serves the o
 | `@xterm/xterm`, `@xterm/addon-fit`, `@xterm/addon-serialize`, `@xterm/headless` | The xterm.js authors; SourceLair Private Company | MIT |
 | `highlight.js` | Ivan Sagalaev and the highlight.js authors | BSD-3-Clause |
 | `marked` | MarkedJS; Christopher Jeffrey | MIT |
+| `@ui-sdk/core`, `@ui-sdk/web` (in `/lib-ui/sdk.js`) | Vercel, Inc. | Apache-2.0 |
 | `croner` (in `/policies.js`) | Hexagon | MIT |
 | `diff` (in `/panels.js`) | Kevin Decker | BSD-3-Clause |
 | `shiki`, `@shikijs/*` (in the files example's `/x/files/` modules) | Pine Wu, Anthony Fu; its grammars and themes gathered from VS Code and their own projects by tm-grammars and tm-themes | MIT |
