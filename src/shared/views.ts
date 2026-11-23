@@ -324,6 +324,7 @@ export const layoutOf = (declared: Layout, configured: Layout, stored: Layout | 
         ...(last('lines') !== undefined && { lines: last('lines') }),
         ...(last('badges') !== undefined && { badges: last('badges') }),
         ...(last('actions') !== undefined && { actions: last('actions') }),
+        ...(last('onScreen') !== undefined && { onScreen: last('onScreen') }),
       }
       return [id, entry]
     }),

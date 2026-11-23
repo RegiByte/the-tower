@@ -21,6 +21,8 @@ export {
 } from '../shared/fill.ts'
 export {
   /** @provisional */ overflowOf,
+  /** @provisional */ isOnScreen,
+  /** @provisional */ drawnEntry,
 } from '../shared/regions.ts'
 export {
   /** @provisional */ NO_KIT,

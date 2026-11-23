@@ -270,6 +270,7 @@
       "regions.*.arity",
       "regions.*.description",
       "regions.*.holds",
+      "regions.*.label",
       "regions.*.layout",
       "regions.*.layout.hidden",
       "regions.*.layout.options",
@@ -1829,6 +1830,10 @@
           "since": "2.0",
           "stability": "provisional"
         },
+        "drawnEntry": {
+          "since": "2.25",
+          "stability": "provisional"
+        },
         "exemptionsOf": {
           "since": "2.0",
           "stability": "provisional"
@@ -1854,6 +1859,10 @@
         },
         "isFresh": {
           "since": "2.0"
+        },
+        "isOnScreen": {
+          "since": "2.25",
+          "stability": "provisional"
         },
         "layoutKey": {
           "since": "2.0"

@@ -167,6 +167,15 @@ exactly:
 - under `wrap` and `scroll` a budget is unused;
 - on a worker's head, `lines` is how many lines its row of lines shows, not part of the fill.
 
+A region whose declaration gives a `label` ("Extensions on a worker's head") offers the viewer a choice beside the
+budgets: its buttons on screen, or in the menu only (`onScreen: false` in its layout entry, the highest layer's).
+`drawnEntry(entry)` in `/lib/layout.js` is the entry to draw by: in the menu only, every budget is `0`, so the region
+draws what is pinned and nothing else, in any form, `wrap` included; `isOnScreen(entry)` says which. A region that holds
+nothing (`holds: []`) is declared for its label alone: it names a group of the renderer's own buttons, which the
+renderer draws or not by `isOnScreen`. Hide nothing the subject's menu and the palette don't reach. An extension's region that holds views takes no `label`: its manifest is refused, since only buttons move to the menu. The tower page
+offers it for a floor's sign, directories, section, trays and shelf, and for a worker's row and head, extensions' and
+the page's own apart, in its settings ("Buttons on screen") and at the end of a region's "Pin to…" submenu.
+
 An extension's actions are new to the viewer while an extension offers them and the viewer's `seen` doesn't hold them
 (`isFresh(offeredIds(board), seen, id)`; `seen` a field of `Viewer` in `/lib/viewer.js`). Mark them with a dot. Newness never changes the
 ranking. When nothing was ever kept, write `seenOf(null, offeredIds(board))` once, so a fresh tower shows nothing as

@@ -3355,6 +3355,10 @@
             "$ref": "#/definitions/Overflow"
           },
           "description": "The overflow forms the renderer draws this region in, its default first. Absent: it offers no choice, and a layout's `overflow`, budgets and pins for it are refused."
+        },
+        "label": {
+          "type": "string",
+          "description": "What the viewer calls the buttons drawn here when they choose to keep them on screen or in the menu only (`LayoutEntry.onScreen`): \"Extensions on a worker's head\". A region with no label offers no such choice. A region that holds nothing draws the renderer's own buttons alone, and is declared so its label can offer the choice."
         }
       },
       "required": [

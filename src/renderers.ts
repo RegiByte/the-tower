@@ -73,7 +73,7 @@ export const DECLARED_FILE = 'renderer.json'
 const RegionSchema: z.ZodType<Region> = z.strictObject({
   id: z.string().regex(REGION_ID, 'a subject kind and a place: card.head, item.head, reviews.thread.head'),
   subject: z.string().min(1),
-  holds: z.array(z.enum(HOLDS)).min(1),
+  holds: z.array(z.enum(HOLDS)),
   scale: z.enum(SCALES).optional(),
   arity: z.enum(['one', 'tabs']).optional(),
   description: z.string().min(1).optional(),
@@ -82,7 +82,8 @@ const RegionSchema: z.ZodType<Region> = z.strictObject({
     .min(1)
     .refine((forms) => new Set(forms).size === forms.length, { message: 'each form once' })
     .optional(),
-})
+  label: z.string().min(1).optional(),
+}).refine((r) => r.holds.length > 0 || r.label !== undefined, { message: 'a region holds something, or is labelled: one that holds nothing draws the renderer\'s own buttons, and offers only the choice of showing them' })
 
 /** A layout's problems in a line, each at its path. */
 const layoutIssues = (error: z.ZodError) => error.issues.map((i) => `${i.path.join('.') || '(top)'}: ${i.message}`).join('; ')
@@ -106,6 +107,7 @@ export const LayoutSchema: z.ZodType<Layout> = z.record(
     lines: Budget,
     badges: Budget,
     actions: Budget,
+    onScreen: z.boolean().optional(),
   }),
 )
 
@@ -162,9 +164,12 @@ const regionProblems = (renderer: string, at: string, region: Region, entry: Lay
       ...(entry.hidden ?? []).flatMap((id, n) => (offered.includes(id) ? [fail(`hidden[${n}]`, unread)] : [])),
     ]
   }
+  const screen = entry.onScreen !== undefined && !region.label ? [fail('onScreen', `${renderer} offers no choice of keeping ${region.id}'s buttons off screen: it gives the region no label`)] : []
+  if (!region.holds.length) return [...screen, ...(['overflow', 'pinned', 'unpinned', 'hidden', 'order', ...(Object.keys(BUDGETS) as (keyof typeof BUDGETS)[])] as const).filter((key) => entry[key] !== undefined).map((key) => fail(key, `${region.id} draws ${renderer}'s own buttons alone: only onScreen applies`))]
   const form = region.overflows?.length ? overflowOf(region as Region & { overflows: Overflow[] }, entry) : undefined
   const nothingToPin = `${region.id} holds no actions or lines to pin${region.holds.includes('views') ? `: its ${region.arity === 'tabs' ? 'tabs' : 'views'} take order` : ''}`
   return [
+    ...screen,
     ...(entry.overflow === undefined
       ? []
       : !region.overflows?.length

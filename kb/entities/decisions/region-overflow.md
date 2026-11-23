@@ -24,6 +24,8 @@
     "hub/src/shared/regions.ts#OVERFLOWS",
     "hub/src/shared/regions.ts#LayoutEntry",
     "hub/src/shared/regions.ts#overflowOf",
+    "hub/src/shared/regions.ts#drawnEntry",
+    "hub/src/shared/regions.ts#isOnScreen",
     "hub/src/shared/adds.ts#actionId",
     "hub/src/shared/adds.ts#rankedActions",
     "hub/src/shared/adds.ts#rankedBadges",
@@ -113,6 +115,12 @@ one renderer ([[renderer-is-disposable]]). And the tower stores only intent, fac
   Its `card.head` keeps the measured `menu` form, but its ⋯ is the worker's subject menu too, so a worker has one menu:
   the region adds what only it tucked (new actions, the view's controls, badges, lines and cut text) and "Pin to the
   head"; a worker row's ⋯, the same menu, pins the extensions' lines into `card.row` ("Pin to the row").
+- *On screen, or in the menu only.* A region a renderer gives a `label` offers the viewer one more choice, per
+  region: its buttons on screen (the default), or in the menu only (`onScreen: false`, the highest layer's, so the
+  config can set it for the user). Off screen, every budget is 0 ([`drawnEntry`](ref:hub/src/shared/regions.ts#drawnEntry)),
+  so the region draws its pins alone in any form; a labelled region that holds nothing names a group of the
+  renderer's own buttons, drawn or not by [`isOnScreen`](ref:hub/src/shared/regions.ts#isOnScreen). It never hides a
+  capability: only regions whose buttons the subject's menu and the palette reach take a label.
 - *"New" without a stored fact.* The viewer keeps a seen set in `tower.store`, per action id across every head and
   every renderer of theirs ([`seenOf`](ref:hub/src/shared/viewer.ts#seenOf)). With nothing kept, everything offered
   counts as seen, so a fresh tower highlights nothing. An action stops being new when the viewer runs it, pins it,
