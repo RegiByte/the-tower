@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-11-15",
-  "reviewed": "2026-11-15",
+  "reviewed": "2026-11-23",
   "refs": [
     "hub/src/bridge/events.ts#NormalEvent",
     "hub/src/bridge/events.ts#Happening",
@@ -49,8 +49,7 @@ log keeps each runtime's own shape, and the reading is where runtimes differ.
 
 The folds read one ordered stream, `log.flatMap(normalize)`: status and conversations read the neutral events, the
 facts fold and the brief read the extras they need too, and the brief keeps log order for free. The set of tags is
-internal to the bridge (it never reaches the board, the API or a log). It was drawn from Claude, then reshaped by
-opencode's recorded fixtures: `ready` (the session can take a prompt; Claude's `SessionStart` other than after a
+internal to the bridge (it never reaches the board, the API or a log). Besides the events both runtimes share, it holds: `ready` (the session can take a prompt; Claude's `SessionStart` other than after a
 compaction), prompts and their delivery carrying an `id` (a prompt sent during a turn waits and is delivered inside
 it), `said` (a step's text logged apart from the step), `permission.answered`, `compaction.failed`, `turn.retrying`,
 `conversation.titled`, `runtime.models`, and `charged` (what one request cost, for a runtime that says it besides its
@@ -88,10 +87,9 @@ header naming a runtime with no normalizer breaks that session at its first even
 **Alternatives considered.** Translating Claude's events into a common log format at write time: rejected, the log
 would hold an interpretation, and changing it would need a migration. A separate fold for a runtime's extras beside
 the neutral ones: rejected, the brief interleaves both and would have to merge them back into log order. A neutral
-vocabulary for prompt origins and turn-end reasons: deferred until a second runtime's are recorded, so they stay
-Claude's strings.
+vocabulary for prompt origins and turn-end reasons: Claude's strings serve as one, and opencode's normalizer writes
+its prompts and turn ends in them (`composer`, `ok`, `aborted`, `error`), which the folds read
+([`USER_ORIGINS`](ref:hub/src/bridge/conversation.ts#USER_ORIGINS)).
 
 **Impact.** Adding a runtime is a normalizer, and a skim if its lines carry large payloads; no fold changes for what
-it shares. Adding opencode reshaped the neutral tags and taught the folds what a second runtime does differently
-(a stop with no turn running ends none, a question form asks the user), and left Claude's facts, status,
-conversations and turns as they were on every Claude fixture.
+it shares.
