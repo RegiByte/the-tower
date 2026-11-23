@@ -270,10 +270,10 @@ absolute path of its file:
 { "renderers": { "page": { "themes": ["/Users/you/code/my-theme/theme.css"] } } }
 ```
 
-or ship it in an extension, by renderer, as a path inside the extension (since 2.29):
+or ship it in an extension, by renderer, as a path inside the extension (since 2.30):
 
 ```json
-{ "id": "my-theme", "version": "1.0", "title": "My theme", "requires": { "tower": "2.29" },
+{ "id": "my-theme", "version": "1.0", "title": "My theme", "requires": { "tower": "2.30" },
   "themes": { "page": ["theme.css"] } }
 ```
 
@@ -1653,7 +1653,7 @@ surfaces take the same data from a manifest, so an extension ships them with not
 | `renderers: { <name>: { root, entry?, settings? } }` | `renderers` | At `/r/<name>/` while the extension is accepted, after the built-ins. The name is `<provides>` or `<provides>.<name>`; a built-in's name refuses the extension. `root` is inside the extension. The config's `renderers.<name>` sets fields over it. |
 | `shelf: [{ label, renderer \| item \| url \| link }]` | `projects.<p>.shelf` | On every floor where the extension is on, after the config's entries. A page is a renderer of its own or an item it contributes, so no entry names a path. |
 | `items: { <collection>: "<folder>" }` | the files of `collections/<p>/<c>/` | In the collection on every floor where the extension is on, read in place ([Collections](#collections)). |
-| `themes: { <renderer>: ["<file>"] }` | `renderers.<name>.themes` | In that renderer's pages while the extension is accepted, before the config's themes ([Write a theme](#write-a-theme)). Since 2.29. |
+| `themes: { <renderer>: ["<file>"] }` | `renderers.<name>.themes` | In that renderer's pages while the extension is accepted, before the config's themes ([Write a theme](#write-a-theme)). Since 2.30. |
 
 Each contributed thing carries `from`, the capability it came from: a renderer in `GET /renderers`, a shelf entry
 and an item on the board. The extension's folder is read when the tower resolves its extensions, so an edit there

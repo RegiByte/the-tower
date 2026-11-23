@@ -710,7 +710,7 @@ const sinceAt =
     schema.meta({ 'x-since': version })
 const since = sinceAt(SINCE)
 const since213 = sinceAt('2.13')
-const since229 = sinceAt('2.29')
+const since230 = sinceAt('2.30')
 
 const Name = z
   .string()
@@ -1065,7 +1065,7 @@ export const Manifest = z
           "Renderers it contributes, each named `<provides>` or `<provides>.<name>`, as the config's renderers declares one: served at /r/<name>/ while it is accepted. The config's renderers.<name> overrides its fields; a built-in's name is refused.",
         ),
     ),
-    themes: since229(
+    themes: since230(
       z
         .record(z.string().regex(/^[\w-]+(\.[\w-]+)?$/, "a renderer's name: page, week, tower3d or an extension's"), z.array(Path).min(1))
         .optional()

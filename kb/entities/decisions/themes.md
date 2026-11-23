@@ -61,6 +61,6 @@ reached at best effort and may change in any release (`docs/extending.md`, "Writ
   adding one theme would silently drop an accepted extension's; turning the extension off is the way to drop it.
 - *Theme JSON (palettes as data)*: the stylesheet is the data, and the terminal reads the tokens it computes.
 
-**Impact.** The copy-the-page recipe is gone from `docs/extending.md`; a restyle is a theme. API 2.29 adds the
+**Impact.** The copy-the-page recipe is gone from `docs/extending.md`; a restyle is a theme. API 2.30 adds the
 config key, the manifest key, `board.themes`, `tower.onThemes` and the two routes. Every renderer page the tower
 serves may carry a `link[data-tower-themes]`.
