@@ -10,9 +10,11 @@
     {
       "name": "center",
       "size": "1280x800",
-      "open": "#v/guides/center/board",
-      "steps": [{ "until": "[data-view=\"guides/center\"] .reader h1", "text": "The command palette" }],
-      "crop": "[data-view=\"guides/center\"]",
+      "steps": [
+        { "click": "[data-region=\"board.skyline\"] button", "text": "Learning center" },
+        { "until": "[data-view=\"guides/center\"] .reader h1", "text": "The command palette" }
+      ],
+      "crop": "body",
       "pad": 0
     }
   ]
