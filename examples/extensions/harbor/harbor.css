@@ -1,0 +1,110 @@
+/*
+ * Harbor: a theme for the tower page. It sets tokens only, plus one rule of the page's own to show that a plain
+ * selector outweighs the tower's. The tower loads it after the renderer's own stylesheet, in a cascade layer of its
+ * own, so nothing here names a layer and no selector has to outweigh the tower's.
+ *
+ * Load it with the config (renderers.page.themes, the absolute path of this file) or as an extension
+ * (extensions.harbor.path, this folder): docs/extending.md, "Write a theme".
+ */
+
+/* The palette, per scheme: the scheme the viewer picked (data-scheme), else the system's. */
+:root {
+  color-scheme: light;
+  --wall: #dfe4ea;
+  --panel: #f4f6f9;
+  --panel-2: #e8ecf1;
+  --sunk: #d6dce4;
+  --line: #c9d1db;
+  --line-strong: #6f7c8c;
+  --ink: #1d2633;
+  --harbor-muted: #445064;
+  --harbor-faint: #56606f;
+  --deco: #8a96a6;
+  --accent: #2f5fb3;
+  --offered: #2f5fb3;
+  --enamel: #182030;
+  --enamel-2: #243047;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-scheme='light']) {
+    color-scheme: dark;
+    --wall: #11161d;
+    --panel: #18202a;
+    --panel-2: #202a36;
+    --sunk: #0e131a;
+    --line: #2b3644;
+    --line-strong: #6d7a8b;
+    --ink: #e4eaf2;
+    --harbor-muted: #b3bdca;
+    --harbor-faint: #97a2b1;
+    --deco: #5d6a7a;
+    --accent: #8fb4f0;
+    --offered: #8fb4f0;
+    --enamel: #0b1017;
+    --enamel-2: #1a2230;
+  }
+}
+
+:root[data-scheme='dark'] {
+  color-scheme: dark;
+  --wall: #11161d;
+  --panel: #18202a;
+  --panel-2: #202a36;
+  --sunk: #0e131a;
+  --line: #2b3644;
+  --line-strong: #6d7a8b;
+  --ink: #e4eaf2;
+  --harbor-muted: #b3bdca;
+  --harbor-faint: #97a2b1;
+  --deco: #5d6a7a;
+  --accent: #8fb4f0;
+  --offered: #8fb4f0;
+  --enamel: #0b1017;
+  --enamel-2: #1a2230;
+}
+
+/* Scheme-free: what follows the palette above in both schemes. */
+:root {
+  --muted: var(--harbor-muted);
+  --faint: var(--harbor-faint);
+  --term-fg: #d8e0ec;
+
+  --radius-card: 12px;
+  --radius-control: 6px;
+  --shadow-card: 0 0 0 .5px #00000014, 0 1px 3px #0000001a;
+
+  --primary: var(--accent);
+  --on-primary: var(--panel);
+  --hover: color-mix(in oklab, var(--accent) 10%, var(--panel));
+
+  --display-weight: 700;
+  --heading-case: none;
+  --heading-tracking: -.01em;
+  --name-tracking: .01em;
+  --label-case: none;
+  --label-tracking: .02em;
+}
+
+/* More contrast, the viewer's or the system's: muted text closer to the ink, every line strong. */
+:root[data-contrast='more'] {
+  --muted: color-mix(in oklab, var(--harbor-muted) 50%, var(--ink));
+  --faint: color-mix(in oklab, var(--harbor-faint) 50%, var(--ink));
+  --line: var(--line-strong);
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --muted: color-mix(in oklab, var(--harbor-muted) 50%, var(--ink));
+    --faint: color-mix(in oklab, var(--harbor-faint) 50%, var(--ink));
+    --line: var(--line-strong);
+  }
+}
+
+/*
+ * Beyond tokens: the page's own classes, best effort, which the tower may change. A worker's callsign in its card's
+ * head takes the accent; the selector is plain, and still outweighs the view's own.
+ */
+.bar-info .call {
+  color: var(--accent);
+}

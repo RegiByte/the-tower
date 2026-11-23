@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-11-23",
   "reviewed": "2026-11-23",
-  "refs": ["hub/src/renderers.ts#themesOf", "hub/src/renderers.ts#themeSheet", "hub/src/renderers.ts#themeUrls", "hub/src/renderers.ts#themeFile", "hub/src/bridge/extensions.ts#contributedThemes", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/http.ts#preloaded", "hub/src/tower/http.ts#themesCss", "hub/src/tower/http.ts#themeServed", "hub/src/tower/publisher.ts", "hub/src/bridge/board.ts#Board", "hub/src/tower/tower.js", "hub/renderers/page/page.js#recolourTerminals", "hub/renderers/tower3d/src/term.ts", "hub/src/config-check.ts#themeProblems"],
+  "refs": ["hub/src/renderers.ts#themesOf", "hub/src/renderers.ts#themeSheet", "hub/src/renderers.ts#themeUrls", "hub/src/renderers.ts#themeFile", "hub/src/bridge/extensions.ts#contributedThemes", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/http.ts#preloaded", "hub/src/tower/http.ts#themesCss", "hub/src/tower/http.ts#themeServed", "hub/src/tower/publisher.ts", "hub/src/bridge/board.ts#Board", "hub/src/tower/tower.js", "hub/renderers/page/page.js#recolourTerminals", "hub/renderers/tower3d/src/term.ts", "hub/src/config-check.ts#themeProblems", "hub/examples/extensions/harbor/harbor.css"],
   "links": [
     { "to": "cascade-layers", "verb": "loads into", "carries": "each theme in a layer of its own inside theme" },
     { "to": "design-system", "verb": "sets", "carries": "the palette and the character tokens" },
@@ -44,7 +44,8 @@ touches, the same for the user's config and for an extension that ships a look.
   ([`recolourTerminals`](ref:hub/renderers/page/page.js#recolourTerminals)), as on a change of scheme.
 
 Only tokens are promised to a theme. The page's classes and state classes and the elements' `data-slot` parts are
-reached at best effort and may change in any release.
+reached at best effort and may change in any release (`docs/extending.md`, "Write a theme"). The example,
+[`harbor.css`](ref:hub/examples/extensions/harbor/harbor.css), is a theme and an extension at once.
 
 **Alternatives considered.**
 - *Load themes from the board only, in `/tower.js`*: live, but every load draws unthemed until the board arrives,
@@ -55,6 +56,6 @@ reached at best effort and may change in any release.
   adding one theme would silently drop an accepted extension's; turning the extension off is the way to drop it.
 - *Theme JSON (palettes as data)*: the stylesheet is the data, and the terminal reads the tokens it computes.
 
-**Impact.** A restyle of a renderer needs no copy of it. API 2.29 adds the
+**Impact.** The copy-the-page recipe is gone from `docs/extending.md`; a restyle is a theme. API 2.29 adds the
 config key, the manifest key, `board.themes`, `tower.onThemes` and the two routes. Every renderer page the tower
 serves may carry a `link[data-tower-themes]`.

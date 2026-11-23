@@ -166,8 +166,9 @@ Do these in order when you update:
 
 - **A renderer or extension copied out of the checkout is a 1.x copy.** The tower page, Tower 3D, a bundled extension
   or an example you copied and changed still imports and declares what 1.x did. Copy it again from the 2.0 checkout
-  and reapply your changes to the new copy, as [A copy of one that ships](extending.md#a-copy-of-one-that-ships) says
-  for every release you take; or port your copy by the rest of this section, as any extension or renderer of yours.
+  and reapply your changes to the new copy, or move a restyle of the tower page into a theme
+  ([Write a theme](extending.md#write-a-theme)), which no release touches; or port your copy by the rest of this
+  section, as any extension or renderer of yours.
 - **`requires.tower` is `"2.0"`.** A manifest that requires a 1.x tower is refused as `too-old` before any other key
   is read, and the tower says so on the board and in `tower extensions check`. Set `"requires": { "tower": "2.0" }`,
   then make the changes the rest of this section lists. Every name in the library now says it arrived in 2.0.
