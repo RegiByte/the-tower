@@ -145,7 +145,7 @@
     color: var(--ui-muted-foreground);
   }
 
-  tower-menu [data-slot="menu-group-label"] {
+  :where(tower-menu, tower-combobox) :is([data-slot="menu-group-label"], [data-slot="combobox-group-label"]) {
     padding: var(--ui-spacing) calc(var(--ui-spacing) * 2.5) calc(var(--ui-spacing) / 2);
     color: var(--ui-muted-foreground);
     font: var(--display-weight) 0.85em / 1.4 var(--display);
