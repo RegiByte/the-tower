@@ -65,7 +65,7 @@ ${reduced('.tower-tip', 'transition: none; scale: 1;')}
 
 /** Shows each `data-tip` of `doc` in one tooltip. */
 export function watchTips(doc: Document) {
-  doc.head.append(Object.assign(doc.createElement('style'), { textContent: tipsCss }))
+  doc.head.append(Object.assign(doc.createElement('style'), { textContent: `@layer tower.design {\n${tipsCss}\n}` }))
   const tip = Object.assign(doc.createElement('div'), { className: 'tower-tip', id: 'tower-tip' })
   tip.setAttribute('popover', 'manual')
   tip.setAttribute('role', 'tooltip')

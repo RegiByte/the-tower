@@ -1,6 +1,6 @@
 import { type Card, type Lines, noLongerOffered } from '/lib/board.js'
 import { commandOf } from '/lib/keys.js'
-import { type Mount, pressing } from '/lib/view.js'
+import { type Mount, pressing, viewLayer } from '/lib/view.js'
 import { esc } from '/lib/words.js'
 import { anchorWhere, linesAnchor } from './anchors.ts'
 import { noteCallOf, threadCheckout } from './panel.ts'
@@ -33,7 +33,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
   let lines = subject.value as Lines
   let key = subject.key
   const cardOf = () => board.floors.flatMap((f) => f.cards).find((c) => c.id === lines.card) as Card
-  host.innerHTML = `<style>${CSS}</style><div class="note-box">
+  host.innerHTML = `<style>${viewLayer(CSS)}</style><div class="note-box">
     <div class="where"></div>
     <textarea data-note-text placeholder="a note on these lines (⌘⏎ adds it, Esc cancels)"></textarea>
     <div class="actions"><button class="primary" data-note-add>Add note</button><button data-note-cancel>Cancel</button><span class="hint">drag across line numbers or ⇧-click one to extend, within a hunk</span></div>

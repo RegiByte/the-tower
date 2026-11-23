@@ -2,7 +2,7 @@ import { type Board, type Card, type Floor, type Subject, linesSubject, noLonger
 import { CHANGES_POLL_MS } from '/lib/changes.js'
 import { commandOf } from '/lib/keys.js'
 import { heldHandlers, loop, noReads, reading, valueOf } from '/lib/machine.js'
-import { type Mount, type Tab, copyTelling, fileCall, morphPanel, panelsCss, pressing } from '/lib/view.js'
+import { type Mount, type Tab, copyTelling, fileCall, morphPanel, panelsCss, pressing, componentsLayer, viewLayer } from '/lib/view.js'
 import { plural } from '/lib/words.js'
 import { anchorOf } from './anchors.ts'
 import type { FloorThread, NoteCall } from '../threads.ts'
@@ -51,7 +51,7 @@ const threadMount = (placeOf: (board: Board, subject: Subject) => ThreadPlace): 
   let seen = true
   /** The note the composer answers. */
   let re: number | undefined
-  host.innerHTML = `<style>${CSS}${panelsCss}${reviewsPanelCss}</style><div class="reviews"></div>`
+  host.innerHTML = `<style>${componentsLayer(panelsCss)}${viewLayer(CSS + reviewsPanelCss)}</style><div class="reviews"></div>`
   const el = host.querySelector<HTMLElement>('.reviews')!
 
   const threadReads = loop({

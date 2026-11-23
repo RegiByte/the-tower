@@ -8,10 +8,27 @@ import { keysHint, keyshortcuts, type Keys } from './keymap.ts'
  */
 
 /**
- * The look of a main pane's view: the view's element a column, its head and body. `rules`, the view's own, nested
- * under `:where([data-view="<id>"])` (`&` the view's element) so they reach nothing outside it.
+ * `css` in the cascade layer every view's style shares, over the renderer's own sheet and under themes: what a view
+ * writes in its `<style>` when it doesn't use `viewCss`.
  */
-export const viewCss = (id: string, rules: string) => `:where([data-view="${id}"]) {
+export const viewLayer = (css: string) => `@layer tower.views {
+${css}
+}`
+
+/**
+ * The CSS of shared components a view draws (`panelsCss`, `itemsCss`, `markdownCss`), in the design's cascade layer
+ * with the rest of them: under the renderer's own sheet, which may restyle them, and under the view's own rules.
+ */
+export const componentsLayer = (css: string) => `@layer tower.design {
+${css}
+}`
+
+/**
+ * The look of a main pane's view: the view's element a column, its head and body. `rules`, the view's own, nested
+ * under `:where([data-view="<id>"])` (`&` the view's element) so they reach nothing outside it, in the views' layer
+ * (`viewLayer`).
+ */
+export const viewCss = (id: string, rules: string) => viewLayer(`:where([data-view="${id}"]) {
   gap: var(--sp-m);
   & .shelf-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-s) var(--sp-l); padding: var(--sp-m) var(--sp-xl); background: var(--panel); border: 1px solid var(--line);
     border-radius: var(--radius); box-shadow: var(--shadow); white-space: nowrap; }
@@ -25,7 +42,7 @@ export const viewCss = (id: string, rules: string) => `:where([data-view="${id}"
   & .shelf-body iframe.page { background: #fff; }
   & .shelf-empty { margin: auto; text-align: center; color: var(--muted); }
   ${rules}
-}`
+}`)
 
 /** The close of a view in the main pane, back to the skyline, with the chords of the keymap's `home`: `data-home`. */
 export const closeHtml = (keys: Keys) => `<button class="icon-btn" data-home aria-label="back to the skyline" ${keyedTip(keys, 'back to the skyline', 'home')}>${ICON.close}</button>`

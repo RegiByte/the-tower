@@ -2,7 +2,7 @@ import { type Board, type Card, type Lines, linesAt, linesSubject } from '/lib/b
 import { changedFiles, type ChangesEvent, changesFailure, changesHandlers, changesOf, changesPath, type ChangesScope, type DiffFile, type DiffLayout, fileKey, isFolded, keepingFileTop, keepingViewedFileTop, type LinePick, livePick, marksToggled, noChanges, picked, readChanges, type RepoChanges, scopeOf, spanned, spotSelector, watchPickDrag } from '/lib/changes.js'
 import { addedActions, marksOf, viewsOf } from '/lib/layout.js'
 import { loop, reading, timers } from '/lib/machine.js'
-import { fileCall, morphPanel, type Mount, panelsCss, type RegionHandle, type Tab } from '/lib/view.js'
+import { fileCall, morphPanel, type Mount, panelsCss, type RegionHandle, type Tab, componentsLayer, viewLayer } from '/lib/view.js'
 import { VIEWER_KEYS } from '/lib/viewer.js'
 import { changedIn } from '../shared/checkouts.ts'
 import { linesSpot, markedChangesHtml, type NamedLines, pickedLines, viewedCount } from '../shared/panels.ts'
@@ -47,7 +47,7 @@ const treeFolds = new Set<string>()
 export const mount: Mount = (host, { tower, board: first, subject, kit, scope: mountScope }) => {
   let board = first
   let card = subject.value as Card
-  host.innerHTML = `<style>${CSS}${panelsCss}</style><div class="changes"></div>`
+  host.innerHTML = `<style>${viewLayer(CSS)}${componentsLayer(panelsCss)}</style><div class="changes"></div>`
   const el = host.querySelector<HTMLElement>('.changes')!
   let seen = true
   let layout: DiffLayout = 'unified'

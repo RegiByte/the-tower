@@ -94,7 +94,8 @@ are the same view in every renderer; only where they sit, their state and a few 
   [`watchPickDrag`](ref:hub/src/shared/changes-lines.ts#watchPickDrag); the renderer keeps the pick and a `picking` flag,
   and what acts on the lines (the note box) waits for the drop.
 - *One stylesheet* ([`panelsCss`](ref:hub/src/shared/panels-css.ts#panelsCss)), scoped under the core views' own roots
-  (`.changes-panel`, `.stats-panel`). Each renderer adds it as a `<style>` and sizes the element the panel is drawn in.
+  (`.changes-panel`, `.stats-panel`). Each renderer adds it as a `<style>`, in the design's cascade layer through `componentsLayer` as a view
+  that draws a panel does too ([[cascade-layers]]), and sizes the element the panel is drawn in.
   An extension's panel keeps its own look beside it: the Reviews panel's
   ([`reviewsPanelCss`](ref:hub/extensions/reviews/client/panel-css.ts#reviewsPanelCss), its quotes coloured by
   [`highlightCss`](ref:hub/src/shared/highlight.ts#highlightCss) under its own root) and the Policies panel's

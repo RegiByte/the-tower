@@ -1,5 +1,5 @@
 import type { Floor, FloorCollection } from '/lib/board.js'
-import { ICON, itemsCss, morphPanel, pressTrayHtml, type Mount } from '/lib/view.js'
+import { ICON, itemsCss, morphPanel, pressTrayHtml, type Mount, viewLayer } from '/lib/view.js'
 import { floorPolicies } from './policies.ts'
 
 /**
@@ -25,7 +25,7 @@ export const mount: Mount = (host, { board: first, subject, kit }) => {
     const label = `${ICON.resume} <b>${policies.length}</b> ${policies.length === 1 ? 'policy' : 'policies'}${offers.length ? `, ${offers.length} offered` : ''}${needs ? ` <i class="needs">${needs} need${needs === 1 ? 's' : ''} you</i>` : ''}${invalid ? ` <i>${invalid} invalid</i>` : ''}`
     const html = !policies.length
       ? ''
-      : `<style>:where([data-view="${ID}"]) { ${itemsCss} }</style>${pressTrayHtml(at?.view === VIEW && at.subject === floorKey, label, 'standing work the tower runs at its slots: rules, standing, Run now and Approve, in the main pane')}`
+      : `<style>${viewLayer(`:where([data-view="${ID}"]) { ${itemsCss} }`)}</style>${pressTrayHtml(at?.view === VIEW && at.subject === floorKey, label, 'standing work the tower runs at its slots: rules, standing, Run now and Approve, in the main pane')}`
     morphPanel(host, html)
   }
 

@@ -1,6 +1,6 @@
 import { itemSubject, type Floor } from '/lib/board.js'
 import { dismissing } from '/lib/cards.js'
-import { closeHtml, copyTelling, fileCall, morphPanel, panelsCss, pressing, viewCss, type Mount } from '/lib/view.js'
+import { closeHtml, copyTelling, fileCall, morphPanel, panelsCss, pressing, viewCss, componentsLayer, viewLayer, type Mount } from '/lib/view.js'
 import { readViewer, VIEWER_KEYS } from '/lib/viewer.js'
 import { esc } from '/lib/words.js'
 import type { PolicyReplies } from '../policies.ts'
@@ -15,7 +15,7 @@ import { floorPolicies, POLICIES } from './policies.ts'
 
 const ID = 'policies/policies'
 
-const STYLE = `${panelsCss}${policiesPanelCss}
+const STYLE = `${componentsLayer(panelsCss)}${viewLayer(policiesPanelCss)}
 ${viewCss(
   ID,
   `& .policies-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--sp-l); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius);

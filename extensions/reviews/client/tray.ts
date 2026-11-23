@@ -1,6 +1,6 @@
 import { type Floor, type FloorCollection, itemKey, workerIn } from '/lib/board.js'
 import { domId } from '/lib/morph.js'
-import { ICON, type Mount, foldTrayHtml, itemsCss, morphPanel, openItemOf } from '/lib/view.js'
+import { ICON, type Mount, foldTrayHtml, itemsCss, morphPanel, openItemOf, viewLayer } from '/lib/view.js'
 import { esc, noun, plural } from '/lib/words.js'
 import { floorThreadsOf } from './panel.ts'
 import { landedThreads, REVIEWS } from './reviews.ts'
@@ -60,7 +60,7 @@ export const mount: Mount = (host, { board: first, subject, kit, state }) => {
     const landed = landedThreads(collection.items).length
     const html = !threads && !landed
       ? ''
-      : `<style>${STYLE}</style>${foldTrayHtml(unfolded, `${ICON.thread} <b>${threads}</b> ${noun(threads, 'thread')}${landed ? `, ${landed} landed` : ''}`, 'review threads, one per checkout: notes from you, its workers and reviewers')}${unfolded ? threadsHtml() : ''}`
+      : `<style>${viewLayer(STYLE)}</style>${foldTrayHtml(unfolded, `${ICON.thread} <b>${threads}</b> ${noun(threads, 'thread')}${landed ? `, ${landed} landed` : ''}`, 'review threads, one per checkout: notes from you, its workers and reviewers')}${unfolded ? threadsHtml() : ''}`
     morphPanel(host, html)
   }
 

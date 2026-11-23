@@ -4,6 +4,7 @@ import type { Mounted, ViewCtx } from './views.ts'
 import { esc, span } from './cards.ts'
 import { domId } from './dom-id.ts'
 import { morphPanel } from './panel-kit.ts'
+import { viewLayer } from './view-parts.ts'
 import { markdownHtml } from './markdown.ts'
 import { itemTitles, titled, titleIn } from './titles.ts'
 
@@ -218,7 +219,7 @@ export function mountKeptTray(host: HTMLElement, ctx: ViewCtx, id: string, tray:
     const more = (rest: number) => `<button class="kept-more" data-more data-tip="all ${c.items.length} in ${esc(c.label.toLowerCase())}, in the main pane">+${rest} more</button>`
     const open = openItemOf(kit.location?.(), c.project, c.id)
     paint(
-      `<style>:where([data-view="${id}"]) { ${itemsCss} }</style>${foldTrayHtml(unfolded, label, `${c.label}: ${c.description ?? 'items kept for later'}`)}` +
+      `<style>${viewLayer(`:where([data-view="${id}"]) { ${itemsCss} }`)}</style>${foldTrayHtml(unfolded, label, `${c.label}: ${c.description ?? 'items kept for later'}`)}` +
         (unfolded ? `<div class="tray-open">${collectionPeekHtml(c.project, c, (item) => title(c.project, item), open, Date.now(), more, tray.actions)}</div>` : ''),
     )
   }

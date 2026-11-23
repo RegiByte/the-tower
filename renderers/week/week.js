@@ -6,6 +6,7 @@
 import { usd, hours, duration } from '/lib/stats.js'
 import { esc } from '/lib/words.js'
 import { markdownHtml, markdownCss } from '/lib/markdown.js'
+import { componentsLayer } from '/lib/view.js'
 
 /**
  * @import { Board, Card, Floor } from '/lib/board.js'
@@ -305,7 +306,7 @@ const book = /** @type {HTMLElement} */ (document.getElementById('book'))
 const range = /** @type {HTMLElement} */ (document.getElementById('range'))
 const earlier = /** @type {HTMLButtonElement} */ (document.getElementById('earlier'))
 const later = /** @type {HTMLButtonElement} */ (document.getElementById('later'))
-document.head.append(Object.assign(document.createElement('style'), { textContent: markdownCss }))
+document.head.append(Object.assign(document.createElement('style'), { textContent: componentsLayer(markdownCss) }))
 
 /** @param {Board} board */
 const resetOf = (board) => {

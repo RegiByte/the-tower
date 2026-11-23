@@ -3,7 +3,7 @@ import { briefCss } from '/lib/brief.js'
 import { markdownCss } from '/lib/markdown.js'
 import { changesSection, faceInstalled, keepingTyped, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '/lib/settings.js'
 import { placeOnOpen, watchTips, toastsCss, ask } from '/lib/chrome.js'
-import { ICON, morphPanel, panelsCss, itemsCss } from '/lib/view.js'
+import { componentsLayer, ICON, morphPanel, panelsCss, itemsCss } from '/lib/view.js'
 import { sawAll, seenOf } from '/lib/viewer.js'
 import { isFresh as isNewAction, offeredIds } from '/lib/layout.js'
 import { deskVerbs } from './desk-verbs.ts'
@@ -51,7 +51,7 @@ export function startHud(started: HudDeps) {
   const { deskNow } = started.views
   const { spawn } = started.spawn
 
-  document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + briefCss + markdownCss + settingsCss + toastsCss + itemsCss }))
+  document.head.append(Object.assign(document.createElement('style'), { textContent: componentsLayer(panelsCss + briefCss + markdownCss + settingsCss + toastsCss + itemsCss) }))
 
   watchTips(document)
 

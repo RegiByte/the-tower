@@ -1,7 +1,7 @@
 import type { Board, Card } from '/lib/board.js'
 import { keysLabel } from '/lib/keys.js'
 import { modeText, type TermView } from '/lib/terminal.js'
-import type { Mount } from '/lib/view.js'
+import { type Mount, viewLayer } from '/lib/view.js'
 
 /**
  * A worker's session in its terminal, streamed while the view is mounted: the PTY's one size held by whoever types, and
@@ -31,7 +31,7 @@ const chipText = (view: TermView, board: Board) => {
 export const mount: Mount = (host, { board: first, subject, kit }) => {
   let board = first
   const id = (subject.value as Card).id
-  host.innerHTML = `<style>${CSS}</style><div class="term" aria-label="Terminal"></div><span class="mode"></span>`
+  host.innerHTML = `<style>${viewLayer(CSS)}</style><div class="term" aria-label="Terminal"></div><span class="mode"></span>`
   const chip = host.querySelector<HTMLElement>('.mode')!
   const term = kit.terminal(host.querySelector<HTMLElement>('.term')!, `terminal/${id}`)
   const paint = () => {

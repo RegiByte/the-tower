@@ -1,6 +1,6 @@
 import { type Board, callOf, can, type Card, type Floor, noLongerOffered, offeredCall, sentHome, type Subject } from '/lib/board.js'
 import { BLOCKED_TEXT, type DaemonVerb, detailsOf, gistLine, lampOf, LET_GO_MEANS, letGoAsk, letGoneLine, reapAsk, resumesRow, sendHomeAsk, statusName, statusTitle, verbHint, verbLabel, whereLineOf, whyNot } from '/lib/cards.js'
-import { ICON, keyedTip, morphPanel, type Mount, pressing, withIcons } from '/lib/view.js'
+import { ICON, keyedTip, morphPanel, type Mount, pressing, viewLayer, withIcons } from '/lib/view.js'
 import { domId } from '/lib/morph.js'
 import { keysHint, keyshortcuts } from '/lib/keys.js'
 import { esc, modelName, when } from '/lib/words.js'
@@ -151,7 +151,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
   let head = opts.head !== false
   const cell = scale === 'cell'
   const pop = `card-${++mounts}`
-  host.innerHTML = `<style>${CSS}</style><div class="bar">
+  host.innerHTML = `<style>${viewLayer(CSS)}</style><div class="bar">
     ${cell ? '<span class="mini"></span>' : ''}<div class="bar-top"${head ? '' : ' hidden'}>
       <div class="bar-main"><div class="bar-info"><span class="who"><span class="part lead"></span><span class="part stats-part"></span></span><span data-holds="badges"></span></div>
         <div class="bar-actions"><span class="part details-part"></span><span data-holds="actions" id="${esc(domId(`${scope}/card.head`, subject.key))}" data-owned></span><span class="part own"></span></div></div>

@@ -1,7 +1,7 @@
 import { can, fileSubject } from '/lib/board.js'
 import { UNRESUMABLE_TITLE, verbHint } from '/lib/cards.js'
 import { MAIN_CHECKOUT } from '/lib/files.js'
-import { fileButtonsHtml, fileCall } from '/lib/view.js'
+import { fileButtonsHtml, fileCall, viewLayer } from '/lib/view.js'
 import { esc } from '/lib/words.js'
 
 /**
@@ -113,7 +113,7 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
   const say = (text) => kit.toast(text)
   const toast = (err) => say(err.message)
 
-  host.innerHTML = `<style>${CSS}</style><div class="fx"><nav class="fx-tree" aria-label="files"><p class="note">Reading the checkout…</p></nav>
+  host.innerHTML = `<style>${viewLayer(CSS)}</style><div class="fx"><nav class="fx-tree" aria-label="files"><p class="note">Reading the checkout…</p></nav>
     <section class="fx-file"><div class="fx-head"><button class="back" data-back>‹ Files</button><span class="path"></span><span class="meta"></span><span class="acts"></span></div><div class="fx-open"><p class="empty">Pick a file to open it.</p></div></section></div>`
   const fx = host.querySelector('.fx')
   const tree = host.querySelector('.fx-tree')

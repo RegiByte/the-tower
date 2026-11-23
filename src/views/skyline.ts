@@ -2,7 +2,7 @@ import { type Board, boardSubject, can, type Card, type Floor, floorSubject } fr
 import { gistLine, heededWaits, HOST_MEANS, loudest, statusName, whyNot } from '/lib/cards.js'
 import { skyAt } from '/lib/design.js'
 import { chordLabel } from '/lib/keys.js'
-import { type Mount, paintOnce } from '/lib/view.js'
+import { type Mount, paintOnce, viewLayer } from '/lib/view.js'
 import { readViewer, VIEWER_KEYS } from '/lib/viewer.js'
 import { esc } from '/lib/words.js'
 import { paintOf } from '../shared/view-parts.ts'
@@ -121,7 +121,7 @@ export const mount: Mount = async (host, { tower, board: first, kit }) => {
     return `<div class="big">${big}</div><div class="sub">${sub}</div>`
   }
 
-  host.innerHTML = `<style>${STYLE}</style><div class="stars"></div><div class="orb"></div>
+  host.innerHTML = `<style>${viewLayer(STYLE)}</style><div class="stars"></div><div class="orb"></div>
     <div class="hello"><div class="words"></div><div class="acts"></div><div class="clock"></div></div><div style="display: contents"></div>`
   const [hello, city] = [...host.children].slice(-2) as HTMLElement[]
   const acts = kit.region(hello.querySelector('.acts')!, 'board.skyline', boardSubject(board))

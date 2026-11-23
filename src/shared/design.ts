@@ -396,6 +396,7 @@ ${reduced("button[aria-busy='true']::after, .icon-btn[aria-busy='true']::after",
 .spawn-form input:not([type=radio]), .spawn-form select, .spawn-form textarea { width: 100%; font: inherit; color: var(--ink); background: var(--panel-2);
   border: 1px solid var(--line-strong); border-radius: var(--radius); padding: var(--sp-m); min-width: 0; }
 .spawn-form :is(input:not([type=radio]), select, textarea):focus-visible { outline: 2px solid var(--pe); outline-offset: -1px; }
+.spawn-form tower-combobox { --ui-ring: var(--pe); --ui-placeholder: var(--faint); }
 .spawn-form input[type=radio]:focus-visible { outline: 2px solid var(--pe); outline-offset: 2px; border-radius: 50%; }
 .spawn-form ::placeholder { color: var(--faint); font-style: italic; }
 .spawn-form textarea { flex: 1; resize: none; font: var(--fs-l)/1.55 var(--ui); padding: var(--sp-l) var(--sp-xl); }
@@ -448,10 +449,18 @@ ${reduced("button[aria-busy='true']::after, .icon-btn[aria-busy='true']::after",
 `
 
 /**
- * The stylesheet every tower page links: the faces, every token as a `--` variable, and the shared components. The
- * scheme follows the system's appearance unless the page sets `data-scheme` on its root element, and contrast and
- * motion the system's settings unless it sets `data-contrast` or `data-motion` (tower.js sets all three from
- * `tower.prefs`).
+ * The cascade layers of a tower page, lowest first, declared before any of its CSS: the UI SDK's parts, vendored sheets
+ * (xterm's), the design, the tower's elements, the renderer's own sheet, views' styles, then themes. A later layer wins
+ * over an earlier one whatever its selectors weigh, and an `!important` in an earlier one over any in a later one, so a
+ * theme can't unhide what the tower hides or undo reduced motion. CSS in no layer wins over every layer.
+ */
+const LAYERS = '@layer ui-sdk, tower.vendor, tower.design, tower.elements, tower.page, tower.views, theme;'
+
+/**
+ * The stylesheet every tower page links first: the order of its cascade layers, the faces, and in the design's layer
+ * every token as a `--` variable and the shared components. The scheme follows the system's appearance unless the page
+ * sets `data-scheme` on its root element, and contrast and motion the system's settings unless it sets `data-contrast`
+ * or `data-motion` (tower.js sets all three from `tower.prefs`).
  */
 export function designCss(): string {
   const faces = fonts.map(
@@ -463,7 +472,9 @@ export function designCss(): string {
   const scheme = (name: Scheme) => `color-scheme: ${name};\n  ${variables(palettes[name])}`
   const [more, moreDark] = [variables(moreContrast('light')), variables(moreContrast('dark'))]
   const steps = (prefix: string, scale: Record<string, string>) => Object.entries(scale).map(([step, value]) => `--${prefix}-${step}: ${value};`).join('\n  ')
-  return `${faces.join('\n')}
+  return `${LAYERS}
+${faces.join('\n')}
+@layer tower.design {
 :root {
   font-size: calc(100% * var(--scale, 1));
   ${variables(shared)}
@@ -486,5 +497,6 @@ export function designCss(): string {
 :root[data-contrast='more'][data-scheme='dark'] { ${moreDark} }
 @media (prefers-contrast: more) and (prefers-color-scheme: dark) { :root:not([data-scheme='light']) { ${moreDark} } }
 @media (prefers-contrast: more) { :root[data-scheme='dark'] { ${moreDark} } }
-${COMPONENTS}`
+${COMPONENTS}
+}`
 }
