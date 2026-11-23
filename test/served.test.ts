@@ -147,7 +147,7 @@ const TABLE = /(<!-- regions: [^\n]*-->\n)[\s\S]*?(<!-- \/regions -->)/
 const regionsTable = (): string => {
   const cell = (regions: Region[], kind: string) =>
     regions
-      .filter((r) => r.subject === kind)
+      .filter((r) => r.subject === kind && r.holds.length)
       .map((r) => `\`${r.id}\`${r.description ? `, ${r.description}` : ''}: ${r.holds.join(', ')}`)
       .join('<br>') || 'not drawn'
   return [

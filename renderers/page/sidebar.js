@@ -3,7 +3,7 @@ import { addedTidyOf, ATTENTION_NAME, branchLine, carriedLine, editedRows, extra
 import { placeOnOpen } from '/lib/chrome.js'
 import { subjectAreaHtml, subjectButtonHtml, subjectHtml } from '/lib/elements.js'
 import { keyshortcuts } from '/lib/keys.js'
-import { addedActions, badgesOf, exemptionsOf, lineId, overflowOf, rankedBadges, rankedLines } from '/lib/layout.js'
+import { actionId, addedActions, badgesOf, exemptionsOf, isOnScreen, lineId, overflowOf, rankedBadges, rankedLines } from '/lib/layout.js'
 import { ICON, keyedTip, morphPanel, originIcon, SHELF_ICON, withIcons } from '/lib/view.js'
 import { domId } from '/lib/morph.js'
 import { base, esc, noun, plural, span } from '/lib/words.js'
@@ -14,7 +14,7 @@ import { actionsHtml, asksHtml, badgeHtml, badgesHtml, drawCount, iconButtonsHtm
 /**
  * @import { Attention, Board, Card, CommandLimits, Floor, FloorBranch, FloorWorktree, RateLimit, ShelfEntry, Subject, Unresumable } from '/lib/board.js'
  * @import { DaemonVerb, EditedRow, Heed, TidyRow } from '/lib/cards.js'
- * @import { Added, Badge } from '/lib/extension.js'
+ * @import { Action, Added, Badge } from '/lib/extension.js'
  * @import { Hold, LayoutEntry, Overflow, Region } from '/lib/layout.js'
  * @import { Viewer } from '/lib/viewer.js'
  */
@@ -69,6 +69,12 @@ export async function sidebar(deps) {
     render()
   }
 
+  /** Whether the viewer keeps region `id`'s buttons on screen (`LayoutEntry.onScreen`). @param {string} id */
+  const onScreen = (id) => isOnScreen(regionLayout(id).entry)
+
+  /** What region `id` draws of `actions`: all of them on screen, its pins alone in the menu only. @template {Added<Action>} A @param {string} id @param {A[]} actions */
+  const shownIn = (id, actions) => (onScreen(id) ? actions : actions.filter((a) => regionLayout(id).entry?.pinned?.includes(actionId(a))))
+
   /** @param {string} text */
   const lineHtml = (text) => `<div class="adds-line" data-tip="${esc(text)}">${esc(text)}</div>`
 
@@ -108,9 +114,25 @@ export async function sidebar(deps) {
     }
   }
 
+  /**
+   * What a worker's row draws of the lines and badges extensions add in the menu only: its pinned lines and its
+   * exemptions, with no count of the rest, which its ⋯ reaches.
+   * @param {Card} c @param {LayoutEntry | undefined} entry
+   */
+  const rowPinned = (c, entry) => {
+    const exemptions = exemptionsOf(board(), cardSubject(c))
+    return {
+      lines: rankedLines(board(), c.id, entry).filter((l) => entry?.pinned?.includes(lineId(l))).map((l) => lineHtml(l.text)).join(''),
+      badges: exemptions.length ? `<div class="badges counted">${exemptions.map(badgeHtml).join('')}</div>` : '',
+      by: '',
+      note: '',
+    }
+  }
+
   /** A worker's row's lines and badges, in the form `card.row` is drawn in. @param {Card} c */
   const rowAdds = (c) => {
     const { region, entry } = regionLayout('card.row')
+    if (!isOnScreen(entry)) return rowPinned(c, entry)
     return overflowOf(/** @type {Region & { overflows: Overflow[] }} */ (region), entry) === 'count' ? rowCounted(c, entry) : rowWrapped(c, entry)
   }
 
@@ -128,7 +150,7 @@ export async function sidebar(deps) {
     <div class="line">${lineOf(c)}</div>
     ${adds.badges}
     ${satellitesHtml(c)}
-    ${can(c, 'resume') ? `<div class="act resumes">${heldWhy('resume') ? heldHtml('resume', verbLabel('card', 'resume').toLowerCase(), `${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}`) : `<button data-resume="${esc(JSON.stringify(callOf(c, 'resume')))}" data-tip="${esc(verbHint('card', 'resume', c))}">${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}</button>`}${letGoHtml(c, verbLabel('card', 'let-go').toLowerCase())}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c.unresumable)}</div>` : ''}
+    ${can(c, 'resume') && onScreen('card.row-verbs') ? `<div class="act resumes">${heldWhy('resume') ? heldHtml('resume', verbLabel('card', 'resume').toLowerCase(), `${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}`) : `<button data-resume="${esc(JSON.stringify(callOf(c, 'resume')))}" data-tip="${esc(verbHint('card', 'resume', c))}">${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}</button>`}${letGoHtml(c, verbLabel('card', 'let-go').toLowerCase())}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c.unresumable)}</div>` : ''}
     ${adds.note}`)}</div>`
   }
 
@@ -311,10 +333,13 @@ export async function sidebar(deps) {
   const dirHtml = (f, dir, hub) =>
     `<div class="dir" id="${esc(domId('dir', dir))}"><span class="dname" data-tip="${esc(dir)}">${hub ? ICON.hub : ICON.repo} ${esc(base(dir))}</span>
     ${mainUnreadHtml(f, dir)}
-    ${shellButtonHtml(f, dir, base(dir))}
-    ${can(f, 'editor') ? `<button class="icon-btn" data-open="${esc(dir)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(base(dir))} in your editor" data-tip="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
-    ${origins[dir] ? `<a class="icon-btn" href="${esc(origins[dir])}" target="_blank" rel="noreferrer" aria-label="${esc(base(dir))} on the web" data-tip="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}
+    ${onScreen('floor.dirs') ? dirButtonsHtml(f, dir) : ''}
   </div>`
+
+  /** The page's own buttons beside a floor's directory (`floor.dirs`): a new shell, the editor, the repository on the web. @param {Floor} f @param {string} dir */
+  const dirButtonsHtml = (f, dir) => `${shellButtonHtml(f, dir, base(dir))}
+    ${can(f, 'editor') ? `<button class="icon-btn" data-open="${esc(dir)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(base(dir))} in your editor" data-tip="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
+    ${origins[dir] ? `<a class="icon-btn" href="${esc(origins[dir])}" target="_blank" rel="noreferrer" aria-label="${esc(base(dir))} on the web" data-tip="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}`
 
   /**
    * A verb on a worktree or kept branch, its call on the button.
@@ -382,7 +407,7 @@ export async function sidebar(deps) {
     : `<button class="${at('tower/shelf')?.project === f.id && at('tower/shelf')?.name === String(n) ? 'sel' : ''}" data-shelf="${f.id}" data-n="${n}" data-tip="${esc(`${entry.label}\n${shelfSource(entry)}`)}">${SHELF_ICON[shelfKind(entry)]} ${esc(entry.label)}</button>`
 
   /** @param {Floor} f */
-  const shelfHtml = (f) => !f.shelf?.length ? '' : `<div class="shelf">${f.shelf.map((entry, n) => shelfEntryHtml(f, entry, n)).join('')}</div>`
+  const shelfHtml = (f) => !f.shelf?.length || !onScreen('floor.shelf') ? '' : `<div class="shelf">${f.shelf.map((entry, n) => shelfEntryHtml(f, entry, n)).join('')}</div>`
 
   /**
    * What a floor keeps beside its workers, folded to one row of counts so the workers stay in sight: first its
@@ -491,12 +516,13 @@ export async function sidebar(deps) {
   const boardSignHtml = () => iconButtonsHtml(board(), boardSubject(board()), heldActions(holdsOf('board.sign'), addedActions(board(), boardSubject(board()))))
 
   /** What extensions add to an open floor's sign: their commands, each its icon. @param {Floor} f */
-  const signHtml = (f) => iconButtonsHtml(board(), floorSubject(f), heldActions(holdsOf('floor.sign'), addedActions(board(), floorSubject(f))))
+  const signHtml = (f) => iconButtonsHtml(board(), floorSubject(f), shownIn('floor.sign', heldActions(holdsOf('floor.sign'), addedActions(board(), floorSubject(f)))))
 
   /** What extensions add to the floor: its badges and verbs in a row. @param {Floor} f */
   const floorAddsHtml = (f) => {
     const subject = floorSubject(f)
-    const adds = badgesHtml(board(), subject) + actionsHtml(board(), subject, heldActions(holdsOf('floor.section'), addedActions(board(), subject))) + opensHtml(subject)
+    const on = onScreen('floor.section')
+    const adds = (on ? badgesHtml(board(), subject) : '') + actionsHtml(board(), subject, shownIn('floor.section', heldActions(holdsOf('floor.section'), addedActions(board(), subject)))) + (on ? opensHtml(subject) : '')
     return adds ? `<div class="adds">${adds}</div>` : ''
   }
 
