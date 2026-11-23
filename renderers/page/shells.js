@@ -10,7 +10,6 @@ import { $, byStart, toast, told } from './kit.js'
 
 /**
  * @import { Board, Floor } from '/lib/board.js'
- * @import { Scheme } from '/lib/design.js'
  * @import { ShellStream, TermFont, TermMode, TermViewHandle } from '/lib/terminal.js'
  */
 
@@ -21,7 +20,6 @@ import { $, byStart, toast, told } from './kit.js'
  *   paint: (projectId: string | undefined) => string,
  *   floorOf: (project: string) => Floor | undefined,
  *   termFont: () => TermFont,
- *   scheme: () => Scheme,
  *   run: (id: string, e: KeyboardEvent) => boolean,
  *   showMode: (el: HTMLElement, mode: TermMode) => void,
  * }} ShellsDeps
@@ -33,7 +31,7 @@ import { $, byStart, toast, told } from './kit.js'
  * @param {ShellsDeps} deps
  */
 export function shells(deps) {
-  const { board, floorInView, paint, floorOf, termFont, scheme, run, showMode } = deps
+  const { board, floorInView, paint, floorOf, termFont, run, showMode } = deps
 
   /** The shell open in the dock: its id and terminal view. @type {{ id: string, view: TermViewHandle } | undefined} */
   let shell
@@ -77,7 +75,6 @@ export function shells(deps) {
       wheelReports: false,
       scrollback: SHELL_SCROLLBACK,
       font: termFont,
-      scheme,
       keymap: () => board().keys,
       run,
       mode: (mode) => showMode($('s-mode'), mode),

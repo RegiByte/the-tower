@@ -15,7 +15,6 @@ import { menu } from './menu.js'
 /**
  * @import { Board, Card, CardShown, Subject } from '/lib/board.js'
  * @import { TerminalMsg, Tower } from '/lib/client.js'
- * @import { Scheme } from '/lib/design.js'
  * @import { Action, Added } from '/lib/extension.js'
  * @import { KitMember, Layout, Overflow, Region } from '/lib/layout.js'
  * @import { JobStream, ShellStream, TermFont, TermViewHandle } from '/lib/terminal.js'
@@ -38,7 +37,6 @@ import { menu } from './menu.js'
  *   declared: () => Region[],
  *   kit: readonly KitMember[],
  *   termFont: () => TermFont,
- *   scheme: () => Scheme,
  *   run: (id: string, e: KeyboardEvent) => boolean,
  *   commandKit: CommandKit & { go: (location: Location) => void, href: (to: Subject | Location) => string, location: () => Location | undefined, spawn: (on: Subject, open: () => boolean) => Promise<string | undefined> },
  *   tower: Tower,
@@ -80,7 +78,7 @@ const tabKey = (view, subject) => `${view}|${subject}`
  * @param {RegionsDeps} deps
  */
 export function regions(deps) {
-  const { board, views, layout, declared, termFont, scheme, run, commandKit, tower, contributions, subjectOf, unshown, mainPane, gone, left } = deps
+  const { board, views, layout, declared, termFont, run, commandKit, tower, contributions, subjectOf, unshown, mainPane, gone, left } = deps
 
   /** The command that opens the view `id` where it is a pane. @param {string} id */
   const paneCommand = (id) => panesOf(board()).find((p) => p.view === id)?.command
@@ -88,7 +86,7 @@ export function regions(deps) {
   /** Each tabs region, by the element of the view it is in: where a tab's chord finds it. @type {WeakMap<HTMLElement, ReturnType<typeof tabs>>} */
   const regionsByHost = new WeakMap()
 
-  /** Every terminal a view's kit opened, which the viewer's face and scheme reach. @type {Set<TermViewHandle>} */
+  /** Every terminal a view's kit opened, which the viewer's face and colours reach. @type {Set<TermViewHandle>} */
   const terminals = new Set()
 
   /** Every tabs region drawn, to draw again when a module it waits for arrives. @type {Set<{ draw: () => void }>} */
@@ -116,7 +114,6 @@ export function regions(deps) {
       wheelReports: false,
       scrollback: SHELL_SCROLLBACK,
       font: termFont,
-      scheme,
       keymap: () => board().keys,
       run,
       mode: () => {},
@@ -140,7 +137,6 @@ export function regions(deps) {
       wheelReports: !shell,
       scrollback: shell ? SHELL_SCROLLBACK : 0,
       font: termFont,
-      scheme,
       keymap: () => board().keys,
       run,
       mode: () => {},

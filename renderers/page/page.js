@@ -325,7 +325,6 @@ const WORKER = 'tower/card'
  * The viewer's appearance, kept by tower.js in this browser for every page of theirs, on the root that the stylesheet
  * reads; terminals, the framed documents, the open shelf page and the settings follow it whenever it changes.
  */
-const scheme = tower.scheme
 
 page.dispatch({ type: 'stored', viewer: viewer() })
 
@@ -372,7 +371,7 @@ const { floorInView, drawSideView, sideView } = await stats({ view, findCard, fl
 
 const { showMode, termFont, applyTermFont, leaveTerminal } = screen({ board, refont: () => (mainRegion.refont(), refontShell()) })
 
-const { shellFloor, renderDock, refontShell, reschemeShell, toggleShell, spawnShell, spawnShellAt, focusShell, focusedShell, openShellId, closeShell } = shells({ board, floorInView, paint, floorOf, termFont, scheme, run, showMode })
+const { shellFloor, renderDock, refontShell, reschemeShell, toggleShell, spawnShell, spawnShellAt, focusShell, focusedShell, openShellId, closeShell } = shells({ board, floorInView, paint, floorOf, termFont, run, showMode })
 const { paintTip } = tipStrip({ viewer, keys: () => board().keys, now: pageNow })
 
 
@@ -1331,7 +1330,6 @@ const mainRegion = regions({
   declared: () => placing().regions,
   kit: KIT,
   termFont,
-  scheme,
   run,
   commandKit: { ...commandKit, go: (location) => void goTo(location), href: (to) => ('view' in to ? hashOf({ t: 'view', location: to }, board()) || '#' : linkHash(to)), location: () => viewing('view')?.location, spawn: (on, open) => spawnFor(on, open) },
   tower: viewTower,
@@ -1744,14 +1742,14 @@ document.addEventListener('click', async (e) => {
 })
 $('home').onclick = goHome
 
-function applyScheme() {
+/** The terminals take the colours the page computes again: the scheme, or a pref the tokens follow (contrast), changed. */
+function recolourTerminals() {
   mainRegion.rescheme()
   reschemeShell()
-  render()
 }
 
-tower.onScheme(applyScheme)
-tower.prefs.on(() => (applyTermFont(), placedRegions.forEach((r) => r.remeasure()), render(), drawSettings()))
+tower.onScheme(() => (recolourTerminals(), render()))
+tower.prefs.on(() => (applyTermFont(), recolourTerminals(), placedRegions.forEach((r) => r.remeasure()), render(), drawSettings()))
 document.fonts.addEventListener('loadingdone', () => placedRegions.forEach((r) => r.remeasure()))
 // A view or a framed page set a key the viewer's record keeps, such as a dismissal.
 tower.store.on(() => void rereadViewer().then(render))

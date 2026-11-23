@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-03",
   "reviewed": "2026-11-23",
-  "refs": ["hub/src/shared/design.ts", "hub/src/shared/design.ts#size", "hub/src/shared/design.ts#space", "hub/src/shared/design.ts#controls", "hub/src/shared/design.ts#iconSize", "hub/src/shared/icons.ts#ICON", "hub/src/shared/icons.ts#withIcons", "hub/src/shared/design.ts#fonts", "hub/src/shared/design.ts#terminalTheme", "hub/src/shared/design.ts#designCss", "hub/src/shared/design.ts#skyAt", "hub/src/shared/design.ts#documentCss", "hub/src/bridge/board.ts", "hub/src/tower/http.ts#design", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/tower/tower.js", "hub/renderers/tower3d/src/outside.ts", "hub/renderers/tower3d/src/cards.ts#WORLD", "hub/renderers/tower3d/src/ui.ts", "hub/renderers/tower3d/src/toon.ts#loadFaces", "hub/src/shared/design.ts#projectTones", "hub/renderers/tower3d/src/sign.ts#paintSign", "hub/renderers/tower3d/src/palette.ts#floorPalette", "hub/scripts/contrast.ts"]
+  "refs": ["hub/src/shared/design.ts", "hub/src/shared/design.ts#size", "hub/src/shared/design.ts#space", "hub/src/shared/design.ts#controls", "hub/src/shared/design.ts#iconSize", "hub/src/shared/icons.ts#ICON", "hub/src/shared/icons.ts#withIcons", "hub/src/shared/design.ts#fonts", "hub/src/shared/design.ts#terminalTheme", "hub/src/shared/design.ts#terminalThemeOn", "hub/src/shared/term-view.ts", "hub/src/shared/design.ts#designCss", "hub/src/shared/design.ts#skyAt", "hub/src/shared/design.ts#documentCss", "hub/src/bridge/board.ts", "hub/src/tower/http.ts#design", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/tower/tower.js", "hub/renderers/tower3d/src/outside.ts", "hub/renderers/tower3d/src/cards.ts#WORLD", "hub/renderers/tower3d/src/ui.ts", "hub/renderers/tower3d/src/toon.ts#loadFaces", "hub/src/shared/design.ts#projectTones", "hub/renderers/tower3d/src/sign.ts#paintSign", "hub/renderers/tower3d/src/palette.ts#floorPalette", "hub/scripts/contrast.ts"]
 }
 ---
 **Problem.** The tower page and Tower 3D looked generic and unlike each other, every status colour equally loud,
@@ -20,7 +20,8 @@ grows as components are added.
 a transit-line band, Overpass for signage, Atkinson Hyperlegible for text, JetBrains Mono for terminals, and a
 terminal that is a block of the ink colour.
 - [`design.ts`](ref:hub/src/shared/design.ts) holds every token as plain data, plus the xterm theme
-  ([`terminalTheme`](ref:hub/src/shared/design.ts#terminalTheme)), the faces and the sky through the day
+  ([`terminalThemeOn`](ref:hub/src/shared/design.ts#terminalThemeOn): the ANSI colours on a surface of `enamel` with
+  text in `termFg`), the faces and the sky through the day
   ([`skyAt`](ref:hub/src/shared/design.ts#skyAt)). It imports nothing, so it runs in Node, in the browser and in
   Tower 3D's bundle.
 - The tower serves it three ways ([`design`](ref:hub/src/tower/http.ts#design)): `/design.css`
@@ -39,7 +40,11 @@ terminal that is a block of the ink colour.
   contrast (the viewer's or the system's) are honoured by `design.css` ([[viewer-prefs]]).
 - **Two schemes, one set of roles.** `palettes.light` (a soft parchment) and `palettes.dark` fill the same roles,
   `ink` for text and `enamel` for dark surfaces, so components never name a scheme. How the viewer's choice reaches
-  pages, terminals and framed shelf pages is [[viewer-prefs]].
+  pages, terminals and framed shelf pages is [[viewer-prefs]]. A page's terminal reads no palette: its view
+  ([`term-view.ts`](ref:hub/src/shared/term-view.ts)) takes `--enamel` and `--term-fg` as the page computes them at
+  its box, again on a change of scheme or prefs, so whatever sets the tokens (a scheme, more contrast, a theme)
+  recolours it. A canvas, which reads no CSS, takes the scheme's
+  ([`terminalTheme`](ref:hub/src/shared/design.ts#terminalTheme)).
 - **Panels follow the scheme; the world doesn't.** Tower 3D's DOM chrome uses the shared components in the viewer's
   scheme. Everything drawn into the scene is a thing in the building and keeps one palette,
   [`WORLD`](ref:hub/renderers/tower3d/src/cards.ts#WORLD) = `palettes.light`: the world has its own light (the sky
