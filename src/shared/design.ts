@@ -452,7 +452,7 @@ ${reduced("button[aria-busy='true']::after, .icon-btn[aria-busy='true']::after",
  * The cascade layers of a tower page, lowest first, declared before any of its CSS: the UI SDK's parts, vendored sheets
  * (xterm's), the design, the tower's elements, the renderer's own sheet, views' styles, then themes. A later layer wins
  * over an earlier one whatever its selectors weigh, and an `!important` in an earlier one over any in a later one, so a
- * theme can't unhide what the tower hides or undo reduced motion. CSS in no layer wins over every layer.
+ * theme can't undo what the tower sets `!important`, reduced motion among it. CSS in no layer wins over every layer.
  */
 const LAYERS = '@layer ui-sdk, tower.vendor, tower.design, tower.elements, tower.page, tower.views, theme;'
 

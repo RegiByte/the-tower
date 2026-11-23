@@ -16,10 +16,19 @@ ${css}
 }`
 
 /**
- * The CSS of shared components a view draws (`panelsCss`, `itemsCss`, `markdownCss`), in the design's cascade layer
- * with the rest of them: under the renderer's own sheet, which may restyle them, and under the view's own rules.
+ * The CSS of shared components a view or a renderer draws (`panelsCss`, `itemsCss`, `markdownCss`), in the design's
+ * cascade layer with the rest of them: under the renderer's own sheet, which may restyle them, and under the view's own
+ * rules. A renderer's element defaults (`button`, `a`) go here too, so the shared components' classes outweigh them.
  */
 export const componentsLayer = (css: string) => `@layer tower.design {
+${css}
+}`
+
+/**
+ * A renderer's own CSS in its cascade layer: over the design and the tower's elements, under views' styles and themes,
+ * as the tower page's own sheet is.
+ */
+export const rendererLayer = (css: string) => `@layer tower.page {
 ${css}
 }`
 

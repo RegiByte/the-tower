@@ -225,6 +225,19 @@ tower.subscribe((board) => {
 the board, `/stats` and the archives, with no build. Read it for a page that steps through windows of time and draws
 the Stats numbers its own way.
 
+**Its own look, in its place.** Link `/design.css` before any other sheet: it declares the order of the tower's
+cascade layers, where a later layer outweighs an earlier one whatever its selectors weigh. Bring your sheet through
+`rendererLayer(css)` of `/lib/view.js`, inserted as a `<style>`: it then sits over the design and the tower's elements
+and under views' styles and themes, as the tower page's own sheet does. Element defaults (`button { … }`, `a { … }`)
+go through `componentsLayer(css)` instead, so the shared components' classes (`.icon-btn`, `.chip`, `.eyebrow`)
+still outweigh them. A sheet in neither outweighs every layer: views can't restyle what it styles, and a theme
+can't either.
+
+```js
+import { rendererLayer } from '/lib/view.js'
+document.head.append(Object.assign(document.createElement('style'), { textContent: rendererLayer(myCss) }))
+```
+
 The board is the whole system as one value, sent again whenever it changes: its type is `Board` in
 `/lib/board.js`, described as JSON Schema by `tower api board` (each event is `{v, board}`, not the board itself). Each card, conversation, floor, policy and offer carries `actions`, what can be done to it now, each a `verb`
 with its `call` when it is a request of the API: `tower.run(card.actions.find((a) => a.verb === 'resume').call)`, or
@@ -489,7 +502,7 @@ joins as a minor the day something uses it.
 | `/lib/board.js` | generic | authors | the board's types and pure readings of it: subjects, what is offered and its calls, crews, checkouts, each command's limits, each extension's settings |
 | `/lib/extension.js` | server | server | server code's types (Start, ctx, folds, parts, the shape of tower/config), API errors, and checking a spawn's fields |
 | `/lib/words.js` | generic | authors | text: escaping, plurals, spans, times, tags and item titles |
-| `/lib/view.js` | browser | authors | a view's types and chrome, the clipboard, panels drawn and kept, controls pressed, files and items, icons, highlighted code |
+| `/lib/view.js` | browser | authors | a view's types and chrome, the cascade layers a renderer's and a view's CSS go in, the clipboard, panels drawn and kept, controls pressed, files and items, icons, highlighted code |
 | `/lib/markdown.js` | generic | authors | markdown as safe html, and its stylesheet |
 | `/lib/machine.js` | generic | authors | the loop machines run on, and held reads |
 | `/lib/time.js` | generic | authors | crons and periods: slots and their words |
@@ -1216,8 +1229,9 @@ board, `show` with a subject below the one it is on (true when it took it), and 
 subject leaves the board. A view draws only inside its host, which carries `data-view="<id>"`, with styles scoped
 `:where([data-view="<id>"])` over `/design.css`'s tokens, brought in a `<style>` inside its host through `viewCss`, or
 `viewLayer` for rules it writes whole and `componentsLayer` for the shared components it draws (`panelsCss`,
-`itemsCss`, `markdownCss`): they put the view's rules over the renderer's own sheet and the shared components under
-it, whatever their selectors weigh, and a `<style>` with neither outweighs both; it never imports another view; it keeps its state in `ctx.state`; it wires its own presses; and it calls verbs only on a press inside
+`itemsCss`, `markdownCss`): they put the view's rules over the renderer's own sheet when the renderer brings it
+through `rendererLayer`, and the shared components under it, whatever their selectors weigh; a `<style>` with neither
+outweighs both; it never imports another view; it keeps its state in `ctx.state`; it wires its own presses; and it calls verbs only on a press inside
 it. A view whose module doesn't load, lacks its export, throws or hasn't mounted in 10 s is one line where it would
 draw, and the page goes on. A view that keeps something in the viewer's record (a dismissal) sets it with
 `tower.store.set`, and every renderer that keeps that record hears it through `tower.store.on`.
