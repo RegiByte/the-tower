@@ -2,7 +2,7 @@ import type { Board, CardShown } from '/lib/board.js'
 import { shownTitle } from '/lib/cards.js'
 import type { Tower } from '/lib/client.js'
 import { documentCss } from '/lib/design.js'
-import type { Mount } from '/lib/view.js'
+import { type Mount, viewLayer } from '/lib/view.js'
 import { esc } from '/lib/words.js'
 
 /**
@@ -34,8 +34,8 @@ export const mount: Mount = (host, { tower, board: first, subject }) => {
   const s = subject.value as Address
   host.innerHTML =
     s.kind === 'url'
-      ? `<style>${CSS}</style><iframe title="${esc(shownTitle(s))}" src="${esc(s.target)}" allow="clipboard-read; clipboard-write"></iframe>`
-      : `<style>${CSS}</style><iframe class="doc" title="${esc(shownTitle(s))}" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>`
+      ? `<style>${viewLayer(CSS)}</style><iframe title="${esc(shownTitle(s))}" src="${esc(s.target)}" allow="clipboard-read; clipboard-write"></iframe>`
+      : `<style>${viewLayer(CSS)}</style><iframe class="doc" title="${esc(shownTitle(s))}" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>`
   const frame = host.querySelector('iframe')!
   const draw = () => s.kind === 'link' && (frame.srcdoc = linkPage(tower, callsignOf(board, s), s))
   draw()

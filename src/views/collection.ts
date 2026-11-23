@@ -1,6 +1,6 @@
 import { type Board, type Floor, type FloorCollection, itemSubject } from '/lib/board.js'
 import { viewsOf } from '/lib/layout.js'
-import { closeHtml, collectionTrayHtml, ICON, itemPath, itemsCss, keptOf, keptTitles, type Mount, paintOnce, viewCss } from '/lib/view.js'
+import { closeHtml, collectionTrayHtml, ICON, itemPath, itemsCss, keptOf, keptTitles, type Mount, paintOnce, viewCss, componentsLayer } from '/lib/view.js'
 import { esc, plural } from '/lib/words.js'
 
 /**
@@ -11,7 +11,7 @@ import { esc, plural } from '/lib/words.js'
 
 const ID = 'tower/collection'
 
-const STYLE = `${itemsCss}
+const STYLE = `${componentsLayer(itemsCss)}
 ${viewCss(
   ID,
   `& .collection-list { flex: 1; min-height: 0; overflow-y: auto; padding: var(--sp-m); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);

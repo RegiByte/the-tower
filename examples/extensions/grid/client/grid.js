@@ -1,6 +1,6 @@
 import { can, cardSubject, floorSettingsOf, floorSubject, settingsOf } from '/lib/board.js'
 import { heededWaits, lampOf, statusName } from '/lib/cards.js'
-import { ICON } from '/lib/view.js'
+import { ICON, viewLayer } from '/lib/view.js'
 import { VIEWER_KEYS } from '/lib/viewer.js'
 import { esc } from '/lib/words.js'
 
@@ -122,7 +122,7 @@ export async function mount(host, { tower, board, subject, kit, state }) {
   const label = () => (key === 'board' ? 'every floor' : floorsOf(now, key)[0]?.name ?? key)
 
   const pop = `grid-add-${uuid()}`
-  host.innerHTML = `<style>${STYLE}</style><div class="grid-bar"><b>Grid</b><span></span><button data-grid-open-add popovertarget="${pop}">Add worker</button><button data-grid-flash data-tip="How a cell shows that its worker waits on you, in every browser: off, a steady ring, or a blinking one"></button><button data-grid-heads></button><div class="grid-add" id="${pop}" popover></div></div><div class="grid-cells"></div><div class="grid-add" id="${pop}-fill" popover></div>`
+  host.innerHTML = `<style>${viewLayer(STYLE)}</style><div class="grid-bar"><b>Grid</b><span></span><button data-grid-open-add popovertarget="${pop}">Add worker</button><button data-grid-flash data-tip="How a cell shows that its worker waits on you, in every browser: off, a steady ring, or a blinking one"></button><button data-grid-heads></button><div class="grid-add" id="${pop}" popover></div></div><div class="grid-cells"></div><div class="grid-add" id="${pop}-fill" popover></div>`
   const bar = host.querySelector('.grid-bar')
   const adder = bar.querySelector('[data-grid-open-add]')
   const menu = bar.querySelector('.grid-add')

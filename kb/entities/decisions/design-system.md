@@ -24,7 +24,8 @@ terminal that is a block of the ink colour.
   ([`skyAt`](ref:hub/src/shared/design.ts#skyAt)). It imports nothing, so it runs in Node, in the browser and in
   Tower 3D's bundle.
 - The tower serves it three ways ([`design`](ref:hub/src/tower/http.ts#design)): `/design.css`
-  ([`designCss`](ref:hub/src/shared/design.ts#designCss): faces, `--` variables and the shared components, among
+  ([`designCss`](ref:hub/src/shared/design.ts#designCss): the order of a page's cascade layers ([[cascade-layers]]),
+  then faces, and in the design's layer the `--` variables and the shared components, among
   them the attention classes and every button's pressed, held and busy states, [[press-feedback]]), `design.ts`
   and `/fonts/<file>` from the `@fontsource` packages. All three answer any origin: a framed shelf page has an
   opaque origin, and fonts and modules load only with CORS.

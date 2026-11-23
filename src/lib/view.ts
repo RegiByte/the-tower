@@ -62,9 +62,11 @@ export type {
 } from '../shared/press.ts'
 export {
   closeHtml,
+  componentsLayer,
   keyedTip,
   paintOnce,
   viewCss,
+  viewLayer,
 } from '../shared/view-parts.ts'
 export {
   viewHost,

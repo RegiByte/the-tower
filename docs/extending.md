@@ -1214,8 +1214,10 @@ load; optional as `href` is), `display(subject, { view? })`,
 until closed) and `confirm(text, verb)`. The renderer calls `update` on each
 board, `show` with a subject below the one it is on (true when it took it), and `close` as its location leaves or its
 subject leaves the board. A view draws only inside its host, which carries `data-view="<id>"`, with styles scoped
-`:where([data-view="<id>"])` over `/design.css`'s tokens, brought in a `<style>` inside its host; it never imports
-another view; it keeps its state in `ctx.state`; it wires its own presses; and it calls verbs only on a press inside
+`:where([data-view="<id>"])` over `/design.css`'s tokens, brought in a `<style>` inside its host through `viewCss`, or
+`viewLayer` for rules it writes whole and `componentsLayer` for the shared components it draws (`panelsCss`,
+`itemsCss`, `markdownCss`): they put the view's rules over the renderer's own sheet and the shared components under
+it, whatever their selectors weigh, and a `<style>` with neither outweighs both; it never imports another view; it keeps its state in `ctx.state`; it wires its own presses; and it calls verbs only on a press inside
 it. A view whose module doesn't load, lacks its export, throws or hasn't mounted in 10 s is one line where it would
 draw, and the page goes on. A view that keeps something in the viewer's record (a dismissal) sets it with
 `tower.store.set`, and every renderer that keeps that record hears it through `tower.store.on`.

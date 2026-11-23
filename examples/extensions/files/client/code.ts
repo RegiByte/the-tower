@@ -8,6 +8,7 @@ import { createHighlighterCore, type HighlighterCore, type LanguageRegistration 
 import { createJavaScriptRegexEngine } from 'shiki/engine/javascript'
 import darkPlus from 'shiki/themes/dark-plus.mjs'
 import lightPlus from 'shiki/themes/light-plus.mjs'
+import { viewLayer } from '/lib/view.js'
 
 const ID = 'files/code'
 
@@ -107,7 +108,7 @@ type Ctx = { tower: Tower; subject: { value: unknown } }
 export async function mount(host: HTMLElement, { tower, subject }: Ctx) {
   host.dataset.scheme = tower.scheme()
   const off = tower.onScheme((scheme) => (host.dataset.scheme = scheme))
-  host.innerHTML = `<style>${CSS}</style><div class="body"></div>`
+  host.innerHTML = `<style>${viewLayer(CSS)}</style><div class="body"></div>`
   const body = host.querySelector<HTMLElement>('.body')!
   let drawn = ''
   let draws = 0

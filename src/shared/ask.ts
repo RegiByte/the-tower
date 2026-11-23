@@ -1,4 +1,9 @@
-/** The dialog's look, whole, so a renderer draws it with `/design.css` and nothing of its own. */
+import { viewLayer } from './view-parts.ts'
+
+/**
+ * The dialog's look, whole, so a renderer draws it with `/design.css` and nothing of its own: in the views' layer, over
+ * the renderer's own sheet.
+ */
 const ASK_CSS = `
 dialog[data-tower-ask], dialog[data-tower-ask] * { box-sizing: border-box; }
 dialog[data-tower-ask] { width: min(520px, 92vw); padding: var(--sp-2xl); background: var(--panel); color: var(--ink); font: var(--fs-l)/1.45 var(--ui); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-pop); }
@@ -37,7 +42,7 @@ const askDialog = () => {
   dialog.dataset.towerAsk = ''
   dialog.setAttribute('aria-labelledby', 'tower-ask-title')
   dialog.setAttribute('aria-describedby', 'tower-ask-body')
-  dialog.innerHTML = `<style>${ASK_CSS}</style><form method="dialog"><h2 id="tower-ask-title"></h2><div class="confirm-body" id="tower-ask-body"></div><div class="actions"><button value="">Cancel</button><button class="primary" id="tower-ask-yes" value="yes"></button></div></form>`
+  dialog.innerHTML = `<style>${viewLayer(ASK_CSS)}</style><form method="dialog"><h2 id="tower-ask-title"></h2><div class="confirm-body" id="tower-ask-body"></div><div class="actions"><button value="">Cancel</button><button class="primary" id="tower-ask-yes" value="yes"></button></div></form>`
   closeOnBackdrop(dialog)
   // Framed, a key the page leaves alone goes on to the tower (`/frame-keys.js`), where Escape goes home.
   dialog.addEventListener('keydown', (e) => e.key === 'Escape' && (e.preventDefault(), dialog.close()))

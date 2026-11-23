@@ -4,10 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Tower</title>
-<link rel="stylesheet" href="/xterm.css">
 <link rel="stylesheet" href="/design.css">
 <script src="/tower.js"></script>
 <style>
+@import url(/xterm.css) layer(tower.vendor);
+@layer tower.design {
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; overscroll-behavior: none; }
 body { display: grid; grid-template-columns: clamp(min(20rem, 38vw), 22vw, 28rem) minmax(0, 1fr); background: var(--wall); color: var(--ink); font: var(--fs-l)/1.45 var(--ui);
@@ -21,7 +22,12 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outlin
 a { color: var(--accent); }
 .display { font-family: var(--display); font-weight: 800; }
 kbd { font: 700 var(--fs-xs)/1 var(--mono); padding: var(--sp-2xs) var(--sp-xs); border-radius: var(--radius-s); background: var(--ink); color: var(--panel); }
-
+dialog { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--sp-2xl); width: min(760px, 92vw);
+  box-shadow: var(--shadow-pop); }
+dialog::backdrop { background: var(--backdrop); }
+dialog h2 { margin: 0 0 var(--sp-l); font: 800 var(--fs-xl)/1 var(--display); text-transform: uppercase; letter-spacing: .06em; }
+}
+@layer tower.page {
 .side { display: flex; flex-direction: column; min-height: 0; background: var(--panel); border-right: 1px solid var(--line); }
 .brand { position: relative; display: flex; align-items: center; gap: var(--sp-xs); padding: var(--sp-xl) var(--sp-l) var(--sp-l) var(--sp-xl); white-space: nowrap; }
 .brand h1 { margin: 0; font: 900 var(--fs-2xl)/1 var(--display); text-transform: uppercase; letter-spacing: .06em; cursor: pointer; }
@@ -439,11 +445,7 @@ dialog.palette[open] { display: flex; flex-direction: column; max-height: min(56
 .shell-pick small { color: var(--faint); font: var(--fs-xs) var(--mono); }
 
 
-dialog { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--sp-2xl); width: min(760px, 92vw);
-  box-shadow: var(--shadow-pop); }
-dialog::backdrop { background: var(--backdrop); }
 dialog.spawn { padding: 0; width: fit-content; max-width: none; max-height: none; }
-dialog h2 { margin: 0 0 var(--sp-l); font: 800 var(--fs-xl)/1 var(--display); text-transform: uppercase; letter-spacing: .06em; }
 dialog .actions { display: flex; justify-content: flex-end; align-items: center; gap: var(--sp-m); margin-top: var(--sp-xl); color: var(--faint); font-size: var(--fs-s); }
 dialog .actions small { margin-right: auto; }
 dialog.sheet header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-m); }
@@ -456,6 +458,7 @@ dialog.sheet header .icon-btn { flex: none; font-size: var(--fs-m); }
 .board-error small { display: block; margin-top: var(--sp-xs); color: var(--muted); }
 body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, [data-view="tower/skyline"], #tabs) { filter: grayscale(1); opacity: .55; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
 </style>
 </head>
 <body>

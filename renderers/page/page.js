@@ -13,7 +13,7 @@ import { wireSpawn } from '/lib/spawn.js'
 import '/lib-ui/combobox.js'
 import { STATS_ALL } from '/lib/stats.js'
 import { loadTerminalFont } from '/lib/terminal.js'
-import { pressOf, copyTelling, fileButtonsHtml, fileCall, itemsCss, morphPanel, panelsCss, pressing, pressingAs } from '/lib/view.js'
+import { pressOf, componentsLayer, copyTelling, fileButtonsHtml, fileCall, itemsCss, morphPanel, panelsCss, pressing, pressingAs } from '/lib/view.js'
 import { readViewer, seenMarker, seenOf, VIEWER_KEYS } from '/lib/viewer.js'
 import { ago, esc, plural } from '/lib/words.js'
 import { domId } from '/lib/morph.js'
@@ -65,7 +65,7 @@ import { gapBeside, isCut, lineWidth, roomOf } from './fit.js'
  * @import { Draft } from '../../extensions/drafts/client/drafts.ts'
  */
 
-document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + settingsCss + itemsCss + briefCss + markdownCss + toastsCss }))
+document.head.append(Object.assign(document.createElement('style'), { textContent: componentsLayer(panelsCss + settingsCss + itemsCss + briefCss + markdownCss + toastsCss) }))
 watchTips(document)
 
 /** The board drawn until the first arrives: one with nothing on it. */

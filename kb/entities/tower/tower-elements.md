@@ -40,7 +40,9 @@ menu to copy, and its `checkedchange`, which doesn't bubble, is fired again on t
 - **One SDK core.** `/lib-ui/sdk.js` is internal: the SDK entries in use bundled once, packages inlined, minified
   ([`uiSdkModule`](ref:hub/src/tower/served.ts#uiSdkModule)), never through `/vendor/`, since popups on two cores
   can't share a layer stack. It adopts [`look.css`](ref:hub/src/lib-ui/look.css), the tower's look for the parts,
-  which reads the SDK's `--ui-*` variables, each set on the outer element from a design token.
+  which reads the SDK's `--ui-*` variables, each set on the outer element from a design token: the mapping in the
+  design's cascade layer, so a component of the design can re-point one on an element it holds, the parts' rules in
+  the elements' layer ([[cascade-layers]]).
 - **A combobox named from outside.** `labelledby` names a label the form draws itself (an eyebrow, an optional mark, a
   hint): the element then draws no label part and points its input's `aria-labelledby` at it. A `<label>` around it
   would take a press in its list for one on the box.

@@ -1,6 +1,6 @@
 import { type Board, boardSubject } from '/lib/board.js'
 import { fenceText, imagePath, markdownCss, markdownHtml } from '/lib/markdown.js'
-import { closeHtml, copyTelling, itemPath, type Mount, paintOnce, viewCss } from '/lib/view.js'
+import { closeHtml, copyTelling, itemPath, type Mount, paintOnce, viewCss, componentsLayer } from '/lib/view.js'
 import { esc } from '/lib/words.js'
 import { type Broken, byCategory, type Guide, GUIDES, guideOf, isGuide, matches, TOWER_WIDE } from './guide.ts'
 
@@ -58,7 +58,7 @@ export const mount: Mount = (host, { tower, board: first, kit }) => {
   /** The version of each guide being read now: a read of an older one is dropped when it lands. */
   const reading = new Map<string, number>()
 
-  host.innerHTML = `<style>${STYLE}${markdownCss}</style>
+  host.innerHTML = `<style>${STYLE}${componentsLayer(markdownCss)}</style>
   <div class="shelf-head"><span class="label">Learning center</span><span class="dim">how to do things in the tower</span>
     <button class="tour primary" data-tour>Take the tour</button><span class="actions"></span></div>
   <div class="center"><nav class="index" aria-label="guides"><input type="search" placeholder="Search guides" aria-label="search guides"><div class="list"></div></nav>

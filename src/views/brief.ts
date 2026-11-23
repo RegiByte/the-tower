@@ -2,7 +2,7 @@ import { can, type Card, conversationSubject, saidSubject, type Subject } from '
 import { type Brief, briefCss, briefHtml, briefKey, type BriefMarkdown, expandedSaid, openFolds, openTools, saidText, saidWhat, toolCallHtml, toolCallSettled, withWhole, withWholesRead } from '/lib/brief.js'
 import { addedActions } from '/lib/layout.js'
 import { fenceText, markdownCss, markdownKept } from '/lib/markdown.js'
-import { copyTelling, morphPanel, type Mount, type RegionHandle, type Tab } from '/lib/view.js'
+import { copyTelling, morphPanel, type Mount, type RegionHandle, type Tab, componentsLayer, viewLayer } from '/lib/view.js'
 import { domId } from '/lib/morph.js'
 import { esc } from '/lib/words.js'
 import { VIEWER_KEYS } from '/lib/viewer.js'
@@ -45,7 +45,7 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit, scop
   let board = first
   let subject = at
   let card = at.value as Card
-  host.innerHTML = `<style>${CSS}${briefCss}${markdownCss}</style><div class="brief-frame"><div class="brief"></div><div class="brief-foot" hidden></div></div>`
+  host.innerHTML = `<style>${viewLayer(CSS)}${componentsLayer(briefCss + markdownCss)}</style><div class="brief-frame"><div class="brief"></div><div class="brief-foot" hidden></div></div>`
   const el = host.querySelector<HTMLElement>('.brief')!
   const foot = host.querySelector<HTMLElement>('.brief-foot')!
   const body = el

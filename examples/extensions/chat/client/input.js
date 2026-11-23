@@ -1,5 +1,6 @@
 import { callOf, cardSubject } from '/lib/board.js'
 import { chordLabel, commandOf } from '/lib/keys.js'
+import { viewLayer } from '/lib/view.js'
 import { esc } from '/lib/words.js'
 
 /**
@@ -72,7 +73,7 @@ export function mount(host, { tower, board: first, subject, kit, state }) {
   /** The line under the box as last drawn: drawn again only when it changes, so its link survives a click. */
   let drawn = ''
 
-  host.innerHTML = `<style>${STYLE}</style><div class="chat">
+  host.innerHTML = `<style>${viewLayer(STYLE)}</style><div class="chat">
     <textarea data-chat-text rows="2"></textarea>
     <div class="foot"><span class="say" aria-live="polite"></span><span class="hint"></span><button class="primary" data-chat-send>Send</button></div>
   </div>`
