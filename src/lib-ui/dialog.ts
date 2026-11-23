@@ -21,7 +21,7 @@ export const elements = {
       body: 'The element it shows: put its content here. It fills the dialog under the title and scrolls inside it when its content is taller.',
     },
     events: {
-      openchange: '`detail.value`: whether it opens or closes, `detail.reason` why (`escape-key`, `outside-press`, `close-press`, or none when `open` was set). `preventDefault()` keeps it as it is.',
+      openchange: '`detail.value`: whether it opens or closes, `detail.reason` why (`escape-key`, `outside-press`, `close-press`). `preventDefault()` keeps it as it is. Setting `open` fires none.',
     },
     states: {},
   },
