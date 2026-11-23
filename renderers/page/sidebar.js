@@ -100,12 +100,26 @@ export async function sidebar(deps) {
    * @param {Card} c @param {LayoutEntry | undefined} entry
    */
   const rowCounted = (c, entry) => {
+    const counts = countsOf(c, entry)
+    return countedHtml(c, counts, [counts.lines, counts.badges])
+  }
+
+  /** A row's lines and badges as the budgets of `entry` draw them, the lines the layout pins among them. @param {Card} c @param {LayoutEntry | undefined} entry */
+  const countsOf = (c, entry) => {
     const { lines: nLines, badges: nBadges } = /** @type {{ lines: number, badges: number }} */ (entry)
-    const subject = cardSubject(c)
-    const lines = drawCount(rankedLines(board(), c.id, entry), nLines, { noun: 'line', say: (l) => l.text, pinned: (l) => !!entry?.pinned?.includes(lineId(l)) })
-    const badges = drawCount(rankedBadges(board(), subject), nBadges, { noun: 'badge', say: badgeWords, pinned: () => false })
-    const more = moreOf(`more-${c.id}`, [lines, badges])
-    const drawn = [...exemptionsOf(board(), subject), ...badges.drawn]
+    return {
+      lines: drawCount(rankedLines(board(), c.id, entry), nLines, { noun: 'line', say: (l) => l.text, pinned: (l) => !!entry?.pinned?.includes(lineId(l)) }),
+      badges: drawCount(rankedBadges(board(), cardSubject(c)), nBadges, { noun: 'badge', say: badgeWords, pinned: () => false }),
+    }
+  }
+
+  /**
+   * A row's drawn lines and badges, its exemptions first, and a "+n" for what `counted` leaves out.
+   * @param {Card} c @param {ReturnType<typeof countsOf>} counts @param {ReturnType<typeof countsOf>[keyof ReturnType<typeof countsOf>][]} counted
+   */
+  const countedHtml = (c, { lines, badges }, counted) => {
+    const more = moreOf(`more-${c.id}`, counted)
+    const drawn = [...exemptionsOf(board(), cardSubject(c)), ...badges.drawn]
     return {
       lines: lines.drawn.map((l) => lineHtml(l.text)).join(''),
       badges: drawn.length || more.mark ? `<div class="badges counted">${drawn.map(badgeHtml).join('')}${more.mark}</div>` : '',
@@ -115,24 +129,25 @@ export async function sidebar(deps) {
   }
 
   /**
-   * What a worker's row draws of the lines and badges extensions add in the menu only: its pinned lines and every badge,
-   * which is information, not a button, with no count of the lines left out, which its ⋯ reaches.
-   * @param {Card} c @param {LayoutEntry | undefined} entry
+   * What a worker's row draws of the lines and badges extensions add in the menu only: its pinned lines, with no count
+   * of the others, which its ⋯ reaches; and its badges, which are information, as its form draws them: under `count`
+   * its budget and a "+n" of the badges alone, under `wrap` every one.
+   * @param {Card} c @param {LayoutEntry | undefined} entry @param {Overflow} form
    */
-  const rowPinned = (c, entry) => {
-    return {
-      lines: rankedLines(board(), c.id, entry).filter((l) => entry?.pinned?.includes(lineId(l))).map((l) => lineHtml(l.text)).join(''),
-      badges: badgesOf(board(), cardSubject(c)).length ? `<div class="badges">${badgesHtml(board(), cardSubject(c))}</div>` : '',
-      by: '',
-      note: '',
+  const rowPinned = (c, entry, form) => {
+    if (form === 'count') {
+      const counts = countsOf(c, { ...entry, lines: 0 })
+      return countedHtml(c, counts, [counts.badges])
     }
+    return { ...rowWrapped(c, entry), lines: rankedLines(board(), c.id, entry).filter((l) => entry?.pinned?.includes(lineId(l))).map((l) => lineHtml(l.text)).join('') }
   }
 
   /** A worker's row's lines and badges, in the form `card.row` is drawn in. @param {Card} c */
   const rowAdds = (c) => {
     const { region, entry } = regionLayout('card.row')
-    if (!isOnScreen(entry)) return rowPinned(c, entry)
-    return overflowOf(/** @type {Region & { overflows: Overflow[] }} */ (region), entry) === 'count' ? rowCounted(c, entry) : rowWrapped(c, entry)
+    const form = overflowOf(/** @type {Region & { overflows: Overflow[] }} */ (region), entry)
+    if (!isOnScreen(entry)) return rowPinned(c, entry, form)
+    return form === 'count' ? rowCounted(c, entry) : rowWrapped(c, entry)
   }
 
   /** Whether the worker waits on this viewer, who hasn't dismissed it: its row and lamp are marked `calls`, which flash when the viewer asks (`waits` in `tower.prefs`). @param {Card} c */
