@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-21",
-  "reviewed": "2026-11-19",
+  "reviewed": "2026-11-23",
   "refs": ["hub/src/shared/palette.ts#paletteEntries", "hub/src/shared/palette.ts#addedEntries", "hub/src/shared/adds.ts#unboundCommands", "hub/src/shared/palette.ts#rankPalette", "hub/src/shared/palette.ts#spawnPickEntries", "hub/src/shared/palette.ts#rankSpawnPick", "hub/src/shared/palette.ts#WEIGHTS", "hub/src/shared/palette.ts#matchScore", "hub/src/shared/waits.ts#heededWaits", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/renderers/page/palette.js#palette", "hub/renderers/page/page.js#doPick", "hub/renderers/page/page.js#runAddedAt", "hub/test/palette.test.ts"]
 }
 ---
@@ -22,7 +22,7 @@ same palette, and only the drawing is a renderer's.
 - Three kinds of entries ([`paletteEntries`](ref:hub/src/shared/palette.ts#paletteEntries)): **go to** (every worker
   on duty by callsign, task and floor; floors; shelf entries; drafts), **do** (the global keymap commands by their
   `label` with their chords; what the selected worker and its earlier conversations offer, its processes one entry,
-  "End 3 processes…", which asks with each listed and is offered only once the worker has stopped (in a turn, or
+  "End <n> processes…", which asks with each listed and is offered only once the worker has stopped (in a turn, or
   watching, its processes are its own work in flight); every floor's verbs; what extensions add to the selected worker, the floors, the board and each floor's items, verbs and
   client commands alike, each in its words from `board.extensions` ([`addedEntries`](ref:hub/src/shared/palette.ts#addedEntries)),
   and the commands offered on no subject ([`unboundCommands`](ref:hub/src/shared/adds.ts#unboundCommands), [[extensions]]),
@@ -47,8 +47,8 @@ same palette, and only the drawing is a renderer's.
   know what to search for. Contextual groups come first (the selected worker's own verbs, who waits on you in
   `board.waiting`'s order with dismissals left out, as ⌥J walks them ([`heededWaits`](ref:hub/src/shared/waits.ts#heededWaits)),
   and recent picks), then every other entry once, in sections
-  ([`rankPalette`](ref:hub/src/shared/palette.ts#rankPalette)): workers, commands, verbs, floors, shelf, drafts,
-  Learn last. Going to a worker is what the palette is opened for most; places come after what can be done; Learn is
+  ([`rankPalette`](ref:hub/src/shared/palette.ts#rankPalette)): workers, commands, verbs, what extensions add, views to
+  open, floors, shelf, drafts, Learn last. Going to a worker is what the palette is opened for most; places come after what can be done; Learn is
   reading matter, so it closes the list. A worker's earlier conversations are a group of their own, each by its first prompt on one line, so
   a worker `/clear`ed a dozen times doesn't push the waits below the fold. Within a section the viewer's floor comes
   first.
