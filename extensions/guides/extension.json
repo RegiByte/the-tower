@@ -8,7 +8,7 @@
   "collections": {
     "guides": {
       "label": "Guides",
-      "description": "How to do one thing in the tower, one markdown file each: a `# Title` line, a ```json header with keywords, category and order, then the body. Images sit beside it.",
+      "description": "How to do one thing in the tower, one markdown file each: a `# Title` line, a JSON header with keywords, category and order, then the body. Images sit beside it.",
       "scope": "system"
     }
   },
