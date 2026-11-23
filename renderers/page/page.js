@@ -5,7 +5,7 @@ import { CAPABILITIES } from '/lib/capabilities.js'
 import { addedTidyOf, ATTENTION_MEANS, ATTENTION_NAME, attentionOrder, boardErrorTitle, untestedHtml, discardAsk, discardedLine, DISMISS_TITLE, heededAsks, heededWaits, heldActions, HOST_ATTENTION, HOST_MEANS, HOST_NAME, hostState, isAsk, keptLine, killShellAsk, letGoAsk, letGoneLine, loudest, neighboursIn, nextAttended, ON_DUTY_MEANS, reapAsk, resumeAllAsk, resumeStranded, sendHomeAsk, shownKey, SOUNDS, strandedOf, tidiedLine, tidyAllAsk, verbLabel, WAITING_MEANS, WAITING_NAME, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME } from '/lib/cards.js'
 import { ask, asking, toastsCss, watchTips } from '/lib/chrome.js'
 import { addedCommandOf, commandOf, COMMANDS, DEFAULT_KEYS, frameCommandOf, isAddedId, MOVE_COMMAND, PANES, panesOf } from '/lib/keys.js'
-import { actionId, actionWords, addedActions, busOf, declaredLayout, displayed, exemptionsOf, fill, headRanked, isCommand, isFresh, layoutKey, layoutOf, lineId, offeredIds, openable, overflowOf, rankedActions, rankedBadges, rankedLines, runCommandWith, usableConfigLayout, viewOn, viewsOf } from '/lib/layout.js'
+import { actionId, actionWords, addedActions, busOf, declaredLayout, displayed, drawnEntry, isOnScreen, exemptionsOf, fill, headRanked, isCommand, isFresh, layoutKey, layoutOf, lineId, offeredIds, openable, overflowOf, rankedActions, rankedBadges, rankedLines, runCommandWith, usableConfigLayout, viewOn, viewsOf } from '/lib/layout.js'
 import { loop, timers } from '/lib/machine.js'
 import { markdownCss } from '/lib/markdown.js'
 import { settingsCss } from '/lib/settings.js'
@@ -18,7 +18,7 @@ import { readViewer, seenMarker, seenOf, VIEWER_KEYS } from '/lib/viewer.js'
 import { ago, esc, plural } from '/lib/words.js'
 import { domId } from '/lib/morph.js'
 import { subjectButtonHtml } from '/lib/elements.js'
-import { menuPins } from '/lib/palette.js'
+import { menuPins, subjectMenu as menuOf } from '/lib/palette.js'
 import { probedLines } from './clients.js'
 import { HOME, SKYLINE, cardIdOf, floorOfView, hashOf, isHome, located, mainClass, mainViewOf, sameRoom, viewOf } from './view.js'
 import { regions } from './regions.js'
@@ -366,7 +366,7 @@ const { showLanding, showKeys } = dialogs({ board })
 
 const { alerts, playSound, showShownAlert, showAskAlert, showAlert } = alerting({ callsign, select, openShown: (c, s) => display(shownSubject(c, s)), floorOf, board, openAsk })
 
-const { drawSettings } = settingsPane({ page, viewer, playSound })
+const { drawSettings } = settingsPane({ page, viewer, playSound, screens: () => screensOf(placing().regions.map((r) => r.id)), screen: screenIn })
 
 const { floorInView, drawSideView, sideView } = await stats({ view, findCard, floorsTopDown, board, viewer, lostAt })
 
@@ -520,20 +520,28 @@ const menuBeside = (key, place, m) => (place ? (besides.get(place)?.(m) ?? {}) :
 /** The lines of a showing's menu its open tab can draw (`shown.tab`), each checked where the layout pins it. @param {SubjectMenu} m @returns {Pinning} */
 const tabPinning = (m) => {
   const holds = placing().regions.find((r) => r.id === 'shown.tab')?.holds ?? []
-  return { region: 'shown.tab', label: 'Pin to the tab', groups: [{ pins: pinChecks('shown.tab', menuPins(m, holds).map(({ pin, line }) => ({ pin, label: line.label }))) }] }
+  return { region: 'shown.tab', label: 'Pin to the tab', groups: [{ pins: pinChecks('shown.tab', menuPins(m, holds).map(({ pin, line }) => ({ pin, label: line.label }))) }], screens: [] }
 }
 
 /**
  * The extensions' lines a worker's row can draw (`card.row`), one per capability, named by the line's text with its
- * extension beside it: none when it has none.
- * @param {string} key @returns {Pinning | undefined}
+ * extension beside it, and whether the row's buttons are on screen.
+ * @param {string} key @returns {Pinning}
  */
 const rowPinning = (key) => {
   const lines = firstOfEach(rankedLines(board(), key.slice('card:'.length), undefined), lineId)
-  return lines.length ? { region: 'card.row', label: 'Pin to the row', groups: [{ pins: pinChecks('card.row', lines.map((l) => ({ pin: lineId(l), label: `${l.text} · ${l.cap}` }))) }] } : undefined
+  const pins = lines.length ? [{ pins: pinChecks('card.row', lines.map((l) => ({ pin: lineId(l), label: `${l.text} · ${l.cap}` }))) }] : []
+  return { region: 'card.row', label: 'Pin to the row', groups: pins, screens: screensOf(['card.row', 'card.row-verbs']) }
 }
 
-const subjectMenu = subjectMenus({ board, opened: openedViews, origins, pick: doMenuPick, beside: menuBeside, pin: pinIn })
+/** Each of the regions `ids` the renderer labels, by its label, checked while the viewer keeps its buttons on screen. @param {string[]} ids */
+const screensOf = (ids) =>
+  ids.flatMap((id) => {
+    const label = placing().regions.find((r) => r.id === id)?.label
+    return label ? [{ region: id, label, on: isOnScreen(layout()[id]) }] : []
+  })
+
+const subjectMenu = subjectMenus({ board, opened: openedViews, origins, pick: doMenuPick, beside: menuBeside, pin: pinIn, screen: screenIn })
 
 /** A capability shown: its words, with the verb it names on the selected worker's floor when that floor offers it. @param {string} id */
 function learnPick(id) {
@@ -718,7 +726,7 @@ const seenAmong = (offered) => seenOf(viewer().seen, offered)
 /** The actions `ids` seen by the viewer, kept when any of them was new to them. */
 const markSeen = seenMarker(tower.store.get, () => offeredIds(board()), (seen) => keepViewer('seen', seen))
 
-/** The viewer's pin writes in flight, one after another. */
+/** The viewer's layout writes in flight, pins and on-screen choices, one after another. */
 let pinWrites = Promise.resolve()
 
 /** What the layers under the viewer's pin in region `id`: the renderer's own and the config's. @param {string} id */
@@ -772,6 +780,20 @@ const menuLines = (m) => m.groups.flatMap((g) => g.lines.flatMap((l) => ('lines'
 
 /** A badge as a menu says it: its label, its hint beside it. @param {Added<Badge>} b */
 const badgeLabel = (b) => (b.hint ? `${b.label} (${b.hint})` : b.label)
+
+/**
+ * Keeps region `id`'s buttons on screen for the viewer, or in the menu only (`LayoutEntry.onScreen`): their layer of the
+ * layout, written as `pinIn` writes it. A choice the layers below make already leaves their entry without the key.
+ * @param {string} id @param {boolean} on
+ */
+function screenIn(id, on) {
+  pinWrites = pinWrites.then(async () => {
+    const stored = /** @type {Layout} */ ((await tower.store.get(LAYOUT_KEY)) ?? {})
+    const below = layoutOf(declaredLayout(board(), declared.layout ?? {}), CONFIG_LAYOUT, undefined)[id]
+    const { onScreen: _, ...rest } = stored[id] ?? {}
+    tower.store.set(LAYOUT_KEY, { ...stored, [id]: { ...rest, ...(on !== isOnScreen(below) && { onScreen: on }) } })
+  })
+}
 
 /** What a region draws among its badges and never tucks, marked so: a worker's Dismiss and its exemptions. @param {string} dismiss @param {Added<Badge>[]} exemptions */
 const keptHtml = (dismiss, exemptions) => (dismiss || exemptions.length ? `<span class="region-keep" data-keep>${dismiss}${exemptions.map(badgeHtml).join('')}</span>` : '')
@@ -830,6 +852,12 @@ const resized = new ResizeObserver((entries) => {
   }
 })
 
+/**
+ * The region of the page's own buttons that names a view's own controls (`data-tuck`) where the region `id` is drawn:
+ * a worker's Resume, Let go, Send home and details, kept on screen or in the menu only apart from what extensions add.
+ */
+const OWN_BUTTONS = { 'card.head': 'card.head-verbs' }
+
 /** The px a region must have to spare before it draws one more item in place, so a region at its edge doesn't flicker. */
 const FIT_MARGIN = 24
 
@@ -869,6 +897,8 @@ function kitRegion(el, id, subject, options) {
   let at = subject
   let omit = options.omit ?? []
   const declaredRegion = () => placing().regions.find((r) => r.id === id)
+  /** Whether the view's own controls here (`data-tuck`) are on screen: the region naming them, where there is one (`OWN_BUTTONS`). */
+  const ownOnScreen = () => !(id in OWN_BUTTONS) || isOnScreen(layout()[OWN_BUTTONS[/** @type {keyof typeof OWN_BUTTONS} */ (id)]])
   const holds = declaredRegion()?.holds ?? []
   const slots = { badges: slotIn(el, 'badges'), lines: slotIn(el, 'lines'), actions: slotIn(el, 'actions') }
   /** Where the region is drawn, its actions' ids' place: inside a mounted view, its mount's scope first (`data-scope`), since a view can be mounted twice at once. */
@@ -1027,15 +1057,17 @@ function kitRegion(el, id, subject, options) {
       ]
     }
     /**
-     * The items the layout's budgets let be drawn in place, in rank order: the view's controls and the pinned actions
-     * always, then at most `badges` badges and `actions` actions; `0` leaves only the pinned (decision `region-overflow`).
+     * The items the layout's budgets let be drawn in place, in rank order: the view's controls while the viewer keeps
+     * them on screen and the pinned actions always, then at most `badges` badges and `actions` actions; `0` leaves only
+     * the pinned, as the menu only does (`drawnEntry`, decision `region-overflow`).
      * @param {ReturnType<typeof fillOrder>} order
      */
     const budgeted = (order) => {
-      const entry = layout()[id]
+      const entry = drawnEntry(layout()[id])
       const drawn = { badge: 0, action: 0 }
       return order.filter((i) => {
-        if (i.t === 'core' || (i.t === 'action' && i.ranked.pinned)) return true
+        if (i.t === 'core') return ownOnScreen()
+        if (i.t === 'action' && i.ranked.pinned) return true
         const budget = i.t === 'badge' ? entry?.badges : entry?.actions
         return budget === undefined || drawn[i.t]++ < budget
       })
@@ -1096,6 +1128,7 @@ function kitRegion(el, id, subject, options) {
           ...(actionPins.length ? [{ label: 'Actions', pins: pinChecks(id, actionPins) }] : []),
           ...(linePins.length ? [{ label: 'Lines', pins: pinChecks(id, linePins) }] : []),
         ],
+        screens: screensOf([id, ...(id in OWN_BUTTONS ? [OWN_BUTTONS[/** @type {keyof typeof OWN_BUTTONS} */ (id)]] : [])]),
       }
     }
     /** ⋯ for what `tucked` holds: its name says how much, its count what it hides, its dot what is severe or new. @param {ReturnType<typeof fillOrder>} tucked */
@@ -1126,7 +1159,7 @@ function kitRegion(el, id, subject, options) {
       actionsAt: items,
       paint: (parts) => {
         const pins = layout()[id]?.pinned ?? []
-        const budget = layout()[id]?.lines ?? parts.lines.length
+        const budget = drawnEntry(layout()[id])?.lines ?? parts.lines.length
         const { drawn } = drawCount(parts.lines, budget, { noun: 'line', say: (l) => l.text, pinned: (l) => pins.includes(lineId(l)) })
         linesLeft = parts.lines.filter((l) => !drawn.includes(l))
         holding = parts.lines.length > 0 || ranked.length > 0
@@ -1215,16 +1248,30 @@ function kitRegion(el, id, subject, options) {
   const draw = (/** @type {Subject} */ s) => {
     at = s
     const entry = layout()[id]
-    ranked = rankedActions(shownActions(s), entry)
-    badges = holds.includes('badges') ? rankedBadges(board(), s) : []
-    kept = holds.includes('badges') ? keptHtml(id === 'card.head' ? dismissHtml(s.key) : '', exemptionsOf(board(), s)) : ''
-    parts = partsNow(holds.includes('lines') && s.kind === 'card' ? rankedLines(board(), /** @type {Card} */ (s.value).id, entry) : [])
     const name = formName()
+    /** In the menu only, the `wrap` form draws the pins alone: the `menu` form's budgets do so already. */
+    const pinsOnly = name === 'wrap' && !isOnScreen(entry)
+    ranked = rankedActions(shownActions(s), entry).filter((r) => !pinsOnly || r.pinned)
+    badges = holds.includes('badges') && !pinsOnly ? rankedBadges(board(), s) : []
+    kept = holds.includes('badges') ? keptHtml(id === 'card.head' ? dismissHtml(s.key) : '', exemptionsOf(board(), s)) : ''
+    const lines = holds.includes('lines') && s.kind === 'card' ? rankedLines(board(), /** @type {Card} */ (s.value).id, entry) : []
+    parts = partsNow(pinsOnly ? lines.filter((l) => entry?.pinned?.includes(lineId(l))) : lines)
     if (form.name !== name) (form.close(), (form = formOf(name)))
     el.dataset.overflow = form.name
     for (const slot of marked.length ? marked : [el]) mark(slot, s)
     form.paint(parts)
+    if (form.name === 'wrap') tuckOwn(s)
     readNext(placed)
+  }
+  /**
+   * In the `wrap` form, which has no ⋯ of its own, the view's controls leave the screen while the viewer keeps them in
+   * the menu only, but only those the subject's menu lists by the same name: one it doesn't, a worker's details, stays.
+   * @param {Subject} s
+   */
+  function tuckOwn(s) {
+    const m = menuOf(board(), s.key, { open: [], origins: {} })
+    const listed = new Set(m ? menuLines(m).map((l) => l.label.toLowerCase()) : [])
+    for (const c of /** @type {NodeListOf<HTMLElement>} */ (el.querySelectorAll('[data-tuck]'))) c.toggleAttribute('data-tucked', !ownOnScreen() && listed.has((c.getAttribute('aria-label') ?? c.textContent ?? '').trim().toLowerCase()))
   }
   placedRegions.add(placed)
   draw(subject)
@@ -1298,7 +1345,7 @@ const paintStrip = () => {
 
 /** Where each of a floor's collections goes in its row of trays, in the order the region places them. @param {Floor} f */
 const trayRowsHtml = (f) =>
-  floorTrays
+  !isOnScreen(layout()['floor.trays']) ? '' : floorTrays
     .ordered(f.collections.map((c) => /** @type {Subject} */ (subjectAt(board(), `collection:${f.id}/${c.id}`))))
     .map(floorTrays.slotHtml)
     .join('')

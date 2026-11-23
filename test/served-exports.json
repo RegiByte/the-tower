@@ -2222,6 +2222,10 @@
         "prefSections": {
           "since": "2.0"
         },
+        "screenSection": {
+          "since": "2.25",
+          "stability": "provisional"
+        },
         "section": {
           "since": "2.0"
         },
@@ -2242,7 +2246,12 @@
           "since": "2.0"
         }
       },
-      "types": {}
+      "types": {
+        "ScreenGroup": {
+          "since": "2.25",
+          "stability": "provisional"
+        }
+      }
     },
     "/lib/spawn.js": {
       "runtime": "browser",

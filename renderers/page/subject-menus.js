@@ -16,6 +16,7 @@ import { subjectMenu } from '/lib/palette.js'
  *   pick: (does: MenuPick, press: Press) => void,
  *   beside: (key: string, place: string | undefined, menu: SubjectMenu) => Beside,
  *   pin: (region: string, pin: string, on: boolean) => void,
+ *   screen: (region: string, on: boolean) => void,
  * }} SubjectMenusDeps
  */
 
@@ -30,14 +31,16 @@ import { subjectMenu } from '/lib/palette.js'
 /** @typedef {{ label: string, lines: AsideLine[] }} AsideGroup */
 
 /**
- * The region drawn beside a subject that its menu pins into: its id, the words its submenu is named by, and what can be
- * pinned there, in groups, each checked where the layout pins it.
- * @typedef {{ region: string, label: string, groups: { label?: string, pins: { pin: string, label: string, checked: boolean }[] }[] }} Pinning
+ * The region drawn beside a subject that its menu pins into: its id, the words its submenu is named by, what can be
+ * pinned there, in groups, each checked where the layout pins it, and the regions there whose buttons the viewer keeps
+ * on screen or in the menu only (`screens`), each checked while on screen.
+ * @typedef {{ region: string, label: string, groups: { label?: string, pins: { pin: string, label: string, checked: boolean }[] }[], screens: { region: string, label: string, on: boolean }[] }} Pinning
  */
 
 /** What a pin's checkbox in the menu is valued by, and a line the page adds: apart from every line's id. */
 const PIN = 'pin '
 const ASIDE = 'aside '
+const SCREEN = 'screen '
 
 /** Between a subject's key and the place it is drawn at, in a menu button's payload (`placedKey`). */
 const PLACED = '\t'
@@ -60,18 +63,21 @@ const itemsOf = (m, omit) =>
   separated(m.groups.map((g) => ({ ...g, lines: g.lines.filter((l) => 'lines' in l || !omit(l)) })).filter((g) => g.lines.length), (g) => ({ type: /** @type {const} */ ('group'), label: g.label, items: g.lines.map((l) => ('lines' in l ? { type: /** @type {const} */ ('submenu'), label: l.label, items: l.lines.map(itemOf) } : itemOf(l))) }))
 
 /**
- * The submenu that pins a subject's lines into the region beside it, each checked where the layout pins it. A check
- * closes the menu, so the region is drawn again with the pin, and the menu opens next with its checks as they stand.
+ * The submenu that pins a subject's lines into the region beside it, each checked where the layout pins it, and last
+ * whether the buttons there are on screen. A check closes the menu, so the region is drawn again with the change, and the
+ * menu opens next with its checks as they stand.
  * @param {Pinning} p
  */
 const pinsItem = (p) => ({
   type: /** @type {const} */ ('submenu'),
   label: p.label,
-  items: separated(p.groups, (g) => ({
-    type: /** @type {const} */ ('group'),
-    ...(g.label && { label: g.label }),
-    items: g.pins.map(({ pin, label, checked }) => ({ type: /** @type {const} */ ('checkbox'), value: `${PIN}${pin}`, label, checked, closeOnSelect: true })),
-  })),
+  items: separated(
+    [
+      ...p.groups.map((g) => ({ label: g.label, items: g.pins.map(({ pin, label, checked }) => ({ value: `${PIN}${pin}`, label, checked })) })),
+      { label: 'Show on screen', items: p.screens.map(({ region, label, on }) => ({ value: `${SCREEN}${region}`, label, checked: on })) },
+    ].filter((g) => g.items.length),
+    (g) => ({ type: /** @type {const} */ ('group'), ...(g.label && { label: g.label }), items: g.items.map((i) => ({ type: /** @type {const} */ ('checkbox'), ...i, closeOnSelect: true })) }),
+  ),
 })
 
 /** Every line of a menu, its submenus' included, by id. @param {SubjectMenu} m @returns {Map<string, MenuLine>} */
@@ -91,7 +97,7 @@ const linePress = (key, line) => ({ key: `menu ${key} ${line.id}`, marks: `tower
  * subject alone, or it and the place its ⋯ is drawn at (`placedKey`). Answers what runs a line pinned beside its subject.
  * @param {SubjectMenusDeps} deps
  */
-export function subjectMenus({ board, opened, origins, pick, beside, pin }) {
+export function subjectMenus({ board, opened, origins, pick, beside, pin, screen }) {
   document.body.insertAdjacentHTML('beforeend', subjectMenuHtml())
   const menu = /** @type {HTMLElement & { items: unknown }} */ (document.getElementById(SUBJECT_MENU))
   /** The subject the menu was filled for, its lines by id, what the page added, and the region its lines pin into. */
@@ -127,6 +133,7 @@ export function subjectMenus({ board, opened, origins, pick, beside, pin }) {
   menu.addEventListener('checkedchange', (e) => {
     const { value, checked } = /** @type {CustomEvent<{ value: string, checked: boolean }>} */ (e).detail
     if (filled.pinning && value.startsWith(PIN)) return pin(filled.pinning.region, value.slice(PIN.length), checked)
+    if (value.startsWith(SCREEN)) return screen(value.slice(SCREEN.length), checked)
     run(e)
   })
   return {

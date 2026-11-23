@@ -95,6 +95,21 @@ export const changesSection = (tree: boolean) =>
       choice('data-changes-files', 'shown', 'Tree', 'the changed files as a tree beside the diffs, each going to its file', tree) +
       choice('data-changes-files', 'hidden', 'None', 'the diffs alone', !tree)}</div>`)
 
+/** A group of a renderer's buttons, a region it labels: on screen, or in the menu only. @since 2.25 */
+export type ScreenGroup = { region: string; label: string; on: boolean }
+
+/**
+ * Each group's buttons on screen or in the menu only (`LayoutEntry.onScreen`), a choice marked `data-on-screen` inside
+ * its row's `data-screen-region`. What leaves the screen stays in the subject's ⋯ and the palette. @since 2.25
+ */
+export const screenSection = (groups: ScreenGroup[]) =>
+  !groups.length
+    ? ''
+    : section('Buttons on screen', 'the rest stay in each ⋯ and ⌘K',
+        groups.map((g) => `<div class="screen-row" data-screen-region="${esc(g.region)}"><span>${esc(g.label)}</span><div class="seg" role="group" aria-label="${esc(g.label)}">${
+          choice('data-on-screen', 'on', 'Shown', `${g.label}: on screen`, g.on) +
+          choice('data-on-screen', 'off', 'Menu', `${g.label}: in the ⋯ and ⌘K only`, !g.on)}</div></div>`).join(''))
+
 /** Whether tips show, and the tips dismissed for good brought back. */
 export const tipsSection = (on: boolean, dismissed: number) =>
   section('Tips', 'what the tower can do, one at a time',
@@ -286,6 +301,7 @@ export const settingsCss = `
 .settings .now { margin: 0; color: var(--muted); font-size: var(--fs-s); }
 .settings .now b { color: var(--ink); } .settings .now.denied b { color: var(--broken-text); }
 .settings .row { display: flex; flex-wrap: wrap; gap: var(--sp-s); }
+.settings .screen-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: var(--sp-m); font-size: var(--fs-s); }
 .settings .row button { display: inline-flex; align-items: center; gap: var(--sp-xs); padding: var(--sp-xs) var(--sp-l); font-size: var(--fs-s); }
 .settings .seg { display: flex; gap: var(--sp-2xs); padding: var(--sp-2xs); border-radius: var(--radius); background: var(--sunk); }
 .settings .seg button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-xs); padding: var(--sp-xs) var(--sp-s); border: 0; border-radius: var(--radius);

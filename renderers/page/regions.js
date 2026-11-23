@@ -2,7 +2,7 @@ import { can, findCard, parentOf, shownSubject } from '/lib/board.js'
 import { shownFrom } from '/lib/brief.js'
 import { subjectAreaHtml, subjectButtonHtml } from '/lib/elements.js'
 import { heldActions, shownKey, shownTitle } from '/lib/cards.js'
-import { addedActions, offeredIn, ordered, overflowOf, paneShows, pickView, shownOf } from '/lib/layout.js'
+import { actionId, addedActions, isOnScreen, offeredIn, ordered, overflowOf, paneShows, pickView, shownOf } from '/lib/layout.js'
 import { panesOf } from '/lib/keys.js'
 import { domId } from '/lib/morph.js'
 import { menuPins, subjectMenu } from '/lib/palette.js'
@@ -338,7 +338,9 @@ export function regions(deps) {
      */
     function heldHtml(id, on, drawn) {
       const holds = declared().find((r) => r.id === id)?.holds ?? []
-      return `${holds.includes('badges') ? badgesHtml(board(), on) : ''}${drawn(board(), on, heldActions(holds, addedActions(board(), on)))}`
+      const entry = layout()[id]
+      const actions = heldActions(holds, addedActions(board(), on)).filter((a) => isOnScreen(entry) || entry?.pinned?.includes(actionId(a)))
+      return `${holds.includes('badges') && isOnScreen(entry) ? badgesHtml(board(), on) : ''}${drawn(board(), on, actions)}`
     }
 
     /** The tab to open: the location's while its worker is on screen, else the one picked here, else the default; none newly opened while its worker is hidden. @param {TabOf[]} all */
