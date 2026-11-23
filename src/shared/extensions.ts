@@ -990,6 +990,7 @@ const RegionDecl = z.strictObject({
   scale: since(z.enum(SCALES).optional()),
   arity: since(z.enum(['one', 'tabs']).optional()),
   description: since(z.string().min(1).optional()),
+  label: sinceAt('2.25')(z.string().min(1).optional().describe("What the viewer calls the buttons drawn here when they choose to keep them on screen or in the menu only.")),
   layout: since(
     z
       .strictObject({
@@ -1108,7 +1109,13 @@ export const Manifest = z
     guidance: since(Guidance.optional().describe('What it tells the workers: when to use its doors, verbs and reads, and how. The config may replace or add to it.')),
     regions: since(
       z
-        .record(z.string().regex(REGION_ID, 'a subject kind and a place: card.cell, reviews.thread.head'), RegionDecl)
+        .record(
+          z.string().regex(REGION_ID, 'a subject kind and a place: card.cell, reviews.thread.head'),
+          RegionDecl.refine((r) => r.label === undefined || !r.holds.includes('views'), {
+            message: 'a region holding views takes no label: only buttons are kept on screen or in the menu only',
+            path: ['label'],
+          }),
+        )
         .optional()
         .describe('The regions its views declare inside them, by id: two declarations of one id agree field for field.'),
     ),

@@ -4,6 +4,7 @@ import type { Board } from '../src/bridge/board.ts'
 import { actionId, headRanked, isFresh, offeredIds, rankedActions, rankedBadges, rankedLines } from '../src/shared/adds.ts'
 import type { Added, Badge, CommandAction, VerbAction } from '../src/shared/extensions.ts'
 import { fill } from '../src/shared/fill.ts'
+import { drawnEntry, isOnScreen } from '../src/shared/regions.ts'
 import { layoutOf } from '../src/shared/views.ts'
 
 const verb = (name: string): Added<VerbAction> => ({ verb: name, call: {}, cap: name.split('/')[0] })
@@ -73,6 +74,14 @@ test('layout: hidden is the union, less what a higher layer orders or pins; form
   assert.equal(merged.overflow, 'menu')
   assert.equal(merged.lines, 0, 'a budget of 0 is set, not absent')
   assert.equal(merged.badges, 2)
+})
+
+test('layout: onScreen comes from the highest layer; in the menu only, every budget is 0 and the pins stay', () => {
+  assert.equal(layoutOf({}, { r: { onScreen: false } }, { r: { onScreen: true } }).r.onScreen, true, "the viewer's choice over the config's")
+  assert.equal(isOnScreen(layoutOf({}, {}, undefined).r), true, 'on screen unless a layer says otherwise')
+  const off = layoutOf({}, { r: { pinned: ['a/a'], actions: 3 } }, { r: { onScreen: false } }).r
+  assert.deepEqual(drawnEntry(off), { pinned: ['a/a'], onScreen: false, lines: 0, badges: 0, actions: 0 })
+  assert.deepEqual(drawnEntry({ actions: 3 }), { actions: 3 })
 })
 
 test('fresh: an action is new while an extension offers it and the viewer has not seen it; a core verb never is', () => {
