@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-11",
-  "reviewed": "2026-11-16",
+  "reviewed": "2026-11-23",
   "refs": [
     "hub/renderers/tower3d/src/life.ts#moveTo",
     "hub/scripts/tower3d-characters.ts",
@@ -159,7 +159,6 @@ time keeps `?stepped` frames identical ([[tower3d-door]]).
 - *Copies of a body per variant, or bone rest scales in the file*: a rest scale vanishes under any clip; colourways and
   a shape after the mixer carry the difference.
 
-**Consequences.** `npm test` checks the GLBs hold the contract's parts, bones and clips, that `parts.glb`'s parts are
-named after a slot, painted in an atlas and on the clips' bones or the pack's skin, and the wardrobe and rendezvous
-rules ([`models.test.ts`](ref:hub/test/models.test.ts), [`wardrobe.test.ts`](ref:hub/test/wardrobe.test.ts),
-[`rendezvous.test.ts`](ref:hub/test/rendezvous.test.ts)). A new character joins the mix by a weight in `wardrobe.json`.
+**Consequences.** A new character joins the mix by a weight in `wardrobe.json`, and a new part by its name. The tests
+hold the GLBs to the contract and the wardrobe and rendezvous rules ([`models.test.ts`](ref:hub/test/models.test.ts),
+[`wardrobe.test.ts`](ref:hub/test/wardrobe.test.ts), [`rendezvous.test.ts`](ref:hub/test/rendezvous.test.ts)).
