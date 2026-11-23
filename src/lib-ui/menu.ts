@@ -20,7 +20,7 @@ export const elements = {
       presentation: '`auto`: a sheet from the bottom of a small touch screen, a popover elsewhere; `sheet`: always a sheet.',
     },
     properties: {
-      items: "What it offers, as the SDK's `MenuData`: items (`{value, label}`), groups, separators, checkboxes, radio groups and submenus. Set it on `payloadchange`. An item's, checkbox's or radio item's `hint`, the tower's own, shows as a muted line under its label, and describes it to a screen reader without naming it; hints are found by value, so items sharing a value share one.",
+      items: "What it offers, as the SDK's `MenuData`: items (`{value, label}`), groups, separators, checkboxes, radio groups and submenus. Set it on `payloadchange`. An item's, checkbox's or radio item's `hint`, the tower's own, shows as a muted line under its label, at most two lines (its backtick spans drawn as code), and describes it whole to a screen reader without naming it; hints are found by value, so items sharing a value share one.",
       open: 'Whether it is open.',
       api: "The SDK's menu controller.",
       openAt: '`openAt(payload, anchor)`: opens it for a subject at an element or a point (`{x, y}`), as a right-click on an area does; resolves once it closes.',
@@ -71,6 +71,29 @@ const hintsOf = (items: TowerMenuData, into = new Map<string, string>()): Map<st
   }
   return into
 }
+
+/**
+ * `hint` as runs of text and code: a run of backticks opens code that the next run of as many closes, as in markdown's
+ * code spans; a run nothing closes is code itself, with the word it opens (a fence named in prose: ```json).
+ */
+const hintSpans = (hint: string): { code: boolean; text: string }[] => {
+  const runs = [...hint.matchAll(/`+/g)]
+  const spans: { code: boolean; text: string }[] = []
+  let at = 0
+  for (const [n, run] of runs.entries()) {
+    if (run.index < at) continue
+    const close = runs.find((other, m) => m > n && other[0].length === run[0].length)
+    spans.push({ code: false, text: hint.slice(at, run.index) })
+    const end = close ? close.index + close[0].length : run.index + /^`+[^\s`]*/.exec(hint.slice(run.index))![0].length
+    spans.push({ code: true, text: close ? hint.slice(run.index + run[0].length, close.index) : hint.slice(run.index, end) })
+    at = end
+  }
+  spans.push({ code: false, text: hint.slice(at) })
+  return spans.filter((span) => span.text)
+}
+
+/** The hint each line was last drawn from. */
+const drawnHint = new WeakMap<Element, string>()
 
 /** `items` as the SDK takes them: without their hints. */
 const bare = (items: TowerMenuData): MenuData =>
@@ -150,7 +173,8 @@ class TowerMenu extends HTMLElement {
 
   /**
    * Each rendered item with a value shows its hint as a line under its label, and an item without one shows none. The
-   * line is hidden from the item's name and is its description instead. Items are found by tag: the SDK marks a part's
+   * line is hidden from the item's name and is its description instead, whole while the line shows at most two lines.
+   * Its backtick spans are drawn as `<code>`. Items are found by tag: the SDK marks a part's
    * `data-slot` after rendering it. The line's id encodes the value, which may hold the whitespace an id list splits on.
    * A pass changes only what differs, so the observer's own writes end there.
    */
@@ -165,11 +189,12 @@ class TowerMenu extends HTMLElement {
         continue
       }
       const id = `${this.id}--hint:${encodeURIComponent(value)}`
-      if (line?.textContent === hint && line.id === id) continue
+      if (line && drawnHint.get(line) === hint && line.id === id) continue
       const shown = line ?? item.appendChild(document.createElement('small'))
       shown.id = id
       shown.setAttribute('aria-hidden', 'true')
-      shown.textContent = hint
+      shown.replaceChildren(...hintSpans(hint).map((span) => (span.code ? Object.assign(document.createElement('code'), { textContent: span.text }) : span.text)))
+      drawnHint.set(shown, hint)
       item.setAttribute('aria-describedby', shown.id)
     }
   }
