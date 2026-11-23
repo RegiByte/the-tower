@@ -151,7 +151,8 @@ key.
   has ones to start from, such as `grid` (workers' terminals side by side). Run one in place by pointing
   `extensions.<id>.path` in the config at its folder in the checkout, so it follows `tower update` (`tower extensions
   restart <id>` takes the new code), or copy it out of the checkout to make it your own.
-- **Renderers.** Your own view of the whole system, or a copy of one that ships, at `/r/<name>/`.
+- **Renderers and themes.** Your own view of the whole system at `/r/<name>/`, or a theme over one that ships: a
+  stylesheet the tower loads after the renderer's own.
 - **The API and the `tower` command.** Every verb and read is on the HTTP API, described at `GET /schema`, and on the
   `tower` command. Workers hold the same command, so a worker can build a renderer, write a policy or check on its
   peers as well as you can. Same-user processes are trusted; the tower guards only against browser pages.

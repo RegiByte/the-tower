@@ -8,8 +8,8 @@
   "refs": ["hub/src/tower/served.ts#libraryUrls", "hub/src/shared/extensions.ts#StartCtx", "hub/src/tower/http.ts#STATIC", "hub/src/tower/tower.js", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/api.ts#ERROR_CODES", "hub/src/shared/shelf-page.ts", "hub/src/renderers.ts#BUILT_INS", "hub/src/shared/health.ts#whyNot", "hub/scripts/extension-shots.ts", "hub/src/shared/extensions.ts#LEGACY"]
 }
 ---
-`docs/extending.md` is the contract written for people: a new renderer or a copy of one that ships
-([[renderers-in-config]]), shelf pages ([[shelf]]), the API ([[renderer-api]], [[renderer-api-contract]]: reads
+`docs/extending.md` is the contract written for people: a new renderer ([[renderers-in-config]]) or a theme over one
+that ships ([[themes]]), shelf pages ([[shelf]]), the API ([[renderer-api]], [[renderer-api-contract]]: reads
 from [`QUERIES`](ref:hub/src/shared/api.ts#QUERIES), errors from
 [`ERROR_CODES`](ref:hub/src/shared/api.ts#ERROR_CODES), verbs left to `/schema`), the library ([[library]]) and what
 the tower serves beside it (`tower.js`, `/design.css`, extensions' clients, the vendored files in

@@ -260,69 +260,53 @@ shipped renderers do), and stop any clock you draw from it. A framed page gets t
 `whyNot(board, verb)` in `/lib/cards.js` says why in a sentence (`undefined` while it runs), for a control drawn inert
 with that tip in place of one that vanishes. It answers `resume`, `carry-on` and `let-go` too, which the board offers on a card.
 
-### A copy of one that ships
+### Write a theme
 
-To change the tower page or Tower 3D, copy it out of the checkout and layer your changes on top of the copy. The
-copy is disposable: you will throw it away and copy again for each release you take. What is yours lives beside it.
+A theme is a stylesheet the tower loads into a renderer's pages after the renderer's own sheet and its views' styles.
+It restyles a renderer without copying it, so taking a release never touches it. Name it in the config, by the
+absolute path of its file:
 
-The tower page is a folder, `renderers/page/`: `index.html`, the modules it loads beside it by relative path, and
-`renderer.json`, which declares its regions for extensions' views. Everything else it imports from the tower by
-absolute URL, so the folder runs from anywhere.
-
-1. Make a directory of your own, outside the tower's checkout (`realpath $(which tower)` is
-   `<checkout>/src/mod/bin/tower`), and keep it in git:
-
-   ```sh
-   mkdir ~/code/my-tower && cd ~/code/my-tower && git init
-   cp -R <the tower's checkout>/renderers/page/. .
-   ```
-
-2. Write your layer beside it, `mine.css` and `mine.js`:
-
-   ```css
-   .brand h1 { color: #e0115f; }
-   .mine-badge { font: 700 var(--fs-xs)/1 var(--mono); padding: var(--sp-xs) var(--sp-s); border-radius: var(--radius); background: #e0115f; color: white; }
-   ```
-
-   ```js
-   const { settings } = await tower.renderer()
-   const badge = Object.assign(document.createElement('span'), { className: 'mine-badge', textContent: settings.badge ?? 'mine' })
-   document.querySelector('.brand h1').after(badge)
-   ```
-
-3. Hook the layer into the copy, the only edit you make to it: a line before `</head>` and one before `</body>`.
-
-   ```html
-   <link rel="stylesheet" href="mine.css">
-   <script type="module" src="mine.js"></script>
-   ```
-
-4. Declare it in an `extension.json` beside the copy, `"renderers": { "mine": { "root": "." } }`, add the extension
-   and make it the default, as in the config above, then `tower config check`. `/` now opens `/r/mine/`. No
-   restart: the tower reads the config again.
-
-Taking an update is then: copy the folder again, add the two lines again. Keep that as a script in your repo:
-
-```sh
-cp -R <the tower's checkout>/renderers/page/. . &&
-perl -0pi -e 's#</head>#<link rel="stylesheet" href="mine.css">\n</head>#; s#</body>#<script type="module" src="mine.js"></script>\n</body>#' index.html
+```json
+{ "renderers": { "page": { "themes": ["/Users/you/code/my-theme/theme.css"] } } }
 ```
 
-The layering advice that makes this work:
+or ship it in an extension, by renderer, as a path inside the extension (since 2.29):
 
-- **Override, don't edit.** Restyle through your own stylesheet, after the copy's: the design's tokens
-  (`--ink`, `--panel`, `--accent`, `--radius`…) are custom properties you can redefine. Size text with the type
-  scale (`--fs-xs` to `--fs-3xl`, in rem, so it follows the viewer's text size) and space it with the spacing scale
-  (`--sp-2xs` to `--sp-3xl`); a small uppercase label is the `.eyebrow` class.
-- **Touch what the copy leaves alone.** The copy redraws parts of the page as the board moves. Your module can add
-  elements, listen to `tower.subscribe`, or call the API, but a value the copy sets (the page's title, a list it
-  redraws) is overwritten on its next draw. A change there belongs in the copy itself: keep it small, and keep it as a
-  patch you reapply.
-- **Build on the API and the library,** not on the copy's internals. Its element ids and functions are not a
-  contract; `/tower.js`, the board and the library are.
+```json
+{ "id": "my-theme", "version": "1.0", "title": "My theme", "requires": { "tower": "2.29" },
+  "themes": { "page": ["theme.css"] } }
+```
 
-Outside the checkout, `tower update` never conflicts with your work, and your copy may move to any stack (a framework,
-a bundler, another language) while still importing the library where it helps.
+[`examples/extensions/harbor/`](../examples/extensions/harbor/) is one, loaded either way: a palette in both schemes
+and in more contrast, rounder corners, and headings in sentence case.
+
+- **Set tokens.** The palette (`--panel`, `--ink`, `--accent`…), the scales, and the character tokens
+  ([Character](#beside-the-library)) are what a theme is for: every renderer, view and element reads them, the
+  terminal too (`--enamel`, `--term-fg`). The design's tokens are the promise: a token keeps its name and meaning
+  within a major.
+- **Write the schemes yourself.** A theme that sets the palette sets it per scheme, as `/design.css` does: the
+  viewer's choice is `data-scheme` on the root (`light`, `dark`, or none to follow the system), and more contrast is
+  `data-contrast="more"` or the system's `prefers-contrast: more`. Harbor writes each once, and derives more contrast
+  from its own palette.
+- **Selectors beyond tokens are best effort.** The page's classes, its state classes and the elements' `data-slot`
+  parts reach what tokens don't, but they are not a contract and may change in any release. Every rule of a theme
+  outweighs the tower's, whatever its selector weighs: a plain `.bar-info .call` beats the view's own rule.
+- **What the tower hides stays hidden,** and so does what it sets `!important` (reduced motion, a tucked control):
+  a theme can't show an element the tower marks `hidden`.
+- **The order.** Each theme is imported into a cascade layer of its own, the accepted extensions' first in their
+  order, then the config's, so a later theme outweighs an earlier one. A theme names no layer: the tower wraps it,
+  and the layers' names are not part of the API. Files beside a theme's stylesheet are served with it, so it reaches
+  its fonts and pictures by relative URL.
+- **Live.** A page loads with its themes, and follows a change of them (the config's list, an extension accepted or
+  turned off) as the board says it: `tower.onThemes` tells it when the new ones have loaded. An edit to a theme's
+  file shows on the next load.
+
+Every renderer the tower serves at `/r/<name>/` takes its themes, a renderer of your own included: the tower links
+`/renderers/<name>/themes.css`, the stylesheet importing them, into the page it serves, and the board carries each
+renderer's themes (`board.themes`, by name) for `/tower.js` to follow. A behaviour rather than a look (a button, a
+panel, a line on a card) is an extension's view or command ([Extensions](#extensions)), not a theme.
+
+### A copy of Tower 3D
 
 Tower 3D is built from the checkout's sources: it imports the library and the extension clients at run time from the
 tower that serves it, a few of its files still import the core's TypeScript by relative path, and its build runs the
@@ -1659,7 +1643,7 @@ folder in the extension, loaded into every session on floors where it is on: [An
 
 ### Contributing surfaces
 
-A capability often starts as a config key and moves into an extension once it is worth sharing. Three of the config's
+A capability often starts as a config key and moves into an extension once it is worth sharing. Four of the config's
 surfaces take the same data from a manifest, so an extension ships them with nothing in the user's config (since 2.13):
 
 | Manifest key | The config's twin | Where it shows |
@@ -1667,6 +1651,7 @@ surfaces take the same data from a manifest, so an extension ships them with not
 | `renderers: { <name>: { root, entry?, settings? } }` | `renderers` | At `/r/<name>/` while the extension is accepted, after the built-ins. The name is `<provides>` or `<provides>.<name>`; a built-in's name refuses the extension. `root` is inside the extension. The config's `renderers.<name>` sets fields over it. |
 | `shelf: [{ label, renderer \| item \| url \| link }]` | `projects.<p>.shelf` | On every floor where the extension is on, after the config's entries. A page is a renderer of its own or an item it contributes, so no entry names a path. |
 | `items: { <collection>: "<folder>" }` | the files of `collections/<p>/<c>/` | In the collection on every floor where the extension is on, read in place ([Collections](#collections)). |
+| `themes: { <renderer>: ["<file>"] }` | `renderers.<name>.themes` | In that renderer's pages while the extension is accepted, before the config's themes ([Write a theme](#write-a-theme)). Since 2.29. |
 
 Each contributed thing carries `from`, the capability it came from: a renderer in `GET /renderers`, a shelf entry
 and an item on the board. The extension's folder is read when the tower resolves its extensions, so an edit there
