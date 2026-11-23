@@ -290,6 +290,8 @@ export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): 
   let term: Terminal | undefined
   let fit: FitAddon | undefined
   let fontShown = io.font()
+  /** Colours asked for while the box was out of the document, where no token resolves: taken when it is back. */
+  let recolour = false
   const typed = (data: string) => document.activeElement === term?.textarea && machine.dispatch({ type: 'typed', data })
   const timing = timers<TermEvent>()
   const machine = loop({
@@ -300,7 +302,8 @@ export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): 
       open: ({ data, cols, rows, exited }) => {
         term?.dispose()
         const font = io.font()
-        term = new xterm.Terminal({ cols, rows, fontSize: fitSize(host, cols, rows, font), fontFamily: font.family, cursorBlink: false, scrollback: io.scrollback, theme: themeAt(host), linkHandler: { activate: openLink }, allowProposedApi: true })
+        recolour = !host.isConnected
+        term = new xterm.Terminal({ cols, rows, fontSize: fitSize(host, cols, rows, font), fontFamily: font.family, cursorBlink: false, scrollback: io.scrollback, theme: recolour ? undefined : themeAt(host), linkHandler: { activate: openLink }, allowProposedApi: true })
         fit = new xterm.FitAddon()
         term.loadAddon(fit)
         if (xterm.WebLinksAddon) term.loadAddon(new xterm.WebLinksAddon(openLink))
@@ -389,8 +392,6 @@ export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): 
   host.addEventListener('paste', onPaste, { capture: true })
   host.addEventListener('drop', onDrop)
   host.addEventListener('dragover', onDragOver)
-  /** A recolour asked while the box was out of the document, where no token resolves: taken when it is back. */
-  let recolour = false
   const takeColours = () => {
     if (!term) return
     recolour = !host.isConnected
