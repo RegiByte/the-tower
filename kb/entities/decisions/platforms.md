@@ -6,14 +6,13 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-31",
-  "reviewed": "2026-11-15",
+  "reviewed": "2026-11-23",
   "refs": ["hub/src/platform.ts#Platform", "hub/src/platform.ts#detected", "hub/src/platform.ts#platform", "hub/src/platform.ts#startWindows", "hub/src/platform.ts#lsofCwd", "hub/src/doctor.ts#supported", "hub/src/doctor.ts#readiness", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#servesConfig", "hub/src/machine.ts#reveal", "hub/src/bridge/resources.ts#underHosts", "hub/src/bridge/resources.ts#resources", "hub/scripts/setup.ts"]
 }
 ---
-**Problem.** The tower was written on a Mac and read the machine the Mac's way: `ps -E` for a process's environment,
-`open` for the browser and Finder, and a leftover counted as orphaned when its parent was launchd, pid 1. Under WSL 2
-everything else already works (PTYs, Unix sockets, `lsof`, file watches), but procps refuses `-E`, there is no
-`open`, and an orphan is adopted by WSL's init relay, not pid 1, so none was ever marked.
+**Problem.** A few of the machine reads the tower makes differ between macOS and WSL 2, while everything else (PTYs,
+Unix sockets, `lsof`, file watches) is the same: procps refuses `ps -E`, there is no `open`, a process's working
+directory has a cheaper source under Linux, and an orphan is adopted by WSL's init relay, not pid 1.
 
 **Why.** WSL 2 is how a Windows user runs Claude Code, and its Linux is close enough to the Mac's Unix that the
 difference fits in a few fields.
