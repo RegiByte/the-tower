@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-04",
-  "reviewed": "2026-11-19",
+  "reviewed": "2026-11-23",
   "refs": [
     "hub/extensions/floors/extension.json",
     "hub/extensions/floors/server.ts",
@@ -93,15 +93,14 @@ board shows a change once the tower reads the file again.
 - A clone holds its floor's id and folder while running, while its floor is still to add, and before the board
   carries its job, which it learns of a moment after it starts
   ([`holding`](ref:hub/extensions/floors/clones.ts#holding)); an in-process hold covers the call that is starting it.
-- Each clone is an ask on the board ([`asksOf`](ref:hub/extensions/floors/clones.ts#asksOf)): running, Stop and
-  Watch; cloned but refused, Add as floor and Dismiss; failed, stopped or lost, Remove (only its folder, only with no
-  running job in it and no floor holding it, only when it holds a `.git`, asking first), Retry and Dismiss. Watch
-  shows the clones' screens through the kit's terminal on `job/<id>`, read only
+- Each clone is an ask on the board ([`asksOf`](ref:hub/extensions/floors/clones.ts#asksOf)), its actions by what the
+  clone came to. Remove deletes only the clone's folder, only with no running job in it and no floor holding it, only
+  when it holds a `.git`. The clones' screens show through the kit's terminal on `job/<id>`, read only
   ([`clones.ts`](ref:hub/extensions/floors/client/clones.ts#mount)).
 
 **Alternatives considered.**
 
-- *Clone run by `ctx.run`, as #391 first did.* A clone can take minutes as a hidden child of the tower, with no
+- *Clone run by `ctx.run`.* A clone can take minutes as a hidden child of the tower, with no
   cancel and nothing recorded if the tower stops. A job outlives the tower, and its end is a fact.
 - *Adopt when the floor isn't in the config yet, with no fact of floors' own.* A floor removed by hand would be added
   back on the next board, and two boards before the config is read again would both add it.
