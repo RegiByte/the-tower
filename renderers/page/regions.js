@@ -952,6 +952,12 @@ export function regions(deps) {
       if (!(/** @type {CustomEvent<{ value: boolean }>} */ (e).detail.value)) drop()
     })
 
+    /** Closes it from code, which fires no `openchange`, and closes its view. */
+    const shut = () => {
+      el.open = false
+      drop()
+    }
+
     return {
       /** Whether the dialog holds a view. */
       isOpen: () => held !== undefined,
@@ -968,13 +974,13 @@ export function regions(deps) {
         el.open = true
       },
       /** Closes it, focus going back to where it was. */
-      close: () => void (el.open = false),
+      close: shut,
       /** The view it holds gets the board; one whose subject left it closes the dialog. */
       update() {
         if (!held) return
         const at = subjectOf(held.key)
         if (at) held.hosted.update(at)
-        else el.open = false
+        else shut()
       },
     }
   }
