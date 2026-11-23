@@ -2,7 +2,8 @@
  * The tooltip every renderer shows. Any element with `data-tip="<text>"` shows its text, lines kept, in one element in
  * the top layer: on keyboard focus at once (not on the focus a press gives), on hover once the pointer rests on the element with no button held (at once
  * while a tip shows or has just hidden), beside the element and inside the viewport, until the pointer or the focus
- * leaves it, Esc, a press, a scroll or a redraw that removes it. It fades in and out, at once under reduced motion. A
+ * leaves it, Esc, a press, a scroll or a redraw that removes it. While a control in the element has its popup open (a
+ * combobox's list, a menu button's menu) its tip hides and doesn't show. It fades in and out, at once under reduced motion. A
  * renderer calls `watchTips(document)` once; what it draws later needs only the attribute. `placeBeside` stands any popover by
  * the element that opened it the same way.
  */
@@ -17,6 +18,9 @@ const MARGIN = 8
 /** How long the pointer rests on an element before its tip shows, and how long after a tip hides the next shows at once. */
 const INTENT_MS = 350
 const WARM_MS = 300
+
+/** A control whose popup is open: a combobox's list, a menu button's menu. */
+const POPUP_OPEN = ':is([role="combobox"], [aria-haspopup]:not([aria-haspopup="false"]))[aria-expanded="true"]'
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v, hi))
 
@@ -76,19 +80,26 @@ export function watchTips(doc: Document) {
   let waiting: HTMLElement | undefined
   let warmUntil = 0
   /**
-   * A redraw may take the element away while its tip shows: the tip goes with it. A morph that keeps the element strips
-   * the `aria-describedby` its html lacks, and it is put back where it is missing, so the observer's own write ends there.
+   * Whether `el` or anything in it has its popup open: the tip would stand over it. A disclosure's `aria-expanded`, a
+   * fold or a tray, opens no popup, and its tip still shows.
+   */
+  const expanded = (el: HTMLElement) => el.matches(POPUP_OPEN) || el.querySelector(POPUP_OPEN) !== null
+  /**
+   * A redraw may take the element away while its tip shows: the tip goes with it, as it does when a popup in it opens. A
+   * morph that keeps the element strips the `aria-describedby` its html lacks, and it is put back where it is missing,
+   * so the observer's own write ends there.
    */
   const redrawn = new MutationObserver(() => {
     if (!shown) return
-    if (!shown.isConnected) hide()
+    if (!shown.isConnected || expanded(shown)) hide()
     else if (shown.getAttribute('aria-describedby') !== tip.id) shown.setAttribute('aria-describedby', tip.id)
   })
 
   const show = (el: HTMLElement) => {
     clearTimeout(pending)
+    if (expanded(el)) return hide()
     if (shown) shown.removeAttribute('aria-describedby')
-    else redrawn.observe(doc.body, { childList: true, subtree: true, attributeFilter: ['aria-describedby'] })
+    else redrawn.observe(doc.body, { childList: true, subtree: true, attributeFilter: ['aria-describedby', 'aria-expanded'] })
     shown = el
     waiting = undefined
     tip.textContent = el.dataset.tip ?? ''
