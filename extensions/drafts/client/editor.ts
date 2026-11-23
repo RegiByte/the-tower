@@ -20,16 +20,16 @@ const ID = 'drafts/editor'
 const STYLE = viewCss(
   ID,
   `& .shelf-head .by { padding: 0; border: 0; background: none; font: inherit; color: inherit; text-decoration: underline; cursor: pointer; }
-  & .draft-note { display: flex; align-items: center; gap: var(--sp-l); padding: var(--sp-m) var(--sp-l) var(--sp-m) var(--sp-xl); border-radius: var(--radius);
+  & .draft-note { display: flex; align-items: center; gap: var(--sp-l); padding: var(--sp-m) var(--sp-l) var(--sp-m) var(--sp-xl); border-radius: var(--radius-card);
     background: color-mix(in oklab, var(--broken) 11%, var(--panel)); border: 1px solid var(--broken); }
   & .draft-note:empty { display: none; }
   & .draft-note span { margin-right: auto; }
   & textarea { flex: 1; min-height: 0; resize: none; padding: var(--sp-xl); font: var(--fs-l)/1.55 var(--mono); font-variant-ligatures: none; color: var(--ink); background: var(--panel);
-    border: 1px solid var(--line-strong); border-radius: var(--radius); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+    border: 1px solid var(--line-strong); border-radius: var(--radius-control); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
   & textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
   & .targets { display: grid; gap: var(--sp-s); max-height: 60vh; overflow-y: auto; scrollbar-gutter: stable; }
   & .targets button { display: flex; align-items: center; gap: var(--sp-m); padding: var(--sp-m) var(--sp-l); text-align: left; font-weight: 400; border-left: 4px solid var(--p, var(--deco)); }
-  & .targets .call { font: 800 var(--fs-m)/1 var(--display); letter-spacing: .04em; }
+  & .targets .call { font: var(--display-weight) var(--fs-m)/1 var(--display); letter-spacing: var(--heading-tracking); }
   & .targets .where { color: var(--muted); font-size: var(--fs-s); white-space: nowrap; }
   & .targets .line { flex: 1; min-width: 0; color: var(--muted); font-size: var(--fs-s); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   & .targets .said { color: var(--faint); }`,

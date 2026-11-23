@@ -10,7 +10,7 @@ export const reviewsPanelCss = `
 .reviews-panel code { font: var(--fs-s) var(--mono); color: var(--ink); }
 .reviews-panel .composer .re-chip { display: flex; align-items: center; gap: var(--sp-s); margin-bottom: var(--sp-s); color: var(--muted); font-size: var(--fs-s); }
 .reviews-panel .composer textarea { display: block; width: 100%; min-height: 72px; resize: vertical; padding: var(--sp-s) var(--sp-m);
-  border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--panel-2); color: var(--ink); font: var(--fs-m)/1.45 var(--ui); }
+  border: 1px solid var(--line-strong); border-radius: var(--radius-control); background: var(--panel-2); color: var(--ink); font: var(--fs-m)/1.45 var(--ui); }
 .reviews-panel .composer textarea::placeholder { color: var(--faint); }
 .reviews-panel .composer .actions { display: flex; align-items: center; gap: var(--sp-s); margin-top: var(--sp-s); }
 .reviews-panel .reviews-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: var(--sp-l); padding: var(--sp-l) 0 var(--sp-m); color: var(--muted); font-size: var(--fs-m); background: var(--panel); }
@@ -18,12 +18,12 @@ export const reviewsPanelCss = `
 .reviews-panel .reviews-head .tag { font: var(--fs-xs) var(--mono); padding: 1px var(--sp-s); border-radius: var(--radius-pill); background: var(--panel-2); color: var(--muted); cursor: copy; }
 .reviews-panel .reviews-head .send { margin-left: auto; display: flex; gap: var(--sp-xs); }
 .reviews-panel .reviews-head .send b { color: inherit; }
-.reviews-panel .reviews-head .send select { max-width: 200px; font: var(--fs-s) var(--ui); background: var(--panel-2); color: var(--ink); border: 1px solid var(--line-strong); border-radius: var(--radius); }
-.reviews-panel .note { max-width: 980px; margin: 0 0 var(--sp-l); padding: var(--sp-m) var(--sp-l) var(--sp-l); border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: var(--radius); }
+.reviews-panel .reviews-head .send select { max-width: 200px; font: var(--fs-s) var(--ui); background: var(--panel-2); color: var(--ink); border: 1px solid var(--line-strong); border-radius: var(--radius-control); }
+.reviews-panel .note { max-width: 980px; margin: 0 0 var(--sp-l); padding: var(--sp-m) var(--sp-l) var(--sp-l); border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: var(--radius-card); }
 .reviews-panel .note.mine { border-left-color: var(--accent); }
 .reviews-panel .note.new { border-color: var(--accent); border-left-color: var(--accent); }
 .reviews-panel .note > header { display: flex; align-items: baseline; gap: var(--sp-m); margin-bottom: var(--sp-xs); font-size: var(--fs-s); color: var(--muted); }
-.reviews-panel .note > header b { font: 800 var(--fs-m)/1 var(--display); letter-spacing: .04em; color: var(--ink); }
+.reviews-panel .note > header b { font: var(--display-weight) var(--fs-m)/1 var(--display); letter-spacing: var(--heading-tracking); color: var(--ink); }
 .reviews-panel .note > header .n { font: var(--fs-s) var(--mono); }
 .reviews-panel .note > header .re { font: var(--fs-s) var(--mono); color: var(--accent); cursor: pointer; }
 .reviews-panel .note > header button.re { margin-left: 0; padding: 0; border: none; background: none; }
@@ -35,8 +35,8 @@ export const reviewsPanelCss = `
 .reviews-panel .note.resolved { border-style: dashed; border-left-style: solid; }
 .reviews-panel .note.resolved .body, .reviews-panel .note.resolved .anchor { color: var(--muted); }
 .reviews-panel .note .body { font-size: var(--fs-l); line-height: 1.5; }
-.reviews-panel .anchor { margin: var(--sp-s) 0; border: 1px solid var(--line); border-radius: var(--radius); }
-.reviews-panel .anchor .where { display: flex; align-items: center; gap: var(--sp-m); padding: var(--sp-xs) var(--sp-m); background: var(--panel-2); border-radius: var(--radius) var(--radius) 0 0; }
+.reviews-panel .anchor { margin: var(--sp-s) 0; border: 1px solid var(--line); border-radius: var(--radius-card); }
+.reviews-panel .anchor .where { display: flex; align-items: center; gap: var(--sp-m); padding: var(--sp-xs) var(--sp-m); background: var(--panel-2); border-radius: var(--radius-card) var(--radius-card) 0 0; }
 .reviews-panel .anchor .where .go { display: flex; align-items: center; gap: var(--sp-m); min-width: 0; padding: 0; border: none; background: none; color: inherit; font: inherit; text-align: left; }
 .reviews-panel .anchor .where .go:hover code { text-decoration: underline; }
 .reviews-panel .anchor .state { padding: 0 var(--sp-s); border-radius: var(--radius-pill); font-size: var(--fs-xs); color: var(--panel); background: var(--muted); }

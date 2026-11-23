@@ -24,7 +24,7 @@ const STYLE = viewCss(
   `padding: var(--sp-m) var(--sp-l); font: var(--fs-m)/1.4 var(--ui);
   & textarea { display: block; width: 100%; resize: none; overflow-y: auto; padding: var(--sp-s) var(--sp-m);
     max-height: calc(${MAX_ROWS} * 1.45em + 2 * var(--sp-s) + 2px);
-    border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--panel-2); color: var(--ink); font: var(--fs-m)/1.45 var(--ui); }
+    border: 1px solid var(--line-strong); border-radius: var(--radius-control); background: var(--panel-2); color: var(--ink); font: var(--fs-m)/1.45 var(--ui); }
   & textarea::placeholder { color: var(--faint); }
   & textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
   & .actions { display: flex; align-items: center; gap: var(--sp-s); margin-top: var(--sp-s); }

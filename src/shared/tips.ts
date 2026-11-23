@@ -52,7 +52,7 @@ export function placeOnOpen(el: HTMLElement, anchor: () => Element) {
  * without `overlay`, it leaves the top layer as it starts fading). A placed popover hides until it is placed.
  */
 export const tipsCss = `
-.tower-tip { position: fixed; inset: auto; margin: 0; max-width: min(20rem, calc(100vw - 16px)); padding: var(--sp-s) var(--sp-m); border: 0; border-radius: var(--radius);
+.tower-tip { position: fixed; inset: auto; margin: 0; max-width: min(20rem, calc(100vw - 16px)); padding: var(--sp-s) var(--sp-m); border: 0; border-radius: var(--radius-card);
   background: var(--ink); color: var(--panel); box-shadow: 0 0 0 1px color-mix(in oklab, var(--panel) 30%, transparent), var(--shadow); font: var(--fs-s)/1.45 var(--ui); font-weight: 400; letter-spacing: 0; text-transform: none;
   white-space: pre-line; overflow-wrap: anywhere; pointer-events: none; overflow: visible;
   opacity: 0; scale: 0.97;

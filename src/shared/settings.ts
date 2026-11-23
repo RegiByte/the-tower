@@ -292,9 +292,9 @@ export const settingsHtml = (sections: string[]) => `<div class="settings"><h2>S
 /** The popover's look, under `.settings-pop` (the popover element) and `.settings` (its content). `height: auto` over the UA's `fit-content`, which WebKit stretches to the `max-height`. */
 export const settingsCss = `
 .settings-pop { position: fixed; inset: auto; margin: 0; padding: 0; white-space: normal; text-align: left; width: min(18.75rem, calc(100vw - 16px)); height: auto; max-height: calc(100vh - 16px); overflow: auto;
-  border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); color: var(--ink); box-shadow: var(--shadow-pop); }
+  border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--panel); color: var(--ink); box-shadow: var(--shadow-pop); }
 .settings { font: var(--fs-m)/1.45 var(--ui); }
-.settings h2 { margin: 0; padding: var(--sp-l) var(--sp-xl) var(--sp-m); font: 800 var(--fs-m)/1 var(--display); letter-spacing: .08em; text-transform: uppercase; }
+.settings h2 { margin: 0; padding: var(--sp-l) var(--sp-xl) var(--sp-m); font: var(--display-weight) var(--fs-m)/1 var(--display); letter-spacing: var(--label-tracking); text-transform: var(--label-case); }
 .settings section { display: grid; gap: var(--sp-m); padding: var(--sp-l) var(--sp-xl); border-top: 1px solid var(--line); }
 .settings h3 { display: flex; align-items: baseline; gap: var(--sp-m); margin: 0; }
 .settings h3 small { font: 400 var(--fs-xs)/1 var(--ui); letter-spacing: 0; text-transform: none; color: var(--faint); }
@@ -303,8 +303,8 @@ export const settingsCss = `
 .settings .row { display: flex; flex-wrap: wrap; gap: var(--sp-s); }
 .settings .screen-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: var(--sp-m); font-size: var(--fs-s); }
 .settings .row button { display: inline-flex; align-items: center; gap: var(--sp-xs); padding: var(--sp-xs) var(--sp-l); font-size: var(--fs-s); }
-.settings .seg { display: flex; gap: var(--sp-2xs); padding: var(--sp-2xs); border-radius: var(--radius); background: var(--sunk); }
-.settings .seg button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-xs); padding: var(--sp-xs) var(--sp-s); border: 0; border-radius: var(--radius);
+.settings .seg { display: flex; gap: var(--sp-2xs); padding: var(--sp-2xs); border-radius: var(--radius-control); background: var(--sunk); }
+.settings .seg button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-xs); padding: var(--sp-xs) var(--sp-s); border: 0; border-radius: var(--radius-control);
   background: none; color: var(--muted); font: 700 var(--fs-s)/1.3 var(--ui); cursor: pointer; }
 .settings .seg button:hover { color: var(--ink); }
 .settings .seg button.on { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px #0003; }
@@ -313,7 +313,7 @@ export const settingsCss = `
 .settings .pref:not(:has(.lbl)) { grid-template-columns: minmax(0, 1fr); }
 .settings .pref .lbl { color: var(--muted); font-size: var(--fs-s); }
 .settings .pref input { width: 100%; min-width: 0; font: var(--fs-m)/1.3 var(--ui); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line-strong);
-  border-radius: var(--radius); padding: var(--sp-xs) var(--sp-m); }
+  border-radius: var(--radius-control); padding: var(--sp-xs) var(--sp-m); }
 .settings .pref input:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
 .settings .pref input::placeholder { color: var(--faint); font-style: italic; }
 .settings .pref input[data-pref=display] { font-family: var(--display); } .settings .pref input[data-pref=mono] { font-family: var(--mono); }

@@ -14,7 +14,7 @@ const ID = 'tower/collection'
 const STYLE = `${componentsLayer(itemsCss)}
 ${viewCss(
   ID,
-  `& .collection-list { flex: 1; min-height: 0; overflow-y: auto; padding: var(--sp-m); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  `& .collection-list { flex: 1; min-height: 0; overflow-y: auto; padding: var(--sp-m); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-card);
     scrollbar-width: thin; scrollbar-color: var(--line) transparent; scrollbar-gutter: stable; }`,
 )}`
 

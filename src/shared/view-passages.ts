@@ -39,7 +39,7 @@ export type PickSource = {
 }
 
 /** The look of the box, inside the view: its host is the frame's positioned parent, the frame at its top left. */
-export const PASSAGE_RULES = `& .passage-box { position: absolute; top: 0; left: 0; z-index: 2; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--panel);
+export const PASSAGE_RULES = `& .passage-box { position: absolute; top: 0; left: 0; z-index: 2; border: 1px solid var(--line-strong); border-radius: var(--radius-card); background: var(--panel);
     box-shadow: 0 8px 28px color-mix(in oklab, var(--ink) 18%, transparent); }
   & .passage-box[hidden] { display: none; }
   & .passage-box.moving { visibility: hidden; }`

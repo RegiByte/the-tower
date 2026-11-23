@@ -13,18 +13,18 @@ const ID = 'tower/archive'
 
 const STYLE = viewCss(
   ID,
-  `& .archive { flex: 1; min-height: 0; overflow-y: auto; padding: var(--sp-m); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  `& .archive { flex: 1; min-height: 0; overflow-y: auto; padding: var(--sp-m); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-card);
     scrollbar-width: thin; scrollbar-color: var(--line) transparent; scrollbar-gutter: stable;
     display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; align-content: start; gap: var(--sp-2xs); }
   & .crew { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-2xs); margin-left: var(--sp-l); padding-left: var(--sp-m); border-left: 2px solid var(--line); }
   & .crew .crew { margin-left: 0; padding-left: var(--sp-s); }
   & .filter { flex: 1; min-width: 120px; max-width: 420px; padding: var(--sp-xs) var(--sp-l); font: var(--fs-m) var(--ui); color: var(--ink); background: var(--panel-2);
-    border: 1px solid var(--line-strong); border-radius: var(--radius); }
+    border: 1px solid var(--line-strong); border-radius: var(--radius-control); }
   & .filter:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-  & .past { overflow: hidden; padding: var(--sp-s) var(--sp-l); border-radius: var(--radius); font-size: var(--fs-m); color: var(--muted); cursor: pointer; }
-  & .past:hover { background: var(--panel-2); color: var(--ink); }
+  & .past { overflow: hidden; padding: var(--sp-s) var(--sp-l); border-radius: var(--radius-control); font-size: var(--fs-m); color: var(--muted); cursor: pointer; }
+  & .past:hover { background: var(--hover); color: var(--ink); }
   & .past .head { display: flex; align-items: center; gap: var(--sp-m); }
-  & .past .call { font: 800 var(--fs-m)/1 var(--display); letter-spacing: .04em; color: var(--ink); text-decoration: none; }
+  & .past .call { font: var(--display-weight) var(--fs-m)/1 var(--display); letter-spacing: var(--heading-tracking); color: var(--ink); text-decoration: none; }
   & .past .when { color: var(--faint); white-space: nowrap; }
   & .past .head .when { margin-left: auto; }
   & .past .conv { display: flex; align-items: center; gap: var(--sp-s); padding-left: var(--sp-xl); }

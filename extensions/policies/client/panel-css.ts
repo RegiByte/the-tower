@@ -2,10 +2,10 @@
 export const policiesPanelCss = `
 .policies-panel { font: var(--fs-m)/1.45 var(--ui); color: var(--ink); }
 .policies-panel section { margin: 0 0 var(--sp-xl); }
-.policies-panel h3 { margin: var(--sp-l) 0 var(--sp-s); color: var(--muted); font: 700 var(--fs-xs)/1.3 var(--ui); letter-spacing: .08em; text-transform: uppercase; }
+.policies-panel h3 { margin: var(--sp-l) 0 var(--sp-s); color: var(--muted); font: var(--display-weight) var(--fs-xs)/1.3 var(--display); letter-spacing: var(--label-tracking); text-transform: var(--label-case); }
 .policies-panel .none { margin: var(--sp-s) 0; color: var(--faint); font-style: italic; }
 .policies-panel code { font: var(--fs-s) var(--mono); }
-.policies-panel .policy, .policies-panel .need { margin: 0 0 var(--sp-m); padding: var(--sp-m) var(--sp-l); border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+.policies-panel .policy, .policies-panel .need { margin: 0 0 var(--sp-m); padding: var(--sp-m) var(--sp-l); border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--panel); }
 .policies-panel .need { border-left: 3px solid var(--accent); }
 .policies-panel .policy.invalid { border-left: 3px solid var(--broken); }
 .policies-panel header { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-s); }
@@ -23,7 +23,7 @@ export const policiesPanelCss = `
 .policies-panel .worker:hover { text-decoration: underline; }
 .policies-panel .problems { margin: var(--sp-s) 0 0; padding-left: var(--sp-xl); color: var(--broken-text); font-size: var(--fs-s); }
 .policies-panel .problems code { color: var(--ink); }
-.policies-panel .offer { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-s) var(--sp-m); margin: 0 0 var(--sp-s); padding: var(--sp-s) var(--sp-l); border: 1px solid var(--accent); border-radius: var(--radius); background: var(--panel); }
+.policies-panel .offer { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-s) var(--sp-m); margin: 0 0 var(--sp-s); padding: var(--sp-s) var(--sp-l); border: 1px solid var(--accent); border-radius: var(--radius-card); background: var(--panel); }
 .policies-panel .offer.dismissed { border-color: var(--line); }
 .policies-panel .offer .lamp { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
 .policies-panel .offer .when { color: var(--muted); }

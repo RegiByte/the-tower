@@ -197,6 +197,6 @@ export const markdownCss = `.md { overflow-wrap: anywhere; }
   font: var(--fs-m)/1.5 var(--mono); font-variant-ligatures: none; }
 .md figure.code pre code { background: none; padding: 0; font: inherit; overflow-wrap: normal; }
 .md figure.code > button { position: absolute; top: 5px; right: 5px; padding: 1px var(--sp-m); font: 700 var(--fs-xs)/1.5 var(--ui); color: var(--muted); background: var(--panel-2);
-  border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer; opacity: .6; }
+  border: 1px solid var(--line); border-radius: var(--radius-control); cursor: pointer; opacity: .6; }
 .md figure.code:hover > button, .md figure.code > button:focus-visible { opacity: 1; }
 ${highlightCss('.md')}`

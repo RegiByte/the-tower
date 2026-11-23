@@ -16,11 +16,11 @@ const ID = 'guides/center'
 const STYLE = viewCss(
   ID,
   `& .center { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(200px, 18em) 1fr; gap: var(--sp-l); }
-  & .index, & .reader { min-height: 0; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+  & .index, & .reader { min-height: 0; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-card); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
   & .index { display: flex; flex-direction: column; gap: var(--sp-m); padding: var(--sp-l); }
-  & .index input { padding: var(--sp-s) var(--sp-m); font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line-strong); border-radius: var(--radius); }
+  & .index input { padding: var(--sp-s) var(--sp-m); font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line-strong); border-radius: var(--radius-control); }
   & .index input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-  & .index h3 { margin: var(--sp-s) 0 0; font: 700 var(--fs-s)/1.3 var(--display); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  & .index h3 { margin: var(--sp-s) 0 0; font: var(--display-weight) var(--fs-s)/1.3 var(--display); text-transform: var(--label-case); letter-spacing: var(--label-tracking); color: var(--muted); }
   & .index ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; }
   & .index li button { width: 100%; text-align: left; padding: var(--sp-xs) var(--sp-s); border: 0; border-radius: var(--radius-s); background: none; color: var(--ink); font: inherit; cursor: pointer; }
   & .index li button:hover { background: color-mix(in oklab, var(--accent) 10%, transparent); }

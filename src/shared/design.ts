@@ -194,6 +194,32 @@ export const shape = { radius: '4px', radiusS: '2px', radiusPill: '999px' }
  */
 export const controls = { control: '24px', selected: 'inset 0 0 0 1px var(--ink)' }
 
+/**
+ * Colour roles, each a palette token by name, emitted as `--<role>: var(--<token>)`, so a role follows the scheme and
+ * contrast its token does, and a theme re-points the role without touching the palette: `primary` fills the one
+ * emphasized action, `onPrimary` is its text, `hover` fills what is under the pointer (rows, menu items).
+ */
+export const roles = { primary: 'ink', onPrimary: 'panel', hover: 'panel2' } as const satisfies Record<string, keyof (typeof palettes)[Scheme]>
+
+/**
+ * Character: the shape and type every renderer draws its parts in, for a theme to set. `radiusCard` rounds cards,
+ * panels, popovers and dialogs, `radiusControl` buttons, fields, tabs and rows; `shadowCard` is a card's resting
+ * elevation (`--shadow` raises one under the pointer). Type comes in three roles: headings and signs, in the display
+ * face at `displayWeight`, in `headingCase`, tracked `headingTracking`; names (callsigns), the same without the case;
+ * and labels (eyebrows, group heads), small, in the display face at `displayWeight`, in `labelCase`, tracked
+ * `labelTracking`. The display face's two largest sizes (the brand, the greeting) draw a hundred heavier.
+ */
+export const character = {
+  radiusCard: 'var(--radius)',
+  radiusControl: 'var(--radius)',
+  shadowCard: 'none',
+  displayWeight: '800',
+  headingCase: 'uppercase',
+  headingTracking: '.06em',
+  labelCase: 'uppercase',
+  labelTracking: '.08em',
+}
+
 /** Icon sizes, as `--icon-<step>`, in rem so they follow the text: `s` beside words, `m` alone in a control. */
 export const iconSize = { s: '.75rem', m: '1rem' }
 
@@ -315,7 +341,7 @@ const variables = (tokens: Record<string, string>) => Object.entries(tokens).map
 export const documentCss = `html { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 body { margin: 0; background: var(--panel); color: var(--ink); font: var(--fs-xl)/1.65 var(--ui); -webkit-font-smoothing: antialiased; }
 article { max-width: 860px; margin: 0 auto; padding: var(--sp-3xl) 36px 80px; }
-h1, h2, h3 { font-family: var(--display); font-weight: 800; line-height: 1.2; margin: 1.6em 0 .6em; } h1 { font-size: 1.8em; } h3 { font-size: 1.1em; }
+h1, h2, h3 { font-family: var(--display); font-weight: var(--display-weight); line-height: 1.2; margin: 1.6em 0 .6em; } h1 { font-size: 1.8em; } h3 { font-size: 1.1em; }
 h2 { font-size: 1.3em; border-bottom: 1px solid var(--line); padding-bottom: .3em; }
 a { color: var(--accent); } li { margin: .2em 0; } article img { max-width: 100%; height: auto; } hr { border: 0; border-top: 1px solid var(--line); margin: 2em 0; }
 code { font: .86em var(--mono); background: var(--panel-2); padding: .1em .35em; border-radius: var(--radius); }
@@ -339,13 +365,13 @@ table { border-collapse: collapse; } th, td { border: 1px solid var(--line); pad
  */
 const COMPONENTS = `
 .icon { width: var(--icon-s); height: var(--icon-s); flex: none; vertical-align: -.125em; }
-.icon-btn { display: inline-grid; place-items: center; min-width: var(--control); min-height: var(--control); padding: 0; border: 1px solid transparent; border-radius: var(--radius);
+.icon-btn { display: inline-grid; place-items: center; min-width: var(--control); min-height: var(--control); padding: 0; border: 1px solid transparent; border-radius: var(--radius-control);
   background: none; color: var(--muted); cursor: pointer; }
 .icon-btn .icon { width: var(--icon-m); height: var(--icon-m); }
 .icon-btn:hover { color: var(--ink); border-color: var(--line); background: var(--panel); }
 .icon-btn small { padding-inline: var(--sp-xs); font-size: var(--fs-xs); }
 .glyph { display: inline-block; background: currentColor; mask: var(--glyph) center / contain no-repeat; }
-.eyebrow { font: 800 var(--fs-xs)/1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.eyebrow { font: var(--display-weight) var(--fs-xs)/1 var(--display); letter-spacing: var(--label-tracking); text-transform: var(--label-case); color: var(--muted); }
 .needs { --c: var(--needs); --on: var(--on-needs); --c-text: var(--needs-text); } .ready { --c: var(--ready); --on: var(--on-ready); --c-text: var(--ready-text); }
 .working { --c: var(--working); --on: var(--on-working); --c-text: var(--working-text); }
 .quiet { --c: var(--quiet); --on: var(--on-quiet); --c-text: var(--muted); } .offered { --c: var(--offered); --on: var(--on-offered); --c-text: var(--offered); } .broken { --c: var(--broken); --on: var(--on-broken); --c-text: var(--broken-text); }
@@ -376,18 +402,18 @@ ${reduced("button[aria-busy='true']::after, .icon-btn[aria-busy='true']::after",
 .meter { position: relative; height: 6px; border-radius: var(--radius-pill); background: var(--sunk); }
 .meter i { display: block; max-width: 100%; height: 100%; border-radius: inherit; background: var(--fill, var(--ink)); }
 .meter s { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--ink); box-shadow: 0 0 0 1px var(--panel); }
-.sign { --pp: var(--p, var(--deco)); display: flex; align-items: center; gap: var(--sp-m); padding: var(--sp-s) var(--sp-s) var(--sp-s) var(--sp-l); border-radius: var(--radius);
+.sign { --pp: var(--p, var(--deco)); display: flex; align-items: center; gap: var(--sp-m); padding: var(--sp-s) var(--sp-s) var(--sp-s) var(--sp-l); border-radius: var(--radius-card);
   background: color-mix(in oklab, var(--pp) var(--p-plate-mix), var(--panel)); border: 1px solid color-mix(in oklab, var(--pp) var(--p-plate-edge-mix), var(--panel));
   color: color-mix(in oklab, var(--pp) var(--p-plate-text-mix), var(--ink)); box-shadow: inset 5px 0 0 var(--pp); }
 .sign .num { display: grid; place-items: center; min-width: 26px; min-height: 22px; padding: 0 var(--sp-xs); border-radius: var(--radius-s); background: var(--pp);
-  color: var(--enamel); font: 900 var(--fs-l)/1 var(--display); font-variant-numeric: tabular-nums; }
-.sign .name { font: 800 var(--fs-l)/1 var(--display); text-transform: uppercase; letter-spacing: .06em; white-space: nowrap;
+  color: var(--enamel); font: var(--fs-l)/1 var(--display); font-weight: calc(var(--display-weight) + 100); font-variant-numeric: tabular-nums; }
+.sign .name { font: var(--display-weight) var(--fs-l)/1 var(--display); text-transform: var(--heading-case); letter-spacing: var(--heading-tracking); white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; }
 .spawn-form { --pp: var(--p, var(--accent)); --pe: color-mix(in oklab, var(--pp) var(--p-edge-mix), var(--ink)); display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; width: min(1000px, calc(100vw - 32px));
   min-height: min(680px, calc(100vh - 48px)); height: auto; max-height: calc(100vh - 48px); overflow: hidden; color: var(--ink); font: var(--fs-l)/1.45 var(--ui); }
 .spawn-form header { display: flex; align-items: center; gap: var(--sp-xl); padding: var(--sp-xl) var(--sp-2xl); border-bottom: 1px solid var(--line); }
 .spawn-form header .sign { flex: none; }
-.spawn-form h2 { margin: 0; font: 800 var(--fs-xl)/1 var(--display); text-transform: uppercase; letter-spacing: .06em; }
+.spawn-form h2 { margin: 0; font: var(--display-weight) var(--fs-xl)/1 var(--display); text-transform: var(--heading-case); letter-spacing: var(--heading-tracking); }
 .spawn-form .draft { margin-left: auto; color: var(--muted); font-size: var(--fs-s); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .spawn-form .draft b { color: var(--ink); }
 .spawn-form .cols { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); min-height: 0; }
@@ -400,7 +426,7 @@ ${reduced("button[aria-busy='true']::after, .icon-btn[aria-busy='true']::after",
 .spawn-form .lbl .hint { font: 400 var(--fs-s)/1 var(--ui); color: var(--faint); cursor: help; }
 .spawn-form .lbl .hint:hover, .spawn-form .lbl .hint:focus-visible { color: var(--muted); }
 .spawn-form input:not([type=radio]), .spawn-form select, .spawn-form textarea { width: 100%; font: inherit; color: var(--ink); background: var(--panel-2);
-  border: 1px solid var(--line-strong); border-radius: var(--radius); padding: var(--sp-m); min-width: 0; }
+  border: 1px solid var(--line-strong); border-radius: var(--radius-control); padding: var(--sp-m); min-width: 0; }
 .spawn-form :is(input:not([type=radio]), select, textarea):focus-visible { outline: 2px solid var(--pe); outline-offset: -1px; }
 .spawn-form tower-combobox { --ui-ring: var(--pe); --ui-placeholder: var(--faint); }
 .spawn-form input[type=radio]:focus-visible { outline: 2px solid var(--pe); outline-offset: 2px; border-radius: 50%; }
@@ -409,7 +435,7 @@ ${reduced("button[aria-busy='true']::after, .icon-btn[aria-busy='true']::after",
 .spawn-form input:invalid { border-color: var(--broken-text); }
 .spawn-form .where { display: grid; gap: var(--sp-s); }
 .spawn-form .choice { display: grid; grid-template-columns: auto 1fr auto; column-gap: var(--sp-l); row-gap: var(--sp-2xs); align-items: baseline; padding: var(--sp-m) var(--sp-l);
-  border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2); cursor: pointer; transition: border-color .15s ease-out, background .15s ease-out; }
+  border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-2); cursor: pointer; transition: border-color .15s ease-out, background .15s ease-out; }
 .spawn-form .choice:hover { border-color: var(--deco); }
 .spawn-form .choice small { grid-column: 2 / -1; color: var(--muted); font-size: var(--fs-s); }
 .spawn-form .choice:has(:checked) { border-color: var(--pe); background: color-mix(in oklab, var(--pp) 12%, var(--panel-2)); box-shadow: inset 4px 0 0 var(--pp); }
@@ -426,8 +452,8 @@ ${reduced("button[aria-busy='true']::after, .icon-btn[aria-busy='true']::after",
 .spawn-form .fields .note { color: var(--muted); font-size: var(--fs-s); margin-top: calc(-1 * var(--sp-s)); }
 .spawn-form .fields .note:empty { display: none; }
 .spawn-form .picks { display: grid; gap: var(--sp-xs); }
-.spawn-form .pick { display: flex; align-items: baseline; gap: var(--sp-l); padding: var(--sp-s) var(--sp-l); border-radius: var(--radius); cursor: pointer; }
-.spawn-form .pick:hover { background: var(--panel-2); }
+.spawn-form .pick { display: flex; align-items: baseline; gap: var(--sp-l); padding: var(--sp-s) var(--sp-l); border-radius: var(--radius-control); cursor: pointer; }
+.spawn-form .pick:hover { background: var(--hover); }
 .spawn-form .pick:has(:checked) { background: color-mix(in oklab, var(--pp) 12%, var(--panel-2)); }
 .spawn-form .pick span { color: var(--muted); font-size: var(--fs-s); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .spawn-form .pick .st { margin-left: auto; }
@@ -474,7 +500,8 @@ export function designCss(): string {
       `@font-face { font-family: '${family}'; font-weight: ${weight}; font-style: ${style}; font-display: block; src: url(fonts/${file}) format('woff2');${range ? ` unicode-range: ${range};` : ''}${metrics ? ` ${metrics}` : ''} }`,
   )
   const mixes = Object.fromEntries(Object.entries(projectMix).map(([name, percent]) => [`p${name[0].toUpperCase()}${name.slice(1)}Mix`, `${percent}%`]))
-  const shared = { ...type, ...shape, ...controls, termFg: ANSI.foreground, ...mixes }
+  const roleVars = Object.fromEntries(Object.entries(roles).map(([role, token]) => [role, `var(--${kebab(token)})`]))
+  const shared = { ...type, ...shape, ...controls, termFg: ANSI.foreground, ...mixes, ...roleVars, ...character }
   const scheme = (name: Scheme) => `color-scheme: ${name};\n  ${variables(palettes[name])}`
   const [more, moreDark] = [variables(moreContrast('light')), variables(moreContrast('dark'))]
   const steps = (prefix: string, scale: Record<string, string>) => Object.entries(scale).map(([step, value]) => `--${prefix}-${step}: ${value};`).join('\n  ')

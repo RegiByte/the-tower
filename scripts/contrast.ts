@@ -7,15 +7,17 @@
  *   npm run tool:contrast            every pair in both schemes, failures marked; exits 1 on any failure
  *   npm run tool:contrast -- --fails only the failures
  *
- * A colour is a token of the scheme's palette, a `#rrggbb`, or a mix as `color-mix(in oklab, a p%, b)` draws it.
+ * A colour is a token of the scheme's palette, a colour role (`roles`, resolved to its token), a `#rrggbb`, or a mix as
+ * `color-mix(in oklab, a p%, b)` draws it.
  * Project colours come from the config, so the project tones are measured on sample colours: the terminal's ANSI hues,
  * the kind of colour a config picks.
  */
-import { mixOklab, palettes, terminalTheme, type Scheme } from '../src/shared/design.ts'
+import { mixOklab, palettes, roles, terminalTheme, type Scheme } from '../src/shared/design.ts'
 
 type Palette = (typeof palettes)[Scheme]
 type Token = { [K in keyof Palette]: Palette[K] extends string ? K : never }[keyof Palette]
-type Colour = Token | `#${string}` | { mix: [Colour, number | Token, Colour] }
+type Role = keyof typeof roles
+type Colour = Token | Role | `#${string}` | { mix: [Colour, number | Token, Colour] }
 type Need = 'text' | 'large' | 'ui'
 type Pair = { fg: Colour; bg: Colour; need: Need; where: string }
 
@@ -50,6 +52,8 @@ const PAIRS: Pair[] = [
   ),
   ...on(['synKeyword', 'synString', 'synNumber', 'synComment', 'synTitle', 'synType', 'synAttr', 'synRegexp'], ['panel', 'addedWash', 'removedWash'], 'text', 'code syntax'),
   ...on(['ink', 'synKeyword', 'synString', 'synNumber', 'synComment', 'synTitle', 'synType', 'synAttr', 'synRegexp'], ['addedWord', 'removedWord'], 'text', "the words an edited line changed"),
+  ...on(['onPrimary'], ['primary'], 'text', 'the primary action'),
+  ...on(['ink', 'muted'], ['hover'], 'text', 'a row or menu item under the pointer'),
   ...on(['lineStrong'], ['panel', 'panel2'], 'ui', "a form field's edge"),
   ...on(['accent'], ['panel', 'panel2'], 'ui', 'the focus ring'),
   ...on(['ink'], ['panel2'], 'ui', 'the ring of a count of waits'),
@@ -60,7 +64,7 @@ const PAIRS: Pair[] = [
 ]
 
 const resolve = (p: Palette, c: Colour): string =>
-  typeof c === 'object' ? mixOklab(resolve(p, c.mix[0]), percent(p, c.mix[1]), resolve(p, c.mix[2])) : c.startsWith('#') ? c : p[c as Token]
+  typeof c === 'object' ? mixOklab(resolve(p, c.mix[0]), percent(p, c.mix[1]), resolve(p, c.mix[2])) : c.startsWith('#') ? c : c in roles ? p[roles[c as Role]] : p[c as Token]
 
 const percent = (p: Palette, k: number | Token) => (typeof k === 'number' ? k : parseFloat(p[k]))
 
