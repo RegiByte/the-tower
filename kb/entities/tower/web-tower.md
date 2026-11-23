@@ -5,7 +5,7 @@
   "summary": "The tower page, the renderer / opens by default: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf.",
   "in": "tower-core",
   "reviewed": "2026-11-23",
-  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/clients.js", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/added.js#drawCount", "hub/renderers/page/regions.js#regions", "hub/renderers/page/stats.js#stats", "hub/renderers/page/extensions-entry.js#extensionsEntry", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster", "hub/src/views/card.ts#mount", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/added.js#regionActionHtml", "hub/src/shared/panel-kit.ts#morphPanel", "hub/renderers/page/page.js#markSeen", "hub/renderers/page/menu.js#menu", "hub/renderers/page/fit.js#lineWidth", "hub/renderers/page/page.js#pinIn", "hub/src/shared/adds.ts#rankedActions", "hub/src/shared/viewer.ts#seenOf", "hub/renderers/page/page.js#subjectLeft", "hub/renderers/page/subject-menus.js#subjectMenus", "hub/renderers/page/page.js#doMenuPick", "hub/renderers/page/page.js#MENU_PICKS", "hub/src/shared/subject-menu.ts#subjectMenu", "hub/src/shared/spawn-form.ts#spawnFormHtml"]
+  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/clients.js", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/added.js#drawCount", "hub/renderers/page/regions.js#regions", "hub/renderers/page/stats.js#stats", "hub/renderers/page/extensions-entry.js#extensionsEntry", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster", "hub/src/views/card.ts#mount", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/added.js#regionActionHtml", "hub/src/shared/panel-kit.ts#morphPanel", "hub/renderers/page/page.js#markSeen", "hub/renderers/page/menu.js#menu", "hub/renderers/page/fit.js#lineWidth", "hub/renderers/page/page.js#pinIn", "hub/renderers/page/page.js#pinChecks", "hub/renderers/page/subject-menus.js#placedKey", "hub/src/shared/adds.ts#rankedActions", "hub/src/shared/viewer.ts#seenOf", "hub/renderers/page/page.js#subjectLeft", "hub/renderers/page/subject-menus.js#subjectMenus", "hub/renderers/page/page.js#doMenuPick", "hub/renderers/page/page.js#MENU_PICKS", "hub/src/shared/subject-menu.ts#subjectMenu", "hub/src/shared/spawn-form.ts#spawnFormHtml"]
 }
 ---
 Built to learn from and throw away ([[renderer-is-disposable]]): it draws the board the [[tower-server]] serves and
@@ -111,15 +111,19 @@ new to the viewer (the `fresh` dot and the description "new") and what is tucked
 `<place>/act:<subject key>/<action id>#<n>`, its place the region's id under the nearest mount's `data-scope`
 (`v7/card.head`, or `card.row` outside any view) and `n` its number among the actions of the same id, so no id
 repeats in the document and a redraw keeps an action's focus, its dot and its busy mark. The `menu`
-form's slot on a worker's head, holding the nodes ⋯ and its menu are made of, is `data-owned` with an id. The fit
+form's slot on a worker's head, holding the nodes ⋯ is made of, is `data-owned` with an id. The fit
 reads every region drawn in one frame: untucking them first when they must be measured afresh, reading them, then
 writing. It also tucks the view's own controls (`data-tuck`), which the view draws: a view updates its region after
 each redraw, so the fit marks them again before the frame is painted. It remembers each item's width while tucked
 ([`lineWidth`](ref:hub/renderers/page/fit.js#lineWidth)) and forgets the widths when the row's inline size changes,
 fonts load or the viewer's text size changes, never on the clock's tick (the pill's time has a reserved width). A
-region not drawn is neither measured nor fitted. Tucked items are reached through ⋯
-([`menu`](ref:hub/renderers/page/menu.js#menu)), whose footer pins for the viewer
-([`pinIn`](ref:hub/renderers/page/page.js#pinIn)): a read-modify-write of that region's entry in `layout.page`, so a
+region not drawn is neither measured nor fitted. Tucked items are reached through ⋯, which opens the subject's menu
+(below): its payload names the region's place too ([`placedKey`](ref:hub/renderers/page/subject-menus.js#placedKey)),
+so the region adds what only it held ahead of the menu's own groups: the actions new as it opened, under New, this
+once; the view's tucked controls the menu doesn't list by name, as proxies pressing the original; the tucked badges,
+the lines past the budget and the cut text, said as lines that can't be picked; and a "Pin to the head" submenu, each
+check pinning for the viewer ([`pinIn`](ref:hub/renderers/page/page.js#pinIn)), its label saying who pinned it when a
+layer below did ([`pinChecks`](ref:hub/renderers/page/page.js#pinChecks)): a read-modify-write of that region's entry in `layout.page`, so a
 choice another window made for another region stays. The page reads its layout (`layout.page` in `tower.store`, over
 the config's and its `renderer.json`'s) again on every board and every store event. An action is seen once the
 viewer runs it or it is drawn in place in a focused window ([`markSeen`](ref:hub/renderers/page/page.js#markSeen)).
@@ -142,8 +146,10 @@ their own, each by its first prompt on one line. A
 menu's line ids are each its own, and `subjectMenu` throws on two alike. Their ids follow the id rule: `sign:floor:<p>`,
 `row:card:<id>`, `<scope>/tab:shown:<card>/<at>`, each ⋯ its place's `/menu`. The open shown tab draws, before its ⋯, what
 its layout pins in `shown.tab` of its menu, an extension's command or one of the menu's own lines run as the menu
-runs it ([[region-overflow]]), but a link's tab no `out`, its name's ↗ saying it opens outside already, and the menu's "Pin to the tab" submenu pins or unpins any of them through
-[`pinIn`](ref:hub/renderers/page/page.js#pinIn), a check closing the menu so the tab is drawn again with it. A ⋯-opened menu is anchored to its button, which the SDK
+runs it ([[region-overflow]]), a file's Finder and editor among them as its `reveal` and `edit` lines, but a link's tab no `out`, its name's ↗ saying it opens outside already, and the menu's "Pin to the tab" submenu pins or unpins any of them through
+[`pinIn`](ref:hub/renderers/page/page.js#pinIn), a check closing the menu so the tab is drawn again with it. A worker row's
+menu pins its extensions' lines into `card.row` the same way ("Pin to the row"); the row holds no actions to pin. A worker's
+head has no ⋯ of its own beside the subject menu: its region's ⋯ is the subject menu. A ⋯-opened menu is anchored to its button, which the SDK
 closes it on losing: the floors' and the tab row's morphs keep a row's, a sign's or a tab's ⋯ through boards, so a
 board drawn while the menu is open leaves it open where it was.
 
