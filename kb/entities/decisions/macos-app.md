@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-09",
-  "reviewed": "2026-11-15",
+  "reviewed": "2026-11-23",
   "refs": ["hub/src/app.ts#openApp", "hub/src/app.ts#infoPlist", "hub/src/app.ts#renderIcon", "hub/apps/macos/icon.svg", "hub/src/cli.ts", "hub/apps/macos/Sources/Tower.swift#Tower", "hub/apps/macos/Sources/App.swift#start", "hub/apps/macos/Sources/App.swift#TowerWebView", "hub/apps/macos/Sources/App.swift#AppDelegate", "hub/apps/macos/Sources/App.swift#webViewDidRequestPointerLock", "hub/apps/macos/Sources/Find.swift#FindBar", "hub/apps/macos/Sources/App.swift#TowerWindow", "hub/apps/macos/Sources/Attention.swift#Attention", "hub/src/shared/waits.ts#heededWaits", "hub/src/shared/waits.ts#transitions"]
 }
 ---
@@ -25,14 +25,11 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
   ([`webViewDidRequestPointerLock`](ref:hub/apps/macos/Sources/App.swift#webViewDidRequestPointerLock)), granted
   through a private delegate method, the one way an embedder can, with the window accepting mouse-moved events, without
   which the locked page hears the mouse only while a button is held; and find in the page
-  ([`FindBar`](ref:hub/apps/macos/Sources/Find.swift#FindBar)). Edit › Find… (⌘F) opens a bar above the page over
-  WebKit's own find, which searches the page and the frames inside it (shelf pages included) and wraps around; ⌘G and
-  ⇧⌘G, or Enter and ⇧Enter in the bar, find the next and previous match, and Esc or Done closes it. While the
-  field has focus, the page's scripts and WebKit can't take it from the user typing
-  ([`TowerWindow`](ref:hub/apps/macos/Sources/App.swift#TowerWindow)); a click into the page, framed or not, hands
-  the page focus at the mouse-down, since WebKit asks for it only after the page has handled the click, and ⌘F gives
-  it back to the field. WebKit says only whether there is a match, so the bar says "Not found" and counts nothing;
-  text a renderer draws to a canvas is out of its reach. Frames inside the page (shelf pages at origins of their own) go where the page sends them.
+  ([`FindBar`](ref:hub/apps/macos/Sources/Find.swift#FindBar)). The bar runs over WebKit's own find, which searches the page and the frames inside it (shelf pages included). While
+  its field has focus, the page's scripts and WebKit can't take it from the user typing
+  ([`TowerWindow`](ref:hub/apps/macos/Sources/App.swift#TowerWindow)); a click into the page hands the page focus at
+  the mouse-down, since WebKit asks for it only after the page has handled the click. WebKit says only whether there
+  is a match, so the bar counts nothing, and text a renderer draws to a canvas is out of its reach. Frames inside the page (shelf pages at origins of their own) go where the page sends them.
 - **A view of a running system, never its starter** ([`start`](ref:hub/apps/macos/Sources/App.swift#start)): the
   app reads the config's `port` ([`Tower`](ref:hub/apps/macos/Sources/Tower.swift#Tower)) and opens the tower once it
   answers. Until then the window says what starts it from a terminal (`tower up`, with `TOWER_CONFIG` when the config
