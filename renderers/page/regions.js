@@ -932,10 +932,13 @@ export function regions(deps) {
    * The region over the page (`board.dialog`), drawn in the `<tower-dialog>` that names it: one view at a time, the one
    * display asked for, mounted as it opens, updated with each board and closed with the dialog, however it closes, or
    * once its subject leaves the board.
-   * @param {string} id
+   * `beside` (the toasts) goes inside the dialog while it is open and back after: what stands outside a modal is inert,
+   * so it could be seen but neither pressed nor heard by a screen reader.
+   * @param {string} id @param {HTMLElement} beside
    */
-  function dialog(id) {
+  function dialog(id, beside) {
     const el = /** @type {HTMLElement & { open: boolean, body: HTMLElement }} */ (document.querySelector(`tower-dialog[data-region="${CSS.escape(id)}"]`))
+    const home = { parent: /** @type {HTMLElement} */ (beside.parentElement), next: beside.nextSibling }
     /** @type {{ key: string, view: string, root: HTMLElement, hosted: Hosted } | undefined} */
     let held
 
@@ -945,6 +948,7 @@ export function regions(deps) {
       if (!was) return
       was.hosted.close()
       was.root.remove()
+      home.parent.insertBefore(beside, home.next)
       delete el.dataset.subject
     }
 
@@ -971,6 +975,7 @@ export function regions(deps) {
         el.dataset.subject = subject.key
         const hosted = hosting.mountView(view, root, subject, { scale: 'dialog', options: layout()[id]?.options?.[view.id] ?? {} })
         held = { key: subject.key, view: view.id, root, hosted }
+        el.body.append(beside)
         el.open = true
       },
       /** Closes it, focus going back to where it was. */

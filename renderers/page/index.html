@@ -25,8 +25,6 @@ kbd { font: 700 var(--fs-xs)/1 var(--mono); padding: var(--sp-2xs) var(--sp-xs);
 dialog { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius-card); padding: var(--sp-2xl); width: min(760px, 92vw);
   box-shadow: var(--shadow-pop); }
 dialog::backdrop { background: var(--backdrop); }
-/* The toasts sit in the top layer, so a dialog over the page never hides them: the popover's own box is taken off. */
-#toasts[popover] { inset: auto; left: 50%; bottom: 20px; margin: 0; border: 0; padding: 0; background: none; color: inherit; overflow: visible; }
 dialog h2 { margin: 0 0 var(--sp-l); font: var(--display-weight) var(--fs-xl)/1 var(--display); text-transform: var(--heading-case); letter-spacing: var(--heading-tracking); }
 }
 @layer tower.page {
@@ -520,7 +518,7 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, [data-view="tow
   </form>
 </dialog>
 <tower-dialog id="dialog" data-region="board.dialog" data-owned="children"></tower-dialog>
-<div id="toasts" popover="manual"></div>
+<div id="toasts"></div>
 <div class="sr-only" id="announce" role="status"></div>
 <div class="board-error" id="board-error" role="alert"></div>
 <script src="/xterm.js"></script>

@@ -660,7 +660,7 @@ function display(target, opts = {}) {
   if (!subject) return toast(`${target} is no longer on the board`)
   const { view: given } = opts
   const over = given && overPage(subject, given)
-  if (over) return (boardDialog.open(over.view, over.subject), requestAnimationFrame(raiseToasts))
+  if (over) return boardDialog.open(over.view, over.subject)
   boardDialog.close()
   const mounted = viewing('view')?.location
   if (given && mounted?.view === given && mainRegion.show(subject)) {
@@ -1367,18 +1367,7 @@ const mainRegion = regions({
 const floorTrays = mainRegion.rows('floor.trays', 'tray')
 
 /** The dialog over the page (`board.dialog`): a view display asks for there, the page going on behind it. */
-const boardDialog = mainRegion.dialog('board.dialog')
-
-/**
- * The toasts stand in the top layer, raised again once the dialog has opened there, so what a view in it is told (a
- * refused tour, an error) shows over it.
- */
-const raiseToasts = () => {
-  const stack = $('toasts')
-  if (stack.matches(':popover-open')) stack.hidePopover()
-  stack.showPopover()
-}
-raiseToasts()
+const boardDialog = mainRegion.dialog('board.dialog', $('toasts'))
 
 /** The strip at the top of the sidebar (`board.strip`): a view on the board, mounted for as long as the page is open. */
 const boardStrip = mainRegion.rows('board.strip', 'strip')
