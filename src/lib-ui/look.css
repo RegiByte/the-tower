@@ -9,7 +9,7 @@
   :where(tower-menu, tower-menu-button, tower-combobox) {
     --ui-background: var(--panel);
     --ui-foreground: var(--ink);
-    --ui-muted: var(--hover);
+    --ui-muted: var(--panel-2);
     --ui-muted-foreground: var(--muted);
     --ui-border: var(--line);
     --ui-input: var(--line-strong);
@@ -78,7 +78,7 @@
 
     &[data-highlighted],
     &[data-open] {
-      background: var(--ui-muted);
+      background: var(--hover);
     }
 
     &[data-disabled] {
@@ -212,7 +212,7 @@
 
     &:hover,
     &[aria-expanded="true"] {
-      background: var(--ui-muted);
+      background: var(--hover);
       color: var(--ui-foreground);
     }
 

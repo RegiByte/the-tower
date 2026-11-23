@@ -635,11 +635,12 @@ host.addEventListener('valuechange', (e) => keep(e.detail.value))
 **The look.** `/lib-ui/` ships the tower's stylesheet for the parts inside its elements, built on the design's tokens.
 It reads them through the SDK's variables, each set on the `tower-*` element from a token, so a page restyles an
 element by setting one of them on it: `--ui-background` (`--panel`), `--ui-foreground` (`--ink`), `--ui-muted`
-(`--hover`: a highlighted item and a field's fill), `--ui-muted-foreground` (`--muted`), `--ui-border` (`--line`),
+(`--panel-2`: a field's fill), `--ui-muted-foreground` (`--muted`), `--ui-border` (`--line`),
 `--ui-input` (`--line-strong`), `--ui-primary` (`--primary`), `--ui-primary-foreground` (`--on-primary`), `--ui-ring`
 (`--accent`), `--ui-destructive` (`--broken-text`), `--ui-radius` (`--radius-control`), `--ui-spacing`
 (`--sp-xs`), `--ui-font-size` (`--fs-s`), `--ui-font-sans` (`--ui`), `--ui-shadow` (`--shadow-pop`),
-`--ui-icon-chevron` and `--ui-icon-check`. The ⋯ button also reads `--control`. The outer elements are yours to lay
+`--ui-icon-chevron` and `--ui-icon-check`. The ⋯ button also reads `--control`, and a highlighted item and the ⋯
+button under the pointer read `--hover`. The outer elements are yours to lay
 out: `<tower-combobox>` is a block, `<tower-menu>` is out of the page's flow (`position: fixed`, its content in the top
 layer), `<tower-menu-area>` turns off iOS's long-press callout, and the rest keep the browser's defaults.
 Only these variables and the design's tokens are promised inside a `tower-*` element: its parts' `data-slot`
@@ -673,7 +674,7 @@ renderer at once, each defaulting to an existing token or a fixed value, alike i
 | `--radius-card` | corners of cards, panels, popovers, dialogs, toasts and the terminal | `var(--radius)` |
 | `--radius-control` | corners of buttons, fields, tabs, segments and rows | `var(--radius)` |
 | `--shadow-card` | a worker's card at rest (`--shadow` raises it under the pointer, and raises the heads of views) | `none` |
-| `--display-weight` | the display face's weight: headings, signs, callsigns, labels; the brand and the greeting draw 100 heavier | `800` |
+| `--display-weight` | the display face's weight, as a number (100 to 900, not a keyword): headings, signs, callsigns, labels; the brand, the greeting and a sign's number draw 100 heavier | `800` |
 | `--heading-case`, `--heading-tracking` | headings and signs; callsigns take the tracking alone | `uppercase`, `.06em` |
 | `--label-case`, `--label-tracking` | labels: `.eyebrow`, menu group labels, the heads of lists | `uppercase`, `.08em` |
 
