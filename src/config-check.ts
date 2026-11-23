@@ -6,10 +6,10 @@
  */
 import { existsSync, statSync } from 'node:fs'
 import path from 'node:path'
-import { contributedRenderers, guidanceOf, manifestOf, parseSettings, resolve, zodOf, type Found, type Resolved } from './bridge/extensions.ts'
+import { contributedRenderers, contributedThemes, guidanceOf, manifestOf, parseSettings, resolve, zodOf, type Found, type Resolved } from './bridge/extensions.ts'
 import { discover } from './extensions.ts'
 import { API_VERSION } from './shared/api.ts'
-import { declaredOf, defaultRenderer, layoutProblems, layoutReachOf, renderersOf, unrooted } from './renderers.ts'
+import { declaredOf, defaultRenderer, layoutProblems, layoutReachOf, renderersOf, themesOf, unrooted } from './renderers.ts'
 import type { Layout } from './shared/regions.ts'
 import { GuidanceConfig, type ViewDecl } from './shared/extensions.ts'
 import { SHELF_KINDS, shelfProblem } from './shelf.ts'
@@ -319,6 +319,21 @@ const projectProblems = (config: Config, id: string, project: Project, renderers
   ]
 }
 
+/** A warning for each theme, the config's or an accepted extension's, whose stylesheet isn't a file: its pages load nothing for it. */
+const themeProblems = (config: Config, contributed: Record<string, string[]>): ConfigProblem[] => {
+  const themes = (() => {
+    try {
+      return themesOf(config, contributed)
+    } catch (err) {
+      if (err instanceof ConfigError) return {}
+      throw err
+    }
+  })()
+  return Object.entries(themes).flatMap(([name, files]) =>
+    files.filter((file) => !statSync(file, { throwIfNoEntry: false })?.isFile()).map((file): ConfigProblem => ({ level: 'warn', key: `renderers.${name}.themes`, problem: `${file} is no file: its pages load nothing for it` })),
+  )
+}
+
 /** Every problem of a config read from its file, each at the key it is at. */
 export const configProblems = (config: Config): ConfigProblem[] => {
   const moved = movedKeys(config)
@@ -354,6 +369,8 @@ export const configProblems = (config: Config): ConfigProblem[] => {
     ...checked('hosts', () => towerHosts(config)),
     ...checked('renderers', () => renderersOf(config, contributed)),
     ...unknownKeysEach('renderers', config.renderers, RENDERER_KEYS),
+    ...checked('renderers', () => themesOf(config, {})),
+    ...themeProblems(config, contributedThemes(extensions.resolved.accepted.values())),
     ...unrooted(config, contributed).map((name): ConfigProblem => ({ level: 'warn', key: `renderers.${name}`, problem: 'sets no "root", and no accepted extension contributes it: it serves nothing until one does, or give it the directory its built files are in' })),
     ...(renderers ?? []).flatMap((r): ConfigProblem[] => (r.problem ? [{ level: 'warn', key: `renderers.${r.name}`, problem: `${r.root}/${r.problem}: it declares no regions` }] : [])),
     ...(renderers ? checked('renderer', () => defaultRenderer(config, renderers)) : []),

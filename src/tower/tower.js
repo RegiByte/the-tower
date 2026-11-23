@@ -60,6 +60,10 @@
  *                                                   tower.js: `<html ${tower.prefs.attributes()}>`
  *   tower.scheme() / tower.onScheme((scheme) => …)   the colour scheme drawn, 'light' or 'dark', the system's when the viewer
  *                                                   chose none; returns unsubscribe
+ *   tower.onThemes(() => …)                         called once a change of this renderer's themes (the stylesheets the config's
+ *                                                   `renderers.<name>.themes` and extensions' `themes` add after its own) has
+ *                                                   loaded: read again what the page computes from the tokens, such as a
+ *                                                   terminal's colours; returns unsubscribe. A page loads with its themes.
  *   tower.remember(value) / await tower.recall()    a value kept for this page in the viewer's browser (null if none)
  *   tower.store.set(key, value) / await tower.store.get(key)   a value kept in the viewer's browser under a key every page
  *                                                   shares, the tower page included (null if none), such as the files viewed in a diff
@@ -221,7 +225,38 @@
       return
     }
     latest = { board: msg.board, self }
+    followThemes(msg.board.themes?.[servedAs] ?? [])
     for (const fn of subscribers) fn(msg.board, self)
+  }
+
+  /** @type {Set<() => void>} */
+  const themeWatchers = new Set()
+  /** The theme URLs this page loaded last, as the board said them; unknown before the first board. @type {string | undefined} */
+  let themesHeard
+  let themesLoaded = 0
+
+  /**
+   * A renderer's page follows its themes as the board says them: the tower links the stylesheet importing them into the
+   * page it serves (`data-tower-themes`), and when they change this links it again, drops the old link once the new one
+   * has loaded, and tells `onThemes` then, so what a page computes from the tokens (a terminal's colours) is read again.
+   * @param {string[]} urls
+   */
+  const followThemes = (urls) => {
+    if (served !== 'r') return
+    const heard = urls.join('\n')
+    const linked = [...document.querySelectorAll('link[data-tower-themes]')]
+    const first = themesHeard === undefined
+    if (heard === themesHeard || (first && urls.length > 0 === linked.length > 0)) return void (themesHeard = heard)
+    themesHeard = heard
+    const done = () => (linked.forEach((link) => link.remove()), themeWatchers.forEach((fn) => fn()))
+    if (!urls.length) return done()
+    const link = document.createElement('link')
+    link.rel = 'stylesheet'
+    link.href = `/renderers/${encodeURIComponent(servedAs)}/themes.css?${++themesLoaded}`
+    link.dataset.towerThemes = ''
+    link.addEventListener('load', done, { once: true })
+    link.addEventListener('error', done, { once: true })
+    document.head.append(link)
   }
 
   /** The tower stopped answering: told once, until a board comes back. */
@@ -784,6 +819,11 @@
     onScheme(fn) {
       schemeWatchers.add(fn)
       return () => schemeWatchers.delete(fn)
+    },
+    onThemes(fn) {
+      themeWatchers.add(fn)
+      listen()
+      return () => themeWatchers.delete(fn)
     },
   }
 })()

@@ -1742,13 +1742,14 @@ document.addEventListener('click', async (e) => {
 })
 $('home').onclick = goHome
 
-/** The terminals take the colours the page computes again: the scheme, or a pref the tokens follow (contrast), changed. */
+/** The terminals take the colours the page computes again: the scheme, a pref the tokens follow (contrast), or the themes changed. */
 function recolourTerminals() {
   mainRegion.rescheme()
   reschemeShell()
 }
 
 tower.onScheme(() => (recolourTerminals(), render()))
+tower.onThemes(() => (recolourTerminals(), placedRegions.forEach((r) => r.remeasure()), render()))
 tower.prefs.on(() => (applyTermFont(), recolourTerminals(), placedRegions.forEach((r) => r.remeasure()), render(), drawSettings()))
 document.fonts.addEventListener('loadingdone', () => placedRegions.forEach((r) => r.remeasure()))
 // A view or a framed page set a key the viewer's record keeps, such as a dismissal.

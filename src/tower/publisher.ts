@@ -13,8 +13,8 @@ import { bucketStart } from '../bridge/stats.ts'
 import { API_VERSION, apiError, type ApiError } from '../shared/api.ts'
 import type { BoardMsg } from '../shared/shelf-page.ts'
 import type { Config } from '../shared/model.ts'
-import { renderersOf } from '../renderers.ts'
-import { contributedRenderers } from '../bridge/extensions.ts'
+import { renderersOf, themesOf, themeUrls } from '../renderers.ts'
+import { contributedRenderers, contributedThemes } from '../bridge/extensions.ts'
 import { frozen } from '../bridge/frozen.ts'
 import { errorOf } from './answers.ts'
 import { eventStream } from './encoding.ts'
@@ -149,6 +149,7 @@ export const publisher = defineResource({
       stores: extensions.registry().stores,
       paths,
       keeps: keepsOf(config),
+      themes: themeUrls(themesOf(config, contributedThemes(extensions.accepted()))),
       viewers: viewersNow(),
       now: Date.now(),
     })

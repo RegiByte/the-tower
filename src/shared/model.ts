@@ -430,7 +430,7 @@ export const USER_KEYS = keysOf<UserConfig>()(['name'])
 export const EDITOR_KEYS = keysOf<EditorConfig>()(['window', 'open', 'goto'])
 export const RUNTIME_KEYS = keysOf<RuntimeConfig>()(['argv', 'plugins'])
 export const PROJECT_RUNTIME_KEYS = keysOf<ProjectRuntimeConfig>()(['plugins', 'command'])
-export const RENDERER_KEYS = keysOf<RendererConfig>()(['root', 'entry', 'settings', 'layout'])
+export const RENDERER_KEYS = keysOf<RendererConfig>()(['root', 'entry', 'settings', 'layout', 'themes'])
 export const EXTENSION_KEYS = keysOf<ExtensionConfig>()(['path', 'off', 'settings', 'guidance'])
 export const FLOOR_EXTENSION_KEYS = keysOf<FloorExtensionConfig>()(['settings'])
 export const CAPABILITY_KEYS = keysOf<CapabilityConfig>()(['off'])
@@ -439,8 +439,12 @@ export const CAPABILITY_KEYS = keysOf<CapabilityConfig>()(['off'])
  * A renderer: `root`, the absolute directory of its built files, all served below `/r/<name>/`; `entry`, its page in
  * it (`index.html` unless set); `settings`, its own configuration, which the core passes through unread.
  */
-/** A renderer the config declares or overrides; `layout`, the default arrangement of its views, over its own (`renderer.json`). */
-export type RendererConfig = { root?: string; entry?: string; settings?: Record<string, unknown>; layout?: Layout }
+/**
+ * A renderer the config declares or overrides; `layout`, the default arrangement of its views, over its own
+ * (`renderer.json`); `themes`, the absolute paths of the stylesheets its pages load after their own, after the accepted
+ * extensions' themes (`themesOf` in src/renderers.ts).
+ */
+export type RendererConfig = { root?: string; entry?: string; settings?: Record<string, unknown>; layout?: Layout; themes?: string[] }
 
 /** The renderers the core declares, by name: no extension contributes one of these names. */
 export const BUILT_IN_RENDERERS = ['page', 'week', 'tower3d'] as const

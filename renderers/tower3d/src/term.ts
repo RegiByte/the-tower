@@ -63,7 +63,7 @@ export function startTerminal({ tower }: { tower: Tower }) {
     })
   }
 
-  const offs = [tower.onScheme(() => open?.rescheme()), tower.prefs.on(() => (open?.rescheme(), void open?.refont()))]
+  const offs = [tower.onScheme(() => open?.rescheme()), tower.onThemes(() => open?.rescheme()), tower.prefs.on(() => (open?.rescheme(), void open?.refont()))]
   return { mountTerm, closeTerm, stop: () => offs.forEach((off) => off()) }
 }
 

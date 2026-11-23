@@ -102,7 +102,7 @@ import { readLanded } from '../landed.ts'
 import { originUrl } from '../machine.ts'
 import { fontFile, packageDir } from '../packages.ts'
 import { readPatterns } from '../patterns.ts'
-import { defaultRenderer, layoutReachOf, rendererFile, renderersOf, withLayoutProblems } from '../renderers.ts'
+import { defaultRenderer, layoutReachOf, rendererFile, renderersOf, themeFile, themesOf, themeSheet, themeUrls, withLayoutProblems, type Themes } from '../renderers.ts'
 import { CLI_REGIONS } from '../shared/regions.ts'
 import { API_VERSION, apiError, ApiError as ApiErrorSchema, CALLER_HEADERS, ERROR_STATUS, HOOK_DEADLINE, HOOKS, isApiError, ITEM_ID, QUERIES, refusal, TRANSPORT, VERBS, VIEWER_ID, VIEWER_RENDERER, type ApiError, type ErrorCode, type Query, type RouteInput } from '../shared/api.ts'
 import { FLOWS } from '../shared/flows.ts'
@@ -128,7 +128,7 @@ import { landingOf, WorktreeError } from '../worktrees.ts'
 import { errorOf, OK, type Answer } from './answers.ts'
 import { DispatchResource } from './dispatch.ts'
 import { collectionOn, contributedTo, floorShelf } from '../bridge/stores.ts'
-import { contributedRenderers } from '../bridge/extensions.ts'
+import { contributedRenderers, contributedThemes } from '../bridge/extensions.ts'
 import type { ExtensionsResource } from './extensions.ts'
 import type { PublisherResource } from './publisher.ts'
 import { lastFrames, screenMirrors } from './screens.ts'
@@ -624,16 +624,33 @@ export const httpServer = defineResource({
         const full = rendererFile(renderer, file || renderer.entry)
         if (!full || !statSync(full, { throwIfNoEntry: false })?.isFile()) return fail(res, 'not_found', `The renderer "${name}" serves no "${file}"`)
         if (mediaTypeOf(full) !== 'text/html') return serveFile(res, full, ANY_ORIGIN)
-        return preloaded(res, renderer, `/r/${name}/${file}`, full)
+        return preloaded(res, renderer, `/r/${name}/${file}`, full, (themeUrls(themesNow(config))[name] ?? []).length > 0)
+      })
+
+    /** Each renderer's themes as the config and the accepted extensions give them now. */
+    const themesNow = (config: Config): Themes => themesOf(config, contributedThemes(extensions.accepted()))
+
+    /** `/renderers/<name>/themes.css`: the stylesheet importing the renderer's themes, empty when it has none. */
+    const themesCss = (req: http.IncomingMessage, res: http.ServerResponse, name: string) =>
+      withConfig(res, (config) => revalidated(req, res, 'text/css', themeSheet(themeUrls(themesNow(config))[name] ?? [])))
+
+    /** A file of a renderer's theme `n`: the stylesheet itself, or one beside or below it that it reaches. */
+    const themeServed = (res: http.ServerResponse, name: string, n: number, file: string) =>
+      withConfig(res, (config) => {
+        const full = themeFile(themesNow(config), name, n, file)
+        return full ? serveFile(res, full, ANY_ORIGIN) : fail(res, 'not_found', `The renderer "${name}" has no theme ${n} that serves "${file}"`)
       })
 
     /**
      * A renderer's html page with what its module scripts import, at any depth: an import map naming each file and
-     * package at its hashed URL, so a reload asks only for what changed, unless the page has its own map; and a
-     * `modulepreload` link for each module, so the browser asks for them all at once, not one level of imports after another.
+     * package at its hashed URL, so a reload asks only for what changed, unless the page has its own map; a
+     * `modulepreload` link for each module, so the browser asks for them all at once, not one level of imports after
+     * another; and, when the renderer has themes, the stylesheet importing them, so the page draws themed from its first
+     * frame and its scripts run once the themes have loaded (`/tower.js` follows a change of them).
      */
-    async function preloaded(res: http.ServerResponse, renderer: Renderer, url: string, file: string) {
-      const html = readFileSync(file, 'utf8')
+    async function preloaded(res: http.ServerResponse, renderer: Renderer, url: string, file: string, themed: boolean) {
+      const read = readFileSync(file, 'utf8')
+      const html = themed ? read.replace('</head>', `<link rel="stylesheet" href="/renderers/${encodeURIComponent(renderer.name)}/themes.css" data-tower-themes>\n</head>`) : read
       const own = `/r/${renderer.name}/`
       const textOf = (module: string) => {
         if (!module.startsWith(own)) return moduleText(module)
@@ -971,6 +988,8 @@ export const httpServer = defineResource({
       }),
       apiRead('patterns', { path: /^\/patterns$/, answer: () => json(readPatterns() satisfies Reads['patterns']) }),
       apiRead('renderers', { path: /^\/renderers$/, answer: () => renderersRead() }),
+      plain('page', { path: /^\/renderers\/(?<name>[\w-]+(?:\.[\w-]+)?)\/themes\.css$/, serve: ({ req, res, params }) => themesCss(req, res, params.name!) }),
+      plain('page', { path: /^\/renderers\/(?<name>[\w-]+(?:\.[\w-]+)?)\/themes\/(?<n>\d+)\/(?<file>.+)$/, serve: ({ res, params }) => themeServed(res, params.name!, Number(params.n), params.file!) }),
       apiRead('archive/<project>', { path: /^\/archive\/(?<project>[\w-]+)$/, answer: ({ params }) => archive(params.project!) }),
       apiRead('conversations/<id>', { path: /^\/conversations\/(?<id>[\w-]+)$/, answer: ({ params }) => conversations(params.id!) }),
       apiRead('conversations/<id>/<conversation>', { path: /^\/conversations\/(?<id>[\w-]+)\/(?<conversation>[\w-]+)$/, answer: ({ params }) => conversation(params.id!, params.conversation!) }),

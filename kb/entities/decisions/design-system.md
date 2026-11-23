@@ -42,7 +42,7 @@ terminal that is a block of the ink colour.
   `ink` for text and `enamel` for dark surfaces, so components never name a scheme. How the viewer's choice reaches
   pages, terminals and framed shelf pages is [[viewer-prefs]]. A page's terminal reads no palette: its view
   ([`term-view.ts`](ref:hub/src/shared/term-view.ts)) takes `--enamel` and `--term-fg` as the page computes them at
-  its box, again on a change of scheme or prefs, so whatever sets the tokens (a scheme, more contrast, a theme)
+  its box, again on a change of scheme, prefs or themes, so whatever sets the tokens (a scheme, more contrast, a theme)
   recolours it. A canvas, which reads no CSS, takes the scheme's
   ([`terminalTheme`](ref:hub/src/shared/design.ts#terminalTheme)).
 - **Panels follow the scheme; the world doesn't.** Tower 3D's DOM chrome uses the shared components in the viewer's
