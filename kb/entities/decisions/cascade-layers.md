@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-11-23",
   "reviewed": "2026-11-23",
-  "refs": ["hub/src/shared/design.ts#designCss", "hub/src/shared/view-parts.ts#viewLayer", "hub/src/shared/view-parts.ts#componentsLayer", "hub/src/shared/view-parts.ts#viewCss", "hub/src/lib-ui/look.css", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/shared/tips.ts#watchTips", "hub/src/shared/ask.ts", "hub/renderers/tower3d/index.html", "hub/renderers/week/index.html"],
+  "refs": ["hub/src/shared/design.ts#designCss", "hub/src/shared/view-parts.ts#viewLayer", "hub/src/shared/view-parts.ts#componentsLayer", "hub/src/shared/view-parts.ts#rendererLayer", "hub/src/shared/view-parts.ts#viewCss", "hub/src/lib-ui/look.css", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/shared/tips.ts#watchTips", "hub/src/shared/ask.ts", "hub/renderers/tower3d/index.html", "hub/renderers/week/index.html"],
   "links": [
     { "to": "design-system", "verb": "orders", "carries": "/design.css's tokens and shared components in tower.design" },
     { "to": "tower-elements", "verb": "orders", "carries": "look.css's parts in tower.elements, its --ui-* mapping in tower.design" },
@@ -30,7 +30,8 @@ be something the tower chooses once, not weights nobody chose on purpose. The UI
 `@layer ui-sdk, tower.vendor, tower.design, tower.elements, tower.page, tower.views, theme;`, and every page links
 `/design.css` first among its sheets. A later layer wins over an earlier one whatever its selectors weigh; within one,
 weight and order decide as before. CSS in no layer wins over every layer, and an `!important` in an earlier layer over
-one in a later layer, so `[hidden]`, `[data-tucked]` and reduced motion hold against any theme.
+one in a later layer, so `[data-tucked]` and reduced motion, `!important` in the tower's sheets, hold against any
+theme. `[hidden]` hides by the browser's own rule, which any author rule outweighs.
 - `tower.vendor`: xterm's sheet, imported by the page and Tower 3D as `@import url(/xterm.css) layer(tower.vendor)`.
 - `tower.design`: the tokens and shared components of `/design.css`; the shared component sheets, through
   [`componentsLayer`](ref:hub/src/shared/view-parts.ts#componentsLayer), wherever a renderer or a view inserts them;
@@ -40,15 +41,19 @@ one in a later layer, so `[hidden]`, `[data-tucked]` and reduced motion hold aga
   `dialog`), which a shared component's class outweighs, as the components were written for.
 - `tower.elements`: [`look.css`](ref:hub/src/lib-ui/look.css)'s rules for the SDK's parts. The ⋯ trigger draws its
   hover edge there; it used to borrow it from the page's `button:hover`.
-- `tower.page`: the renderer's own sheet (the page's, Tower 3D's, The Week's).
+- `tower.page`: the renderer's own sheet: the page's, Tower 3D's and The Week's, written in the layer by name in their
+  static `<style>`, and any other renderer's through
+  [`rendererLayer`](ref:hub/src/shared/view-parts.ts#rendererLayer), so a renderer written from scratch reaches the
+  same place without naming it. Its element defaults go through `componentsLayer`.
 - `tower.views`: what [`viewCss`](ref:hub/src/shared/view-parts.ts#viewCss) emits, and
   [`viewLayer`](ref:hub/src/shared/view-parts.ts#viewLayer) for a view's rules written whole, among them the shared
   ask dialog's, which must outweigh a renderer's `button` rules.
 - `theme`: empty until a theme loads (pass 3c, T3).
 
-The names are not part of the API: an extension's view reaches its layer through the two helpers of `/lib/view.js`,
-and a theme names no layer, its loader wraps it. Framed documents (a shelf page, a showing) keep their own `<style>`
-in no layer over `/design.css`, which keeps the order they had.
+The names are not part of the API: a renderer and an extension's view reach their layers through the three helpers
+of `/lib/view.js`, and a theme names no layer, its loader wraps it. Framed documents (a shelf page, a showing) keep
+their own `<style>` in no layer over `/design.css`, which keeps the order they had, and so do the pages no theme
+reaches: KayKit's, Tower 3D's lab, editor and dresser, and the tower's problem page.
 
 The move was checked as a refactor: computed styles of every element (and `::before`, `::after`, `::placeholder`) and
 screenshots, in Chrome and WebKit, light and dark, before and after, on the floors, a worker's terminal, Brief,
@@ -64,6 +69,6 @@ Changes, a card's menu, the new-worker form's combobox and the settings popover.
   them in `tower.design` but adds a name to the order.
 - *`light-dark()` palettes instead of layers*: removes the dark-mode fight only.
 
-**Impact.** A theme in the `theme` layer outweighs the tower with any selector and can't unhide what the tower hides. A
+**Impact.** A theme in the `theme` layer outweighs the tower with any selector and can't undo what the tower sets `!important`. A
 view that writes a raw `<style>` with neither helper outweighs every layer, themes included. Inside a layer, selector
-weight still matters, so new rules keep it flat. `/lib/view.js` gained `viewLayer` and `componentsLayer`.
+weight still matters, so new rules keep it flat. `/lib/view.js` gained `viewLayer`, `componentsLayer` and `rendererLayer`.

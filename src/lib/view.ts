@@ -65,6 +65,7 @@ export {
   componentsLayer,
   keyedTip,
   paintOnce,
+  rendererLayer,
   viewCss,
   viewLayer,
 } from '../shared/view-parts.ts'
