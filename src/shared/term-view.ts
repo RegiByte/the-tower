@@ -273,6 +273,7 @@ const computedColor = (el: HTMLElement, token: string) => {
   el.append(probe)
   const color = getComputedStyle(probe).color
   probe.remove()
+  if (!color) throw new Error(`${token} has no colour at a terminal outside the document: recolour it once it is attached`)
   pixel ??= new OffscreenCanvas(1, 1).getContext('2d', { willReadFrequently: true })!
   pixel.clearRect(0, 0, 1, 1)
   pixel.fillStyle = color
@@ -388,7 +389,17 @@ export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): 
   host.addEventListener('paste', onPaste, { capture: true })
   host.addEventListener('drop', onDrop)
   host.addEventListener('dragover', onDragOver)
-  const observer = new ResizeObserver(() => machine.dispatch({ type: 'pane' }))
+  /** A recolour asked while the box was out of the document, where no token resolves: taken when it is back. */
+  let recolour = false
+  const takeColours = () => {
+    if (!term) return
+    recolour = !host.isConnected
+    if (!recolour) term.options.theme = themeAt(host)
+  }
+  const observer = new ResizeObserver(() => {
+    if (recolour) takeColours()
+    machine.dispatch({ type: 'pane' })
+  })
   observer.observe(host)
   return {
     term: () => term,
@@ -400,7 +411,7 @@ export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): 
       await loadTerminalFont(font)
       if (fontShown === font && term) machine.dispatch({ type: 'font' })
     },
-    rescheme: () => term && (term.options.theme = themeAt(host)),
+    rescheme: takeColours,
     close: () => {
       stop()
       observer.disconnect()
