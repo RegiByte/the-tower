@@ -20,7 +20,7 @@ export const elements = {
       presentation: '`auto`: a sheet from the bottom of a small touch screen, a popover elsewhere; `sheet`: always a sheet.',
     },
     properties: {
-      items: "What it offers, as the SDK's `MenuData`: items (`{value, label}`), groups, separators, checkboxes, radio groups and submenus. Set it on `payloadchange`.",
+      items: "What it offers, as the SDK's `MenuData`: items (`{value, label}`), groups, separators, checkboxes, radio groups and submenus. Set it on `payloadchange`. An item's, checkbox's or radio item's `hint`, the tower's own, shows as a muted line under its label, and describes it to a screen reader without naming it; hints are found by value, so items sharing a value share one.",
       open: 'Whether it is open.',
       api: "The SDK's menu controller.",
       openAt: '`openAt(payload, anchor)`: opens it for a subject at an element or a point (`{x, y}`), as a right-click on an area does; resolves once it closes.',
@@ -56,6 +56,32 @@ export const elements = {
   },
 } satisfies Record<string, ElementContract>
 
+/** An entry of the SDK's `MenuData`, each entry with a value, in its groups and submenus too, with a `hint` the tower shows under its label. */
+type Hinted<T> = T extends { items: readonly (infer I)[] } ? Omit<T, 'items'> & { items: Hinted<I>[] } : T extends { value: string } ? T & { hint?: string } : T
+
+/** What a `<tower-menu>` offers: the SDK's `MenuData`, each item with an optional `hint`. */
+export type TowerMenuData = Hinted<MenuData[number]>[]
+
+/** The hint of each item of `items` that has one, by its value. */
+const hintsOf = (items: TowerMenuData, into = new Map<string, string>()): Map<string, string> => {
+  for (const item of items) {
+    if (typeof item === 'string') continue
+    if ('items' in item) hintsOf(item.items as TowerMenuData, into)
+    else if ('hint' in item && item.hint) into.set(item.value, item.hint)
+  }
+  return into
+}
+
+/** `items` as the SDK takes them: without their hints. */
+const bare = (items: TowerMenuData): MenuData =>
+  items.map((item) => {
+    if (typeof item === 'string') return item
+    if ('items' in item) return { ...item, items: bare(item.items as TowerMenuData) } as MenuData[number]
+    if (!('hint' in item)) return item
+    const { hint: _, ...entry } = item
+    return entry
+  })
+
 /** The id of the SDK menu inside a `<tower-menu>`: its triggers name it. */
 const innerId = (id: string) => `${id}--ui`
 
@@ -68,7 +94,10 @@ const areaStates = new WeakMap<Element, CustomStateSet>()
 class TowerMenu extends HTMLElement {
   static observedAttributes = ['modal', 'loop', 'presentation']
   #inner?: HTMLElementTagNameMap['ui-menu']
-  #items?: MenuData
+  #items?: TowerMenuData
+  #hints = new Map<string, string>()
+  /** The SDK renders items as the menu and its submenus open: each rendered item gets its hint as it appears. */
+  #rendered = new MutationObserver(() => this.#describe())
 
   connectedCallback() {
     if (this.#inner) return
@@ -79,7 +108,8 @@ class TowerMenu extends HTMLElement {
     for (const name of TowerMenu.observedAttributes) this.#copy(inner, name)
     this.append(inner)
     this.#inner = inner
-    if (this.#items) inner.items = this.#items
+    if (this.#items) inner.items = bare(this.#items)
+    this.#rendered.observe(inner, { childList: true, subtree: true })
     inner.addEventListener('payloadchange', () => (this.#announced = true))
     inner.addEventListener('openchange', (event) => this.#announce(event as CustomEvent<{ value: boolean; reason: string }>), { capture: true })
     relay(inner, this, ['payloadchange', 'action', 'openchange'])
@@ -118,6 +148,31 @@ class TowerMenu extends HTMLElement {
     if (!this.dispatchEvent(new CustomEvent('checkedchange', { detail, cancelable: event.cancelable, bubbles: true }))) event.preventDefault()
   }
 
+  /**
+   * Each rendered item with a value shows its hint as a line under its label, and an item without one shows none. The
+   * line is hidden from the item's name and is its description instead. Items are found by tag: the SDK marks a part's
+   * `data-slot` after rendering it. A pass changes only what differs, so the observer's own writes end there.
+   */
+  #describe() {
+    for (const item of this.#inner?.querySelectorAll(':is(ui-menu-item, ui-menu-checkbox-item, ui-menu-radio-item)[value]') ?? []) {
+      const value = item.getAttribute('value')!
+      const hint = this.#hints.get(value)
+      const line = item.querySelector(':scope > small')
+      if (hint === undefined) {
+        line?.remove()
+        if (line) item.removeAttribute('aria-describedby')
+        continue
+      }
+      const id = `${this.id}--hint:${value}`
+      if (line?.textContent === hint && line.id === id) continue
+      const shown = line ?? item.appendChild(document.createElement('small'))
+      shown.id = id
+      shown.setAttribute('aria-hidden', 'true')
+      shown.textContent = hint
+      item.setAttribute('aria-describedby', id)
+    }
+  }
+
   #copy(inner: Element, name: string) {
     const value = this.getAttribute(name)
     if (value === null) inner.removeAttribute(name)
@@ -134,11 +189,13 @@ class TowerMenu extends HTMLElement {
     }
   }
 
-  set items(items: MenuData) {
+  set items(items: TowerMenuData) {
     this.#items = items
-    if (this.#inner) this.#inner.items = items
+    this.#hints = hintsOf(items)
+    if (this.#inner) this.#inner.items = bare(items)
+    this.#describe()
   }
-  get items(): MenuData {
+  get items(): TowerMenuData {
     return this.#items ?? []
   }
   get open() {

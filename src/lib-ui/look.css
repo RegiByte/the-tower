@@ -88,6 +88,11 @@
     &[data-destructive] {
       color: var(--ui-destructive);
     }
+
+    &:has(> small) {
+      flex-wrap: wrap;
+      row-gap: 0;
+    }
   }
 
   tower-menu [data-slot="menu-content"] [data-slot="menu-trigger"]::after {
@@ -138,6 +143,14 @@
   tower-combobox [data-slot="combobox-item-indicator"] {
     display: flex;
     margin-inline-start: auto;
+  }
+
+  tower-menu :is([data-slot="menu-item"], [data-slot="menu-checkbox-item"], [data-slot="menu-radio-item"]) > small {
+    flex-basis: 100%;
+    order: 2;
+    color: var(--ui-muted-foreground);
+    font-size: calc(var(--ui-font-size) - 0.0625rem);
+    line-height: 1.35;
   }
 
   tower-menu [data-slot="menu-shortcut"] {

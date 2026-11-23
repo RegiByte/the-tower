@@ -52,8 +52,11 @@ const PLACED = '\t'
  */
 export const placedKey = (key, place) => `${key}${PLACED}${place}`
 
-/** A line of `subjectMenu` as the SDK's menu data: a tick where it says what is open. @param {MenuLine} l */
-const itemOf = (l) => (l.open === undefined ? { value: l.id, label: l.label, ...(l.destructive && { destructive: true }) } : { type: /** @type {const} */ ('checkbox'), value: l.id, label: l.label, checked: l.open, closeOnSelect: true })
+/** A line of `subjectMenu` as `<tower-menu>`'s data: a tick where it says what is open, its hint under its label. @param {MenuLine} l */
+const itemOf = (l) => ({
+  ...(l.open === undefined ? { value: l.id, label: l.label, ...(l.destructive && { destructive: true }) } : { type: /** @type {const} */ ('checkbox'), value: l.id, label: l.label, checked: l.open, closeOnSelect: true }),
+  ...(l.hint && { hint: l.hint }),
+})
 
 /** Groups as the SDK's menu data: each under its name, a line between groups. @template G @param {G[]} all @param {(g: G) => object} item */
 const separated = (all, item) => all.flatMap((g, n) => [...(n ? [{ type: /** @type {const} */ ('separator') }] : []), item(g)])
