@@ -2,11 +2,11 @@
 {
   "type": "decision",
   "name": "Desk dressing: a workstation's KayKit props derived from its worker's card",
-  "summary": "Every workstation in Tower 3D is an L (the Blender desk plus a KayKit cabinet return), and what stands on it is a pure function of the worker's card over a scene document placed by hand: a state of each of its groups (status props on the desk, a mess growing with context on the return, candy in October), and in code a pizza box per finished turn on the floor and a frame in a slot for each thing it showed. Drawn on the office's KayKit path, one batch per pack and theme.",
+  "summary": "Every workstation in Tower 3D is an L (the Blender desk plus a KayKit cabinet return), and what stands on it is a pure function of the worker's card over a scene document placed by hand: a state of each of its groups (status props on the desk, a mess growing with context on the return, candy in October), and in code a pizza box per finished turn on the floor and a frame in a slot for each thing it showed. Drawn on the office's KayKit path.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-11-17",
+  "reviewed": "2026-11-23",
   "refs": [
     "hub/renderers/tower3d/src/dress.ts#dress",
     "hub/renderers/tower3d/src/dress.ts#pileState",
@@ -21,8 +21,7 @@
     "hub/renderers/kaykit/scenes/prefabs/desk_dress.json",
     "hub/renderers/tower3d/src/kit.ts#fillLayer",
     "hub/renderers/tower3d/src/layout.ts#RETURN",
-    "hub/scripts/tower3d-kit.ts",
-    "hub/renderers/tower3d/src/building.ts"
+    "hub/renderers/tower3d/src/building.ts#dressLevels"
   ]
 }
 ---
@@ -57,23 +56,19 @@ text, while the status colours stay the loudest thing on the floor. The state al
 - Slots and props are in desk space and the desk's group carries its turn ([[workstations]]), so a turned desk turns
   its dressing with it; `desk_dress.json` knows nothing of the turn.
 - Every workstation is an L: a KayKit cabinet return off the desk's right end
-  ([`RETURN`](ref:hub/renderers/tower3d/src/layout.ts#RETURN)), in a grey atlas that reads as a filing cabinet beside
-  the desk's wood; free stations draw it bare.
-- The dressing goes through the office's one KayKit path ([[office-kaykit]]), shared with the zones: what `dress`
-  places in code becomes a scene item in the desk's frame, its scale from
-  [`PROPS`](ref:hub/renderers/tower3d/src/dress.ts#PROPS) on top of the catalog's norms, and
-  [`fillLayer`](ref:hub/renderers/tower3d/src/kit.ts#fillLayer) refills one layer for every workstation on each
-  board, a batch per pack, theme and surface. `npm run tower3d` first measures the models it uses, vendored in
-  `renderers/tower3d/kaykit/` and `renderers/tower3d/forge/`, into one git-ignored kit file built beside the bundle
-  ([`tower3d-kit.ts`](ref:hub/scripts/tower3d-kit.ts), [[bundled-renderer]]), so building needs no bundle on disk.
+  ([`RETURN`](ref:hub/renderers/tower3d/src/layout.ts#RETURN)), in an atlas that reads as a filing cabinet beside the
+  desk's wood; free stations draw only the document's shared items.
+- The dressing goes through the office's one KayKit path ([[office-kaykit]]): what `dress` places in code becomes a
+  scene item in the desk's frame, its scale from [`PROPS`](ref:hub/renderers/tower3d/src/dress.ts#PROPS) on top of
+  the catalog's norms, and every board refills each level's dressing layer
+  ([`dressLevels`](ref:hub/renderers/tower3d/src/building.ts#dressLevels),
+  [`fillLayer`](ref:hub/renderers/tower3d/src/kit.ts#fillLayer)).
 
 **Alternatives considered.**
-- *Room scale for everything.* Right for furniture; tabletop props come out two to three times real size beside
+- *Room scale for everything.* Right for furniture; KayKit's tabletop props come out larger than real beside
   `desk.glb`'s keyboard, so each prop carries a further scale.
 - *The glTF's standard material.* At night it is darker and smoother than the workers and the desk. Toon keeps one
   language.
-- *A path of its own* (glTFs loaded one by one, an InstancedMesh per model): more draw calls, and a second path to
-  keep beside the playground's.
 - *The pile in code, each placement nudged by the worker's id*: it could not be placed by hand.
 - *One state at a time, or a pile state adding only its own items over the last.* Status, pile and season change
   apart, so a desk needs one of each; a state holding the whole pile at its share can be arranged on its own.
