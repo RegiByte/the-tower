@@ -2809,6 +2809,29 @@
         "states": {}
       }
     },
+    "/lib-ui/dialog.js": {
+      "tower-dialog": {
+        "attributes": {
+          "label": {
+            "since": "2.31"
+          }
+        },
+        "properties": {
+          "body": {
+            "since": "2.31"
+          },
+          "open": {
+            "since": "2.31"
+          }
+        },
+        "events": {
+          "openchange": {
+            "since": "2.31"
+          }
+        },
+        "states": {}
+      }
+    },
     "/lib-ui/menu.js": {
       "tower-menu": {
         "attributes": {

@@ -7,6 +7,7 @@
  */
 import '@ui-sdk/web/menu'
 import '@ui-sdk/web/combobox'
+import '@ui-sdk/web/dialog'
 import look from './look.css'
 
 const sheet = new CSSStyleSheet()
