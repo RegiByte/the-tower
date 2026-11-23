@@ -48,7 +48,7 @@
   "collections": {
     "policies": {
       "label": "Policies",
-      "description": "Standing work the tower starts on a schedule: one markdown file each, a `# Title`, a ```json header, then the prompt. `tower x policies list` lists them."
+      "description": "Standing work the tower starts on a schedule: one markdown file each, a `# Title`, a JSON header, then the prompt. `tower x policies list` lists them."
     }
   },
   "streams": {
