@@ -242,8 +242,14 @@ const ANSI = {
   brightWhite: '#f6f3ea',
 }
 
-/** An xterm.js `ITheme`: the terminal is a block of the scheme's enamel, its ANSI colours warmed to sit beside paper. */
-export const terminalTheme = (scheme: Scheme) => ({ ...ANSI, background: palettes[scheme].enamel, cursorAccent: palettes[scheme].enamel })
+/**
+ * An xterm.js `ITheme` on a surface: the terminal is a block of `enamel` with its text in `termFg`, its ANSI colours
+ * warmed to sit beside paper. A page's terminal reads both as the page computes `--enamel` and `--term-fg`.
+ */
+export const terminalThemeOn = ({ enamel, termFg }: { enamel: string; termFg: string }) => ({ ...ANSI, foreground: termFg, cursor: termFg, background: enamel, cursorAccent: enamel })
+
+/** The terminal's theme in a scheme as the design defines it, for surfaces that read no CSS (a canvas). */
+export const terminalTheme = (scheme: Scheme) => terminalThemeOn({ enamel: palettes[scheme].enamel, termFg: ANSI.foreground })
 
 /**
  * The sky through the day, by the viewer's clock: the gradient top to horizon, the strength of the sun, how many

@@ -33,7 +33,7 @@ type Target = {
   run: (id: string, e: KeyboardEvent) => boolean
 }
 
-/** The terminal: one mounted at a time, redrawn when the viewer's scheme or terminal face changes. */
+/** The terminal: one mounted at a time, recoloured when the viewer's scheme or prefs change, refonted when its terminal face does. */
 export function startTerminal({ tower }: { tower: Tower }) {
   let open: TermViewHandle | undefined
 
@@ -53,7 +53,6 @@ export function startTerminal({ tower }: { tower: Tower }) {
       wheelReports: t.wheelReports,
       scrollback: t.scrollback,
       font: () => terminalFont(tower.prefs.get()),
-      scheme: () => tower.scheme(),
       keymap: t.keys,
       run: t.run,
       mode: (m) => t.onMode(modeText(m), m.t === 'owning'),
@@ -64,7 +63,7 @@ export function startTerminal({ tower }: { tower: Tower }) {
     })
   }
 
-  const offs = [tower.onScheme(() => open?.rescheme()), tower.prefs.on(() => void open?.refont())]
+  const offs = [tower.onScheme(() => open?.rescheme()), tower.prefs.on(() => (open?.rescheme(), void open?.refont()))]
   return { mountTerm, closeTerm, stop: () => offs.forEach((off) => off()) }
 }
 

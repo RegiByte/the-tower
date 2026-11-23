@@ -2,7 +2,7 @@ import type { FitAddon } from '@xterm/addon-fit'
 import type { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes'
 import type { WebLinksAddon } from '@xterm/addon-web-links'
 import type { ILink, Terminal } from '@xterm/xterm'
-import { terminalTheme, type Scheme } from './design.ts'
+import { terminalThemeOn } from './design.ts'
 import type { Keys } from './keymap.ts'
 import { loop, timers, type Handlers, type StateEffect, type TimerEffect } from './loop.ts'
 import type { ScreenMsg, TerminalMsg } from './shelf-page.ts'
@@ -226,7 +226,6 @@ export type TermViewIo = {
   wheelReports: boolean
   scrollback: number
   font(): TermFont
-  scheme(): Scheme
   /** The board's keys now (`board.keys`), and the keymap command a key inside the terminal runs: true keeps its key from the PTY. */
   keymap(): Keys
   run(command: string, e: KeyboardEvent): boolean
@@ -245,6 +244,7 @@ export type TermViewHandle = {
   state(): TermView
   /** Takes the viewer's face and size once loaded, if they changed. */
   refont(): Promise<void>
+  /** Takes the terminal's colours as the page computes them now: after a change of scheme, contrast or theme. */
   rescheme(): void
   close(): void
 }
@@ -259,6 +259,30 @@ export type TermViewHandle = {
  * key from the app's Edit menu, so nothing would be pasted. Ctrl with Alt is Windows' AltGr, which xterm types.
  */
 const keepTextareaEmpty = (e: KeyboardEvent) => e.metaKey || (e.ctrlKey && !e.altKey) || e.preventDefault()
+
+let pixel: OffscreenCanvasRenderingContext2D | undefined
+
+/**
+ * A colour token as the page computes it at `el`, as `#rrggbb`, or `#rrggbbaa` when translucent, the forms xterm.js
+ * parses: a probe takes the token as its colour, which the browser resolves whatever CSS wrote it in (a mix, oklch),
+ * and a canvas pixel painted in it gives its sRGB.
+ */
+const computedColor = (el: HTMLElement, token: string) => {
+  const probe = el.ownerDocument.createElement('i')
+  probe.style.cssText = `display: none; color: var(${token})`
+  el.append(probe)
+  const color = getComputedStyle(probe).color
+  probe.remove()
+  pixel ??= new OffscreenCanvas(1, 1).getContext('2d', { willReadFrequently: true })!
+  pixel.clearRect(0, 0, 1, 1)
+  pixel.fillStyle = color
+  pixel.fillRect(0, 0, 1, 1)
+  const [r, g, b, a] = pixel.getImageData(0, 0, 1, 1).data
+  return `#${(a < 255 ? [r, g, b, a] : [r, g, b]).map((c) => c.toString(16).padStart(2, '0')).join('')}`
+}
+
+/** The terminal's theme in the colours the page computes at `el`: `--enamel` behind, `--term-fg` its text. */
+const themeAt = (el: HTMLElement) => terminalThemeOn({ enamel: computedColor(el, '--enamel'), termFg: computedColor(el, '--term-fg') })
 
 /** Opens a view of a PTY's stream in `host`, which it fits and watches for resizes, until `close`. */
 export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): TermViewHandle {
@@ -275,7 +299,7 @@ export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): 
       open: ({ data, cols, rows, exited }) => {
         term?.dispose()
         const font = io.font()
-        term = new xterm.Terminal({ cols, rows, fontSize: fitSize(host, cols, rows, font), fontFamily: font.family, cursorBlink: false, scrollback: io.scrollback, theme: terminalTheme(io.scheme()), linkHandler: { activate: openLink }, allowProposedApi: true })
+        term = new xterm.Terminal({ cols, rows, fontSize: fitSize(host, cols, rows, font), fontFamily: font.family, cursorBlink: false, scrollback: io.scrollback, theme: themeAt(host), linkHandler: { activate: openLink }, allowProposedApi: true })
         fit = new xterm.FitAddon()
         term.loadAddon(fit)
         if (xterm.WebLinksAddon) term.loadAddon(new xterm.WebLinksAddon(openLink))
@@ -376,7 +400,7 @@ export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): 
       await loadTerminalFont(font)
       if (fontShown === font && term) machine.dispatch({ type: 'font' })
     },
-    rescheme: () => term && (term.options.theme = terminalTheme(io.scheme())),
+    rescheme: () => term && (term.options.theme = themeAt(host)),
     close: () => {
       stop()
       observer.disconnect()
