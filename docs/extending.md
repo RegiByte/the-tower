@@ -295,8 +295,10 @@ and in more contrast, rounder corners, and headings in sentence case.
   a theme can't show an element the tower marks `hidden`.
 - **The order.** Each theme is imported into a cascade layer of its own, the accepted extensions' first in their
   order, then the config's, so a later theme outweighs an earlier one. A theme names no layer: the tower wraps it,
-  and the layers' names are not part of the API. Files beside a theme's stylesheet are served with it, so it reaches
-  its fonts and pictures by relative URL.
+  and the layers' names are not part of the API.
+- **One file.** The tower serves a theme's stylesheet alone, at its own origin only: nothing beside it, so a theme
+  kept among other files shows none of them. A face or a picture it needs goes in as a `data:` URL, or is a face the
+  viewer has installed.
 - **Live.** A page loads with its themes, and follows a change of them (the config's list, an extension accepted or
   turned off) as the board says it: `tower.onThemes` tells it when the new ones have loaded. An edit to a theme's
   file shows on the next load.

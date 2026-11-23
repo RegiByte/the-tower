@@ -285,7 +285,7 @@ export const themesOf = (config: Config, contributed: Themes): Themes => {
   return merged
 }
 
-/** Where theme `n` of `renderer` is served: below a folder of its own, so the files beside it resolve as they sit. */
+/** Where theme `n` of `renderer` is served: its own name below a path of its own. */
 export const themeUrl = (renderer: string, n: number, file: string): string =>
   `/renderers/${encodeURIComponent(renderer)}/themes/${n}/${encodeURIComponent(path.basename(file))}`
 
@@ -300,8 +300,11 @@ export const themeUrls = (themes: Themes): Themes =>
  */
 export const themeSheet = (urls: string[]): string => urls.map((url, n) => `@import url("${url}") layer(theme.t${n});`).join('\n')
 
-/** The file `/renderers/<name>/themes/<n>/<file>` serves: one in the folder of the renderer's theme `n`, or below it. */
+/**
+ * The file `/renderers/<name>/themes/<n>/<file>` serves: the renderer's theme `n` itself, when `file` is its name.
+ * Nothing beside it is served, so a theme kept in a folder of other files shows none of them.
+ */
 export const themeFile = (themes: Themes, renderer: string, n: number, file: string): string | undefined => {
   const theme = themes[renderer]?.[n]
-  return theme === undefined ? undefined : fileBelow(path.dirname(theme), file)
+  return theme !== undefined && file === path.basename(theme) ? theme : undefined
 }

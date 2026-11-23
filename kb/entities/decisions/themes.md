@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-11-23",
   "reviewed": "2026-11-23",
-  "refs": ["hub/src/renderers.ts#themesOf", "hub/src/renderers.ts#themeSheet", "hub/src/renderers.ts#themeUrls", "hub/src/renderers.ts#themeFile", "hub/src/bridge/extensions.ts#contributedThemes", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/http.ts#preloaded", "hub/src/tower/http.ts#themesCss", "hub/src/tower/http.ts#themeServed", "hub/src/tower/publisher.ts", "hub/src/bridge/board.ts#Board", "hub/src/tower/tower.js", "hub/renderers/page/page.js#recolourTerminals", "hub/renderers/tower3d/src/term.ts", "hub/src/config-check.ts#themeProblems", "hub/examples/extensions/harbor/harbor.css"],
+  "refs": ["hub/src/renderers.ts#themesOf", "hub/src/renderers.ts#themeSheet", "hub/src/renderers.ts#themeUrls", "hub/src/renderers.ts#themeFile", "hub/src/bridge/extensions.ts#contributedThemes", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/http.ts#preloaded", "hub/src/tower/http.ts#withThemes", "hub/test/server.test.ts", "hub/src/tower/http.ts#themesCss", "hub/src/tower/http.ts#themeServed", "hub/src/tower/publisher.ts", "hub/src/bridge/board.ts#Board", "hub/src/tower/tower.js", "hub/renderers/page/page.js#recolourTerminals", "hub/renderers/tower3d/src/term.ts", "hub/src/config-check.ts#themeProblems", "hub/examples/extensions/harbor/harbor.css"],
   "links": [
     { "to": "cascade-layers", "verb": "loads into", "carries": "each theme in a layer of its own inside theme" },
     { "to": "design-system", "verb": "sets", "carries": "the palette and the character tokens" },
@@ -32,10 +32,13 @@ touches, the same for the user's config and for an extension that ships a look.
   file ([`themeProblems`](ref:hub/src/config-check.ts#themeProblems)).
 - *One stylesheet.* `/renderers/<name>/themes.css` ([`themeSheet`](ref:hub/src/renderers.ts#themeSheet)) imports
   each theme into `layer(theme.t<n>)`, so a later theme outweighs an earlier one and no theme names a layer. Theme
-  `n` is served at `/renderers/<name>/themes/<n>/<file>`, its folder with it
-  ([`themeFile`](ref:hub/src/renderers.ts#themeFile)), so it reaches its fonts and pictures by relative URL.
+  `n` is served at `/renderers/<name>/themes/<n>/<file>`, that one file alone and with no CORS header
+  ([`themeFile`](ref:hub/src/renderers.ts#themeFile)): only the renderer's pages load it, at the tower's origin, so no
+  page elsewhere reads it and nothing beside it (a home folder, an extension's script holding its key) is served.
 - *Themed from the first frame.* The tower links that stylesheet into each renderer page it serves when the
-  renderer has themes ([`preloaded`](ref:hub/src/tower/http.ts#preloaded)): a parser-inserted sheet blocks the
+  renderer has themes ([`preloaded`](ref:hub/src/tower/http.ts#preloaded), at the end of its head, or of the document
+  without one: [`withThemes`](ref:hub/src/tower/http.ts#withThemes)), naming their URLs, which `/tower.js` compares the
+  board's with: a parser-inserted sheet blocks the
   page's scripts until it has loaded, so a terminal opens in the theme's colours. A renderer of the user's own takes
   its themes with nothing to write.
 - *Live.* The board carries each renderer's theme URLs (`themes`, derived in the publisher). `/tower.js` links the
@@ -51,6 +54,8 @@ reached at best effort and may change in any release (`docs/extending.md`, "Writ
 - *Load themes from the board only, in `/tower.js`*: live, but every load draws unthemed until the board arrives,
   and a terminal opened before the theme loads flashes in the stock colours.
 - *Inject only, reload on a change*: simpler, but a config edit the tower already reads live would need a reload.
+- *Serving a theme's folder*, so it reaches fonts and pictures by relative URL: a theme kept in the home folder or
+  beside an extension's script would serve everything around it. A theme is one file; a face goes in as a `data:` URL.
 - *A served stylesheet the renderer links itself*: every renderer, the core's included, would have to know the URL.
 - *The config's `themes` replacing the extensions'*, as a config field over an extension's renderer does: a user
   adding one theme would silently drop an accepted extension's; turning the extension off is the way to drop it.
