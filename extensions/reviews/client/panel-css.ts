@@ -23,7 +23,7 @@ export const reviewsPanelCss = `
 .reviews-panel .note.mine { border-left-color: var(--accent); }
 .reviews-panel .note.new { border-color: var(--accent); border-left-color: var(--accent); }
 .reviews-panel .note > header { display: flex; align-items: baseline; gap: var(--sp-m); margin-bottom: var(--sp-xs); font-size: var(--fs-s); color: var(--muted); }
-.reviews-panel .note > header b { font: var(--display-weight) var(--fs-m)/1 var(--display); letter-spacing: var(--heading-tracking); color: var(--ink); }
+.reviews-panel .note > header b { font: var(--display-weight) var(--fs-m)/1 var(--display); letter-spacing: var(--name-tracking); color: var(--ink); }
 .reviews-panel .note > header .n { font: var(--fs-s) var(--mono); }
 .reviews-panel .note > header .re { font: var(--fs-s) var(--mono); color: var(--accent); cursor: pointer; }
 .reviews-panel .note > header button.re { margin-left: 0; padding: 0; border: none; background: none; }

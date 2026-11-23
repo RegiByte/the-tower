@@ -79,6 +79,7 @@
       "--line-strong",
       "--mono",
       "--muted",
+      "--name-tracking",
       "--needs",
       "--needs-text",
       "--offered",

@@ -675,7 +675,8 @@ renderer at once, each defaulting to an existing token or a fixed value, alike i
 | `--radius-control` | corners of buttons, fields, tabs, segments and rows | `var(--radius)` |
 | `--shadow-card` | a worker's card at rest (`--shadow` raises it under the pointer, and raises the heads of views) | `none` |
 | `--display-weight` | the display face's weight, as a number (100 to 900, not a keyword): headings, signs, callsigns, labels; the brand, the greeting and a sign's number draw 100 heavier | `800` |
-| `--heading-case`, `--heading-tracking` | headings and signs; callsigns take the tracking alone | `uppercase`, `.06em` |
+| `--heading-case`, `--heading-tracking` | headings and signs | `uppercase`, `.06em` |
+| `--name-tracking` | names: callsigns wherever they are drawn | `.04em` |
 | `--label-case`, `--label-tracking` | labels: `.eyebrow`, menu group labels, the heads of lists | `uppercase`, `.08em` |
 
 A page's terminal takes `--enamel` (its background) and `--term-fg` (its text) as the page computes them, so a

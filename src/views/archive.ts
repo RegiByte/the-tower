@@ -24,7 +24,7 @@ const STYLE = viewCss(
   & .past { overflow: hidden; padding: var(--sp-s) var(--sp-l); border-radius: var(--radius-control); font-size: var(--fs-m); color: var(--muted); cursor: pointer; }
   & .past:hover { background: var(--hover); color: var(--ink); }
   & .past .head { display: flex; align-items: center; gap: var(--sp-m); }
-  & .past .call { font: var(--display-weight) var(--fs-m)/1 var(--display); letter-spacing: var(--heading-tracking); color: var(--ink); text-decoration: none; }
+  & .past .call { font: var(--display-weight) var(--fs-m)/1 var(--display); letter-spacing: var(--name-tracking); color: var(--ink); text-decoration: none; }
   & .past .when { color: var(--faint); white-space: nowrap; }
   & .past .head .when { margin-left: auto; }
   & .past .conv { display: flex; align-items: center; gap: var(--sp-s); padding-left: var(--sp-xl); }
