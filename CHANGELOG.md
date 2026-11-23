@@ -12,6 +12,22 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.16.0
+
+Three keyboard additions to the tower page, from Glauco Neves (#703, #704, #706). API 2.23. Nothing to restart beyond
+the tower (`tower update` does it): the new default chord rides the board, so a page reload alone doesn't pick it up.
+
+- **⌥W sends the selected worker home**, through Send home's own confirm and Resume toast. It is the keymap's
+  `send-home`, rebindable or unbound (`null`) under the config's `keys`. Send home's button tip names the chord, and
+  the palette lists it once, as the selected worker's own entry.
+- **A key to start a worker on any floor:** `spawn-pick` opens the palette over the floors a worker can start on.
+  Typing narrows them by name, and a pick opens the new-worker form there. With nothing typed, the selected worker's
+  floor comes first, then recent picks. It has no default chord, since a browser keeps ⌘N and ⌘⇧N for its windows:
+  bind it in Tower.app (`"keys": { "spawn-pick": "Meta+Shift+N" }`), or run "New worker on a floor" from ⌘K.
+  `/lib/palette.js` adds `spawnPickEntries` and `rankSpawnPick`.
+- **A click on a worker's Terminal tab focuses its terminal**, as the pane chord already did, so typing needs no
+  second click.
+
 ## v2.15.0
 
 The tower page keeps what you hold while it redraws, everywhere a working worker's churn reached it (pass 3b, the
