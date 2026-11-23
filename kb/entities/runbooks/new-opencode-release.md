@@ -4,7 +4,7 @@
   "name": "New opencode release",
   "summary": "An opencode release outside the tested range: the board flags each worker on it, doctor names it, and the range moves only after `tool:opencode-check` records the scenarios again on it and reads clean against the baseline and the fixtures.",
   "in": "tower",
-  "reviewed": "2026-11-17",
+  "reviewed": "2026-11-23",
   "refs": ["hub/src/shared/opencode.ts#OPENCODE_TESTED", "hub/src/shared/opencode.ts#OPENCODE_SURFACES", "hub/scripts/runtime-check.ts", "hub/scripts/runtime-check.ts#due", "hub/scripts/runtime-check.ts#sessionPid", "hub/scripts/runtime-check.opencode.ts#OPENCODE", "hub/scripts/runtime-check.opencode.scenarios.ts#SCENARIOS", "hub/scripts/runtime-check.opencode.fakes.ts#fakes", "hub/scripts/runtime-check.report.ts#scenarioDifferences", "hub/test/opencode-shapes.json", "hub/test/opencode.test.ts", "hub/test/fixtures/"]
 }
 ---
@@ -20,20 +20,18 @@ as [[new-claude-release]] says for Claude.
 `test/fixtures/opencode-*.jsonl`, each driven as its fixture was, and reports everything that reads differently. It is
 the runner Claude's check runs on ([[new-claude-release]]: shapes, status replays, retries, `due`, `accept`), with
 opencode's part one record, [`OPENCODE`](ref:hub/scripts/runtime-check.opencode.ts#OPENCODE); `tool:opencode-check`
-is `tool:runtime-check -- opencode`. Its throwaway system is `/tmp/tower-opencode-check` on port 4397, apart from
-Claude's.
+is `tool:runtime-check -- opencode`.
 `npm run -s tool:opencode-check -- due` ([`due`](ref:hub/scripts/runtime-check.ts#due)) exits 0 when the installed
 release reads above the range and no pull request titled `opencode <release>` is open or merged, 1 when not, 2 when it
 can't tell: the check line of the policy that offers the run on each new release. It reads only the installed
 opencode (`opencode --version`, the one opencode command that starts no server), never upstream's releases.
-- **Model.** The scenarios run on Gemini 4 Argon through OpenRouter (`openrouter/google/gemini-4-argon`, one on
-  Hydrogen), data in the scenarios: a Claude model would not exercise opencode's own paths. Its key stays in
+- **Model.** The scenarios run on a non-Claude model through OpenRouter, named in the scenarios
+  ([`MODEL`](ref:hub/scripts/runtime-check.opencode.scenarios.ts#MODEL)): a Claude model would not exercise opencode's own paths. Its key stays in
   opencode's own credentials, never in the tower's config or the tool. A non-Claude model drives a scenario less
   predictably, which `--retries` absorbs: the report names each scenario that needed one and why.
 - **Fakes** ([`fakes`](ref:hub/scripts/runtime-check.opencode.fakes.ts#fakes)). A failed turn, a retry and an automatic
   compaction (and one that fails) run on a local OpenAI-compatible provider the runner serves in its own process, as
-  their fixtures were recorded: models `fail` (400), `retry` (503 twice), `big` (an answer that fills its 32k context,
-  then a summary in opencode's template) and `badsummary` (a summary off it). A remote MCP server that asks for an
+  their fixtures were recorded, one model per behaviour. A remote MCP server that asks for an
   OAuth login is served beside it. Each reaches a scenario through its directory's `opencode.json`, which opencode
   merges under the config the tower composes, as do the permission scenario's rules: shell calls and paths outside
   the session's directories ask (opencode's own agents allow external reads unless told otherwise), so its reads go to
@@ -49,9 +47,7 @@ opencode (`opencode --version`, the one opencode command that starts no server),
   surfaces `OPENCODE_SURFACES` lists.
 
 Sessions end as their fixtures did, `/exit` typed and chosen. Conversations land in the user's own opencode database,
-as every opencode session's do. The fixtures `opencode-standalone` and `opencode-variant` are recorded on one model
-each; a run takes about 12 sessions on OpenRouter and 4 on the fake provider, about five minutes and well under a
-dollar.
+as every opencode session's do.
 
 **Fix: move the range.**
 1. Exit 0: raise `OPENCODE_TESTED.highest` to the release, and `npm run tool:opencode-check -- accept` to take the
