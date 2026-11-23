@@ -165,7 +165,7 @@ body:has(.crew-group.dragged) .tower-tip { visibility: hidden; }
 .floors .sess.sel { border-left-color: var(--c); }
 .sess .top { display: flex; align-items: center; gap: var(--sp-m); }
 .sess .call, .past .call { color: inherit; text-decoration: none; }
-.sess .call { font: var(--display-weight) var(--fs-m)/1 var(--display); letter-spacing: var(--heading-tracking); white-space: nowrap; }
+.sess .call { font: var(--display-weight) var(--fs-m)/1 var(--display); letter-spacing: var(--name-tracking); white-space: nowrap; }
 .sess .st { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-xs); font-weight: 700; color: var(--muted); white-space: nowrap; }
 .sess .ago { flex: none; font-size: var(--fs-xs); color: var(--faint); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .sess:is(.needs, .broken, .working, .ready) .st { color: var(--c-text); }
@@ -202,7 +202,7 @@ body:has(.crew-group.dragged) .tower-tip { visibility: hidden; }
 .gone-home:hover { color: var(--ink); }
 .away { justify-self: start; display: inline-flex; align-items: center; gap: var(--sp-s); max-width: 100%; min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); background: none; border: 1px dashed var(--line); border-left: 4px solid var(--p, var(--line)); }
 .away:hover { color: var(--ink); border-color: var(--ink); border-left-color: var(--p, var(--ink)); }
-.away .call { font: var(--display-weight) var(--fs-s)/1 var(--display); letter-spacing: var(--heading-tracking); color: var(--ink); }
+.away .call { font: var(--display-weight) var(--fs-s)/1 var(--display); letter-spacing: var(--name-tracking); color: var(--ink); }
 .away .on { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .away .st { flex: none; font-weight: 700; }
 .away:is(.needs, .broken, .working, .ready) .st { color: var(--c-text); }
@@ -226,7 +226,7 @@ body:has(.crew-group.dragged) .tower-tip { visibility: hidden; }
 .past:hover { background: var(--hover); color: var(--ink); }
 .past.sel { background: var(--panel-2); color: var(--ink); }
 .past .head { display: flex; align-items: center; gap: var(--sp-m); }
-.past .call { font: var(--display-weight) var(--fs-s)/1 var(--display); letter-spacing: var(--heading-tracking); color: var(--ink); }
+.past .call { font: var(--display-weight) var(--fs-s)/1 var(--display); letter-spacing: var(--name-tracking); color: var(--ink); }
 .past .when { color: var(--faint); white-space: nowrap; }
 .past .head .when { margin-left: auto; }
 .past .conv { display: flex; align-items: center; gap: var(--sp-s); padding-left: var(--sp-xl); }

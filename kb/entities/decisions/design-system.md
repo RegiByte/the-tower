@@ -73,8 +73,8 @@ terminal that is a block of the ink colour.
   [`character`](ref:hub/src/shared/design.ts#character)): colour roles that name a palette token (`--primary` and
   `--on-primary` for the one emphasized action, `--hover` for what is under the pointer), corners per kind of surface
   (`--radius-card`, `--radius-control`), a card's resting elevation (`--shadow-card`), and type in three roles at one
-  `--display-weight`: headings and signs (`--heading-case`, `--heading-tracking`), names (callsigns, the heading's
-  tracking without its case) and labels (`.eyebrow`, menu group labels, the heads of lists: the display face, small,
+  `--display-weight`: headings and signs (`--heading-case`, `--heading-tracking`), names (callsigns,
+  `--name-tracking`) and labels (`.eyebrow`, menu group labels, the heads of lists: the display face, small,
   `--label-case`, `--label-tracking`), one label style wherever a label is drawn. Each defaults to an existing token
   or a fixed value, so the stock look and every scheme keep their values; the sites read the tokens, never a literal.
 - **Icons, controls and selection**: one SVG icon set ([`ICON`](ref:hub/src/shared/icons.ts#ICON)) in

@@ -50,7 +50,7 @@ const CSS = `:where([data-view="${ID}"]) {
   & .bar-info :is(.who, .lead) { display: inline-flex; align-items: center; gap: inherit; }
   & .bar-info .who { flex: 0 1 auto; flex-wrap: wrap; }
   & .bar-info .lead { flex: none; }
-  & .bar-info .call { flex: none; font: var(--display-weight) var(--fs-2xl)/1 var(--display); letter-spacing: var(--heading-tracking); color: var(--ink); }
+  & .bar-info .call { flex: none; font: var(--display-weight) var(--fs-2xl)/1 var(--display); letter-spacing: var(--name-tracking); color: var(--ink); }
   & .bar-info .pill { flex: none; font-variant-numeric: tabular-nums; }
   & .bar-info .stats { flex: none; display: flex; align-items: center; gap: var(--sp-l); }
   & .bar-info b { color: var(--ink); font-variant-numeric: tabular-nums; }
@@ -89,7 +89,7 @@ const CSS = `:where([data-view="${ID}"]) {
   }
   & .bar-details, & .bar-left { margin: 0; inset: 100px 20px auto auto; width: min(620px, 90vw); max-height: 70vh; overflow: auto; padding: var(--sp-l) var(--sp-xl) var(--sp-xl); background: var(--panel); color: var(--ink);
     border: 1px solid var(--line); border-radius: var(--radius-card); box-shadow: var(--shadow-pop); scrollbar-gutter: stable; }
-  & .bar-details h3, & .bar-left h3 { margin: 0 0 var(--sp-l); font: var(--display-weight) var(--fs-l)/1 var(--display); letter-spacing: var(--heading-tracking); }
+  & .bar-details h3, & .bar-left h3 { margin: 0 0 var(--sp-l); font: var(--display-weight) var(--fs-l)/1 var(--display); letter-spacing: var(--name-tracking); }
   & .bar-left .proc { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: var(--sp-xs) var(--sp-l); padding: var(--sp-s) 0; border-top: 1px solid var(--line); font-size: var(--fs-s); }
   & .bar-left .proc code { font-family: var(--mono); }
   & .bar-left .proc .on { color: var(--muted); font-family: var(--mono); }
@@ -104,7 +104,7 @@ const CSS = `:where([data-view="${ID}"]) {
   &.asking .ask { display: flex; }
   & .ask .what { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   & .ask .what b { color: var(--needs-text); }
-  & .ask .call { font: var(--display-weight) var(--fs-l)/1 var(--display); letter-spacing: var(--heading-tracking); }
+  & .ask .call { font: var(--display-weight) var(--fs-l)/1 var(--display); letter-spacing: var(--name-tracking); }
   & .ask button { margin-left: auto; flex: none; }
   & .screen { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--enamel); border-radius: var(--radius-card); }
   &.cell { gap: 0; }
@@ -116,7 +116,7 @@ const CSS = `:where([data-view="${ID}"]) {
   &.cell .acts:empty { display: none; }
   &.cell .mini { display: none; }
   &.cell.bare .bar { align-items: center; }
-  &.cell.bare .mini { display: flex; align-items: center; gap: var(--sp-xs); grid-column: 1; grid-row: 1; font: var(--display-weight) var(--fs-m)/1 var(--display); letter-spacing: var(--heading-tracking); color: var(--ink); }
+  &.cell.bare .mini { display: flex; align-items: center; gap: var(--sp-xs); grid-column: 1; grid-row: 1; font: var(--display-weight) var(--fs-m)/1 var(--display); letter-spacing: var(--name-tracking); color: var(--ink); }
   &.cell.bare .bar-line { grid-column: 2; grid-row: 1; margin: 0; min-width: 0; overflow: hidden; }
   &.cell .pick { min-height: 0; padding: 0 2px; background: none; border: 0; color: var(--muted); }
   &.cell .pick svg { width: 12px; height: 12px; }

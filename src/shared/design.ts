@@ -204,10 +204,10 @@ export const roles = { primary: 'ink', onPrimary: 'panel', hover: 'panel2' } as 
 /**
  * Character: the shape and type every renderer draws its parts in, for a theme to set. `radiusCard` rounds cards,
  * panels, popovers and dialogs, `radiusControl` buttons, fields, tabs and rows; `shadowCard` is a card's resting
- * elevation (`--shadow` raises one under the pointer). Type comes in three roles: headings and signs, in the display
- * face at `displayWeight`, in `headingCase`, tracked `headingTracking`; names (callsigns), the same without the case;
- * and labels (eyebrows, group heads), small, in the display face at `displayWeight`, in `labelCase`, tracked
- * `labelTracking`. The display face's two largest sizes (the brand, the greeting) draw a hundred heavier.
+ * elevation (`--shadow` raises one under the pointer). Type comes in three roles, all in the display face at
+ * `displayWeight`: headings and signs, in `headingCase`, tracked `headingTracking`; names (callsigns), tracked
+ * `nameTracking`; and labels (eyebrows, group heads), small, in `labelCase`, tracked `labelTracking`. The display
+ * face's two largest sizes (the brand, the greeting) draw a hundred heavier.
  */
 export const character = {
   radiusCard: 'var(--radius)',
@@ -216,6 +216,7 @@ export const character = {
   displayWeight: '800',
   headingCase: 'uppercase',
   headingTracking: '.06em',
+  nameTracking: '.04em',
   labelCase: 'uppercase',
   labelTracking: '.08em',
 }

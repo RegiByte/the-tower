@@ -29,7 +29,7 @@ const STYLE = viewCss(
   & textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
   & .targets { display: grid; gap: var(--sp-s); max-height: 60vh; overflow-y: auto; scrollbar-gutter: stable; }
   & .targets button { display: flex; align-items: center; gap: var(--sp-m); padding: var(--sp-m) var(--sp-l); text-align: left; font-weight: 400; border-left: 4px solid var(--p, var(--deco)); }
-  & .targets .call { font: var(--display-weight) var(--fs-m)/1 var(--display); letter-spacing: var(--heading-tracking); }
+  & .targets .call { font: var(--display-weight) var(--fs-m)/1 var(--display); letter-spacing: var(--name-tracking); }
   & .targets .where { color: var(--muted); font-size: var(--fs-s); white-space: nowrap; }
   & .targets .line { flex: 1; min-width: 0; color: var(--muted); font-size: var(--fs-s); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   & .targets .said { color: var(--faint); }`,
