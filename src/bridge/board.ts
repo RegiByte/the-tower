@@ -415,6 +415,11 @@ export type Board = {
    */
   viewers: Viewers
   /**
+   * Each renderer's themes, by name, as the URLs its pages import them from in order: the accepted extensions', then the
+   * config's `renderers.<name>.themes`. A page follows a change of them live. @since 2.29
+   */
+  themes: Record<string, string[]>
+  /**
    * What extensions' folds added to each subject, and the core's badge on a floor where a stage of its hooks has no
    * answer (cap `tower`, since 1.107), by its key (`card:<id>`, `floor:<project>`, `board`,
    * `conversation:<id>`, `item.<collection>:<project>/<id>`, `<cap>.<kind>:<key>`), each tagged with its capability:
@@ -889,6 +894,8 @@ export type SystemView = {
   paths: Pick<SystemPaths, 'config' | 'collections'>
   /** The chords the renderers keep for themselves (their `renderer.json`'s `keeps`): no extension's default takes one. */
   keeps: string[]
+  /** Each renderer's themes, as the URLs its pages import them from. */
+  themes: Record<string, string[]>
   /** The renderer pages reading the board, as the tower last heard from them. */
   viewers: Viewers
   now: number
@@ -924,7 +931,7 @@ export const board = (view: SystemView): Board => boardOf(view, allCards(view))
 
 /** The board of `view` from its cards (`allCards`), built once by a caller that reads them too. */
 export const boardOf = (view: SystemView, cards: Card[]): Board => {
-  const { config, sessions, host, shells, items, repos, firstReads, logFiles, readings, streams, stores, paths, keeps, viewers, now } = view
+  const { config, sessions, host, shells, items, repos, firstReads, logFiles, readings, streams, stores, paths, keeps, themes, viewers, now } = view
   const { keys, extensions } = keysOf(config, view.extensions, keeps, now)
   const continued = continuations(sessions, chainsOf(sessions))
   const kept = onBoard(bucketStart(now, 'day'))
@@ -938,6 +945,7 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
     keys,
     config: paths.config,
     viewers,
+    themes,
     collections: collectionsOf(towerCollections(stores), TOWER_WIDE, paths.collections, items, keptBy, (c) => contributedTo(config, TOWER_WIDE, c, stores)),
     floors: Object.entries(config.projects).map(([id, { shelf: _shelf, collections: _, worktrees: __, hiring: ___, brief: ____, extensions: _____, capabilities: ______, runtimes: _______, ...project }]) => {
       const git = floorGit(config, id, project, repos, occupants, mainInUse(cards, id), stores)

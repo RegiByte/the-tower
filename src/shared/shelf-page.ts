@@ -292,4 +292,6 @@ export type Tower = {
   prefs: { get(): Prefs; set(patch: Partial<Prefs>): void; on(fn: (prefs: Prefs) => void): () => void; attributes(): string }
   scheme(): Scheme
   onScheme(fn: (scheme: Scheme) => void): () => void
+  /** Called once a change of this renderer's themes has loaded, to read again what the page computes from the tokens. @since 2.29 */
+  onThemes(fn: () => void): () => void
 }

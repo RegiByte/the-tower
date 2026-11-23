@@ -135,6 +135,16 @@
           "$ref": "#/definitions/Viewers",
           "description": "The renderer pages reading the board, as the tower last heard from them: `active`, the viewer the user acted on last among those whose board stream is open (`viewer/active`), none while no open one has said so; `last`, the same for each renderer whose pages named it on their stream."
         },
+        "themes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": "Each renderer's themes, by name, as the URLs its pages import them from in order: the accepted extensions', then the config's `renderers.<name>.themes`. A page follows a change of them live."
+        },
         "adds": {
           "type": "object",
           "additionalProperties": {
@@ -246,6 +256,7 @@
         "limits",
         "extensions",
         "viewers",
+        "themes",
         "adds",
         "asks",
         "today",

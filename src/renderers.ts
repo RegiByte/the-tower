@@ -264,3 +264,44 @@ export const fileBelow = (root: string, file: string): string | undefined => {
   const rel = path.relative(root, full)
   return rel.startsWith('..') || path.isAbsolute(rel) || hiddenBelow(root, full) ? undefined : full
 }
+
+/** Each renderer's themes, by name: the absolute paths of the stylesheets its pages load after their own, in order. */
+export type Themes = Record<string, string[]>
+
+/**
+ * Each renderer's themes: the accepted extensions' (`contributed`), then the config's `renderers.<name>.themes`, so the
+ * config's come last and win. A config entry that is no list of absolute paths is a config error.
+ */
+export const themesOf = (config: Config, contributed: Themes): Themes => {
+  const own = Object.entries(config.renderers ?? {}).flatMap(([name, r]): [string, string[]][] => {
+    const themes: unknown = r?.themes
+    if (themes === undefined) return []
+    if (!Array.isArray(themes) || !themes.every((t) => typeof t === 'string' && path.isAbsolute(t)))
+      throw new ConfigError(`renderers.${name}.themes in the config: a list of the absolute paths of stylesheets`)
+    return [[name, themes]]
+  })
+  const merged: Themes = { ...contributed }
+  for (const [name, themes] of own) merged[name] = [...(merged[name] ?? []), ...themes]
+  return merged
+}
+
+/** Where theme `n` of `renderer` is served: below a folder of its own, so the files beside it resolve as they sit. */
+export const themeUrl = (renderer: string, n: number, file: string): string =>
+  `/renderers/${encodeURIComponent(renderer)}/themes/${n}/${encodeURIComponent(path.basename(file))}`
+
+/** The URLs of each renderer's themes, in order: what the board carries, so a page follows a change of them live. */
+export const themeUrls = (themes: Themes): Themes =>
+  Object.fromEntries(Object.entries(themes).map(([name, files]) => [name, files.map((file, n) => themeUrl(name, n, file))]))
+
+/**
+ * The stylesheet a renderer's pages load its themes through, `/renderers/<name>/themes.css`: each theme imported into
+ * a layer of its own inside `theme`, the last of a page's layers (`/design.css`), in order, so a later theme outweighs an
+ * earlier one, and every theme the tower, whatever their selectors weigh. A theme names no layer.
+ */
+export const themeSheet = (urls: string[]): string => urls.map((url, n) => `@import url("${url}") layer(theme.t${n});`).join('\n')
+
+/** The file `/renderers/<name>/themes/<n>/<file>` serves: one in the folder of the renderer's theme `n`, or below it. */
+export const themeFile = (themes: Themes, renderer: string, n: number, file: string): string | undefined => {
+  const theme = themes[renderer]?.[n]
+  return theme === undefined ? undefined : fileBelow(path.dirname(theme), file)
+}

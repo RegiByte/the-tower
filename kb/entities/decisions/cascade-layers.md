@@ -9,6 +9,7 @@
   "reviewed": "2026-11-23",
   "refs": ["hub/src/shared/design.ts#designCss", "hub/src/shared/view-parts.ts#viewLayer", "hub/src/shared/view-parts.ts#componentsLayer", "hub/src/shared/view-parts.ts#rendererLayer", "hub/src/shared/view-parts.ts#viewCss", "hub/src/lib-ui/look.css", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/page/calls.js#watchCalls", "hub/src/shared/tips.ts#watchTips", "hub/src/shared/ask.ts", "hub/renderers/tower3d/index.html", "hub/renderers/week/index.html"],
   "links": [
+    { "to": "themes", "verb": "orders", "carries": "each renderer's themes in the theme layer, last" },
     { "to": "design-system", "verb": "orders", "carries": "/design.css's tokens and shared components in tower.design" },
     { "to": "tower-elements", "verb": "orders", "carries": "look.css's parts in tower.elements, its --ui-* mapping in tower.design" },
     { "to": "shared-panels", "verb": "orders", "carries": "the shared component sheets in tower.design, wherever they are inserted" }
@@ -50,7 +51,7 @@ sidebar's edge arrows, which keep blinking in step) is marked otherwise, never `
 - `tower.views`: what [`viewCss`](ref:hub/src/shared/view-parts.ts#viewCss) emits, and
   [`viewLayer`](ref:hub/src/shared/view-parts.ts#viewLayer) for a view's rules written whole, among them the shared
   ask dialog's, which must outweigh a renderer's `button` rules.
-- `theme`: empty until a theme loads (pass 3c, T3).
+- `theme`: the renderer's themes, each in a layer of its own inside it, in order ([[themes]]).
 
 The names are not part of the API: a renderer and an extension's view reach their layers through the three helpers
 of `/lib/view.js`, and a theme names no layer, its loader wraps it. Framed documents (a shelf page, a showing) keep

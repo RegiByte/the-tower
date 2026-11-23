@@ -390,6 +390,13 @@ export const contributedRenderers = (accepted: Iterable<Pick<Accepted, 'dir' | '
     ),
   )
 
+/** The themes the accepted extensions contribute, by renderer, in the extensions' order: each an absolute file inside its extension. */
+export const contributedThemes = (accepted: Iterable<Pick<Accepted, 'dir' | 'manifest'>>): Record<string, string[]> => {
+  const themes: Record<string, string[]> = {}
+  for (const { dir, manifest } of accepted) for (const [renderer, files] of Object.entries(manifest.themes ?? {})) themes[renderer] = [...(themes[renderer] ?? []), ...files.map((file) => path.join(dir, file))]
+  return themes
+}
+
 /** Each items folder the manifest names that isn't a folder inside the extension. */
 const itemFolderProblems = (manifest: Manifest, found: Found): LoadProblem[] =>
   Object.entries(manifest.items ?? {})

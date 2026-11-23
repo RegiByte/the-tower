@@ -299,6 +299,7 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<CommandL
     ...(extra.quota && { x: { quota: { ...extra.quota, commands: [extra.quota] } satisfies QuotaPart } }),
     extensions: [REVIEWS_ON_BOARD],
     viewers: {},
+    themes: {},
     adds: Object.assign({}, ...threaded.map((t) => t.adds ?? {})),
     asks: [],
     today: extra.today ?? { since: now - 15 * 60 * MIN, spend: 0, agentHours: 0, waits: { n: 0, p50: 0 } },
