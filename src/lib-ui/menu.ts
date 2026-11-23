@@ -151,7 +151,8 @@ class TowerMenu extends HTMLElement {
   /**
    * Each rendered item with a value shows its hint as a line under its label, and an item without one shows none. The
    * line is hidden from the item's name and is its description instead. Items are found by tag: the SDK marks a part's
-   * `data-slot` after rendering it. A pass changes only what differs, so the observer's own writes end there.
+   * `data-slot` after rendering it. The line's id encodes the value, which may hold the whitespace an id list splits on.
+   * A pass changes only what differs, so the observer's own writes end there.
    */
   #describe() {
     for (const item of this.#inner?.querySelectorAll(':is(ui-menu-item, ui-menu-checkbox-item, ui-menu-radio-item)[value]') ?? []) {
@@ -163,13 +164,13 @@ class TowerMenu extends HTMLElement {
         if (line) item.removeAttribute('aria-describedby')
         continue
       }
-      const id = `${this.id}--hint:${value}`
+      const id = `${this.id}--hint:${encodeURIComponent(value)}`
       if (line?.textContent === hint && line.id === id) continue
       const shown = line ?? item.appendChild(document.createElement('small'))
       shown.id = id
       shown.setAttribute('aria-hidden', 'true')
       shown.textContent = hint
-      item.setAttribute('aria-describedby', id)
+      item.setAttribute('aria-describedby', shown.id)
     }
   }
 
