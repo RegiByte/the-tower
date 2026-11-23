@@ -113,7 +113,8 @@ they are written once in shared code and a next renderer gets them by importing 
 - *One tooltip* ([`tips.ts`](ref:hub/src/shared/tips.ts), `tips.ts`): [`watchTips`](ref:hub/src/shared/tips.ts#watchTips)
   puts one element in the top layer and shows any `data-tip`'s text at once on keyboard focus (not on the focus a
   press gives, which a text field takes as `:focus-visible`) and on a resting hover,
-  with `aria-describedby` while shown. [`placeNear`](ref:hub/src/shared/tips.ts#placeNear) keeps it beside its
+  with `aria-describedby` while shown. It steps aside while a control in its element has its popup open (a
+  combobox's list, a menu button's menu), so it never stands over the popup. [`placeNear`](ref:hub/src/shared/tips.ts#placeNear) keeps it beside its
   element inside the viewport, and [`placeOnOpen`](ref:hub/src/shared/tips.ts#placeOnOpen) stands a popover by its
   button the same way.
 - *Every explanation through it*: renderers and shared views say what a control does with `data-tip`, a control with
