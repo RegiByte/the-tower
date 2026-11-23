@@ -166,11 +166,21 @@
     font-size: var(--ui-font-size);
   }
 
+  tower-combobox :has(> ui-combobox-input + ui-combobox-trigger) {
+    display: flex;
+
+    & > ui-combobox-input {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+
   tower-combobox input {
     box-sizing: border-box;
     width: 100%;
     min-width: 0;
     padding: calc(var(--ui-spacing) * 2);
+    padding-inline-end: calc(var(--ui-spacing) * 8);
     border: 1px solid var(--ui-input);
     border-radius: var(--ui-radius);
     background: var(--ui-muted);
@@ -189,6 +199,34 @@
     &:disabled {
       color: var(--ui-muted-foreground);
       cursor: not-allowed;
+    }
+  }
+
+  tower-combobox [data-slot="combobox-trigger"] {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: calc(var(--ui-spacing) * 8);
+    margin-inline-start: calc(var(--ui-spacing) * -8);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ui-muted-foreground);
+    font: inherit;
+    translate: none;
+
+    &::after {
+      width: 1em;
+      height: 1em;
+      background: currentColor;
+      content: "";
+      mask: var(--ui-icon-chevron) center / contain no-repeat;
+      rotate: 90deg;
+    }
+
+    &[data-open]::after {
+      rotate: -90deg;
     }
   }
 
