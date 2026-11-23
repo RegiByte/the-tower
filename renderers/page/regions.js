@@ -340,7 +340,7 @@ export function regions(deps) {
       const holds = declared().find((r) => r.id === id)?.holds ?? []
       const entry = layout()[id]
       const actions = heldActions(holds, addedActions(board(), on)).filter((a) => isOnScreen(entry) || entry?.pinned?.includes(actionId(a)))
-      return `${holds.includes('badges') && isOnScreen(entry) ? badgesHtml(board(), on) : ''}${drawn(board(), on, actions)}`
+      return `${holds.includes('badges') ? badgesHtml(board(), on) : ''}${drawn(board(), on, actions)}`
     }
 
     /** The tab to open: the location's while its worker is on screen, else the one picked here, else the default; none newly opened while its worker is hidden. @param {TabOf[]} all */

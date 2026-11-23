@@ -76,11 +76,11 @@ test('layout: hidden is the union, less what a higher layer orders or pins; form
   assert.equal(merged.badges, 2)
 })
 
-test('layout: onScreen comes from the highest layer; in the menu only, every budget is 0 and the pins stay', () => {
+test('layout: onScreen comes from the highest layer; in the menu only, the lines and actions budgets are 0, the pins and badges stay', () => {
   assert.equal(layoutOf({}, { r: { onScreen: false } }, { r: { onScreen: true } }).r.onScreen, true, "the viewer's choice over the config's")
   assert.equal(isOnScreen(layoutOf({}, {}, undefined).r), true, 'on screen unless a layer says otherwise')
   const off = layoutOf({}, { r: { pinned: ['a/a'], actions: 3 } }, { r: { onScreen: false } }).r
-  assert.deepEqual(drawnEntry(off), { pinned: ['a/a'], onScreen: false, lines: 0, badges: 0, actions: 0 })
+  assert.deepEqual(drawnEntry(off), { pinned: ['a/a'], onScreen: false, lines: 0, actions: 0 }, 'badges are information: they stay')
   assert.deepEqual(drawnEntry({ actions: 3 }), { actions: 3 })
 })
 

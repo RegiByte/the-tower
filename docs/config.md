@@ -99,7 +99,7 @@ a region that holds what extensions contribute takes:
 | `unpinned` | Ids the renderer's own layout pins that this layer drops. The viewer's `unpinned`, set from the page, drops a pin made here. |
 | `overflow` | The form the region is drawn in when full, one of the forms its `renderer.json` lists in `overflows`: `menu`, `count`, `wrap` or `scroll`. |
 | `lines`, `badges`, `actions` | How many of each a `menu` region draws in place at most, or a `count` region exactly; pins and the region's own controls don't count. `0` under `menu` is pins only. |
-| `onScreen` | `false`: the region's buttons are in the menu only, its pins drawn and nothing else, in any form; the subject's menu and the palette still reach every one. Only a region its `renderer.json` gives a `label` takes it; one labelled and holding nothing draws the renderer's own buttons, and takes `onScreen` alone. |
+| `onScreen` | `false`: the region's buttons are in the menu only: its pinned actions and lines drawn and no others, in any form, its badges kept, since they are information; the subject's menu and the palette still reach every one. Only a region its `renderer.json` gives a `label` takes it; one labelled and holding nothing draws the renderer's own buttons, and takes `onScreen` alone. |
 
 ```json
 "renderers": { "page": { "layout": { "card.head": { "pinned": ["reviews/hire"], "overflow": "wrap" } } } }

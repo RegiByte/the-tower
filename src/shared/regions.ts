@@ -81,8 +81,8 @@ export type LayoutEntry = {
   /** How many actions are drawn in place, as `badges`. @since 1.138 */
   actions?: number
   /**
-   * `false`: the region's buttons are in the menu only. It draws what is pinned and nothing else that extensions add,
-   * whatever its form, and a region of the renderer's own buttons draws none; the subject's menu and the palette still
+   * `false`: the region's buttons are in the menu only. It draws what is pinned of the actions and lines extensions
+   * add, and their badges, which are information, whatever its form, and a region of the renderer's own buttons draws none; the subject's menu and the palette still
    * reach every one. Unset or `true`, on screen. Offered only where the region has a `label`. @since 2.25
    */
   onScreen?: boolean
@@ -114,10 +114,10 @@ export const overflowOf = (region: Region & { overflows: Overflow[] }, entry: La
 export const isOnScreen = (entry: LayoutEntry | undefined): boolean => entry?.onScreen !== false
 
 /**
- * The entry a region is drawn by: in the menu only, every budget is 0, so only what is pinned is drawn, in any form.
- * @since 2.25
+ * The entry a region is drawn by: in the menu only, its `lines` and `actions` budgets are 0, so of those only what is
+ * pinned is drawn, in any form. Its badges are information, not buttons, and stay. @since 2.25
  */
-export const drawnEntry = (entry: LayoutEntry | undefined): LayoutEntry | undefined => (isOnScreen(entry) ? entry : { ...entry, lines: 0, badges: 0, actions: 0 })
+export const drawnEntry = (entry: LayoutEntry | undefined): LayoutEntry | undefined => (isOnScreen(entry) ? entry : { ...entry, lines: 0, actions: 0 })
 
 /** A problem of a renderer's layout in the config, at its key, as `tower config check` says it and `GET /renderers` serves it. @since 1.138 */
 export type LayoutProblem = { level: 'fail' | 'warn'; key: string; problem: string }

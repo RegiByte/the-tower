@@ -115,15 +115,14 @@ export async function sidebar(deps) {
   }
 
   /**
-   * What a worker's row draws of the lines and badges extensions add in the menu only: its pinned lines and its
-   * exemptions, with no count of the rest, which its ⋯ reaches.
+   * What a worker's row draws of the lines and badges extensions add in the menu only: its pinned lines and every badge,
+   * which is information, not a button, with no count of the lines left out, which its ⋯ reaches.
    * @param {Card} c @param {LayoutEntry | undefined} entry
    */
   const rowPinned = (c, entry) => {
-    const exemptions = exemptionsOf(board(), cardSubject(c))
     return {
       lines: rankedLines(board(), c.id, entry).filter((l) => entry?.pinned?.includes(lineId(l))).map((l) => lineHtml(l.text)).join(''),
-      badges: exemptions.length ? `<div class="badges counted">${exemptions.map(badgeHtml).join('')}</div>` : '',
+      badges: badgesOf(board(), cardSubject(c)).length ? `<div class="badges">${badgesHtml(board(), cardSubject(c))}</div>` : '',
       by: '',
       note: '',
     }
@@ -522,7 +521,7 @@ export async function sidebar(deps) {
   const floorAddsHtml = (f) => {
     const subject = floorSubject(f)
     const on = onScreen('floor.section')
-    const adds = (on ? badgesHtml(board(), subject) : '') + actionsHtml(board(), subject, shownIn('floor.section', heldActions(holdsOf('floor.section'), addedActions(board(), subject)))) + (on ? opensHtml(subject) : '')
+    const adds = badgesHtml(board(), subject) + actionsHtml(board(), subject, shownIn('floor.section', heldActions(holdsOf('floor.section'), addedActions(board(), subject)))) + (on ? opensHtml(subject) : '')
     return adds ? `<div class="adds">${adds}</div>` : ''
   }
 

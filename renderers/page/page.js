@@ -59,7 +59,7 @@ import { gapBeside, isCut, lineWidth, roomOf } from './fit.js'
  * @import { StatsRange } from '/lib/stats.js'
  * @import { Press, CommandKit, Placing } from '/lib/view.js'
  * @import { Viewer } from '/lib/viewer.js'
- * @import { AsideLine, Beside, Pinning } from './subject-menus.js'
+ * @import { AsideGroup, AsideLine, Beside, Pinning } from './subject-menus.js'
  * @import { ReadAnswer } from '../../extensions/quota/client/quota.ts'
  * @import { MainView } from './view.js'
  * @import { Draft } from '../../extensions/drafts/client/drafts.ts'
@@ -515,7 +515,23 @@ const besides = new Map()
  * anywhere else, the pins of the region drawn beside the subject's own ⋯, an open shown tab's or a worker's row's.
  * @param {string} key @param {string | undefined} place @param {SubjectMenu} m @returns {Beside}
  */
-const menuBeside = (key, place, m) => (place ? (besides.get(place)?.(m) ?? {}) : { pinning: key.startsWith('shown:') ? tabPinning(m) : key.startsWith('card:') ? rowPinning(key) : undefined })
+const menuBeside = (key, place, m) => {
+  if (place) return besides.get(place)?.(m) ?? {}
+  if (key.startsWith('floor:')) return { first: floorAside(key) }
+  return { pinning: key.startsWith('shown:') ? tabPinning(m) : key.startsWith('card:') ? rowPinning(key) : undefined }
+}
+
+/**
+ * What a floor's section holds that its menu doesn't, while the viewer keeps it in the menu only (`floor.section`): the
+ * views it opens, each opened as its button opens it. None while it is on screen.
+ * @param {string} key @returns {AsideGroup[]}
+ */
+const floorAside = (key) => {
+  const subject = subjectAt(board(), key)
+  if (!subject || isOnScreen(layout()['floor.section'])) return []
+  const lines = opensOf(subject).map((v) => ({ label: `Open ${v.words.label}`, run: () => display(subject.key, { view: v.id }) }))
+  return lines.length ? [{ label: `On ${/** @type {Floor} */ (subject.value).name}`, lines }] : []
+}
 
 /** The lines of a showing's menu its open tab can draw (`shown.tab`), each checked where the layout pins it. @param {SubjectMenu} m @returns {Pinning} */
 const tabPinning = (m) => {
@@ -1252,7 +1268,7 @@ function kitRegion(el, id, subject, options) {
     /** In the menu only, the `wrap` form draws the pins alone: the `menu` form's budgets do so already. */
     const pinsOnly = name === 'wrap' && !isOnScreen(entry)
     ranked = rankedActions(shownActions(s), entry).filter((r) => !pinsOnly || r.pinned)
-    badges = holds.includes('badges') && !pinsOnly ? rankedBadges(board(), s) : []
+    badges = holds.includes('badges') ? rankedBadges(board(), s) : []
     kept = holds.includes('badges') ? keptHtml(id === 'card.head' ? dismissHtml(s.key) : '', exemptionsOf(board(), s)) : ''
     const lines = holds.includes('lines') && s.kind === 'card' ? rankedLines(board(), /** @type {Card} */ (s.value).id, entry) : []
     parts = partsNow(pinsOnly ? lines.filter((l) => entry?.pinned?.includes(lineId(l))) : lines)
@@ -1414,10 +1430,12 @@ const besideOn = (subject) => {
   return [at.view, ...(mainRegion.tabsAt(null)?.tabs().views ?? [])]
 }
 
-/** "Open <label>" for each view a floor's section offers, less those its layout hides there. @param {Subject} subject */
+/** Each view a floor's section offers, less those its layout hides there. @param {Subject} subject */
+const opensOf = (subject) => openable(placing(), subject, besideOn(subject)).filter((v) => !layout()['floor.section']?.hidden?.includes(v.id))
+
+/** "Open <label>" for each view a floor's section offers (`opensOf`). @param {Subject} subject */
 const opensHtml = (subject) =>
-  openable(placing(), subject, besideOn(subject))
-    .filter((v) => !layout()['floor.section']?.hidden?.includes(v.id))
+  opensOf(subject)
     .map((v) => `<button class="added" data-open-view="${esc(JSON.stringify({ subject: subject.key, view: v.id }))}"${v.words.hint ? ` data-tip="${esc(v.words.hint)}"` : ''}>Open ${esc(v.words.label)}</button>`)
     .join('')
 
