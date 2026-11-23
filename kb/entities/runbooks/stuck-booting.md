@@ -4,7 +4,7 @@
   "name": "Session stuck on booting",
   "summary": "A session that stays booting is Claude on a startup screen the bridge does not recognize (an external CLAUDE.md imports prompt, new dialog copy), or a launch that never drew Claude; recognized screens (trust, login) show as blocked.",
   "in": "host",
-  "reviewed": "2026-11-15",
+  "reviewed": "2026-11-23",
   "refs": ["hub/src/bridge/status.ts#BOOTING", "hub/src/bridge/status.ts#statusOf", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/composer.ts#AT_COMPOSER", "hub/src/cli.ts"]
 }
 ---
@@ -21,15 +21,13 @@ from the log) or `tower attach <id>` ([`cli.ts`](ref:hub/src/cli.ts)). Its log h
 - Every session starts [`booting`](ref:hub/src/bridge/status.ts#BOOTING) and leaves it on the first
   `SessionStart` ([`statusOf`](ref:hub/src/bridge/status.ts#statusOf)). Startup dialogs come before
   `SessionStart`, so no hook fires while one waits.
-- The workspace trust dialog, shown the first time Claude runs in a directory (a new hub, a new worktree).
-  It preselects "No, exit".
+- The workspace trust dialog, shown the first time Claude runs in a directory outside a trusted one. It preselects
+  "No, exit". A worktree, inside its trusted repo's
+  [`.worktrees/`](ref:hub/src/shared/repos.ts#WORKTREES_DIR), doesn't raise it; a new hub does.
 - "Allow external CLAUDE.md imports?", or a screen whose copy changed in a new Claude version: add its wording to
   [`blockedBy`](ref:hub/src/bridge/blocked.ts#blockedBy)'s table, with a fixture recorded on a throwaway system.
-- The trust dialog is not raised in a folder inside a trusted one, worktrees included (they live under their trusted
-  repo's [`.worktrees/`](ref:hub/src/shared/repos.ts#WORKTREES_DIR)). A new hub, or a folder outside a trusted repo,
-  raises it.
 
 **Fix.** Answer the dialog in the session's terminal. For workspace trust: ↓ then Enter, sent as separate
 writes. A spawn with a first prompt (`-- <prompt>`) waits behind the dialog and runs the prompt once it is
-answered. If the screen shows no dialog either, the session never drew one: check that the config's `argv`
-starts Claude, and read the screen for an error.
+answered. If the screen shows no dialog either, the session never drew one: check that the config's
+`runtimes.claude.argv` starts Claude, and read the screen for an error.
