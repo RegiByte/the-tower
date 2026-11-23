@@ -416,7 +416,7 @@ export type Board = {
   viewers: Viewers
   /**
    * Each renderer's themes, by name, as the URLs its pages import them from in order: the accepted extensions', then the
-   * config's `renderers.<name>.themes`. A page follows a change of them live. @since 2.29
+   * config's `renderers.<name>.themes`. A page follows a change of them live. @since 2.30
    */
   themes: Record<string, string[]>
   /**
