@@ -1,6 +1,7 @@
 {
   "regions": [
     { "id": "board.main", "subject": "board", "holds": ["views"], "scale": "pane", "arity": "one", "description": "the main pane (a worker, the skyline, a floor's archive, a collection, a shelf entry)" },
+    { "id": "board.dialog", "subject": "board", "holds": ["views"], "scale": "dialog", "arity": "one", "description": "over the page, modal: a view to read or act in while the page goes on behind it, opened by display with that view, closed by its close button, Escape or a press outside" },
     { "id": "board.strip", "subject": "board", "holds": ["views"], "scale": "row", "arity": "one", "description": "a strip at the top of the sidebar, its view mounted for as long as the page is open: what an extension keeps in sight, or plays, whatever the main pane shows" },
     { "id": "board.sign", "subject": "board", "holds": ["commands"], "description": "beside the sidebar's Floors and Stats, and the palette: commands about no one floor, such as a new floor, each its icon alone, its label and hint the tip", "overflows": ["wrap"] },
     { "id": "board.skyline", "subject": "board", "holds": ["commands"], "description": "in the skyline's greeting, the welcome on a new tower included: commands about no one floor, each its icon and label", "overflows": ["wrap"] },

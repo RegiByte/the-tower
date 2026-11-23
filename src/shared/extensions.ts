@@ -971,7 +971,7 @@ const View = z.strictObject({
   on: since(Kinds.describe('The subject kinds it mounts on: a region offers it on these, at a scale it has.')),
   shows: since(Kinds.optional().describe('The kinds it is handed through show while mounted on an ancestor, never mounted on.')),
   accepts: since(MediaTypes.optional().describe("The media types of a file-bearing subject it draws, matched against the subject's value.type.")),
-  scales: since(z.array(z.enum(SCALES)).min(1).describe('The room it can draw in: chip, row, cell, pane.')),
+  scales: since(z.array(z.enum(SCALES)).min(1).describe('The room it can draw in: chip, row, cell, pane, dialog (2.31: over the page, modal; list pane too, for a renderer that draws no dialog).')),
   needs: since(z.array(z.enum(KIT_MEMBERS)).optional().describe("The kit members it can't draw without: a renderer whose kit lacks one doesn't offer it.")),
   regions: since(z.array(z.string()).optional().describe("The regions it declares inside it, each one of the manifest's regions.")),
   options: since(Schema.optional().describe("Its options' JSON Schema, as a region's layout sets them.")),

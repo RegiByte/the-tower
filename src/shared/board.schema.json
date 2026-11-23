@@ -3399,7 +3399,8 @@
         "chip",
         "row",
         "cell",
-        "pane"
+        "pane",
+        "dialog"
       ]
     },
     "Overflow": {

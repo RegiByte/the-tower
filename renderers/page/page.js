@@ -5,12 +5,13 @@ import { CAPABILITIES } from '/lib/capabilities.js'
 import { addedTidyOf, ATTENTION_MEANS, ATTENTION_NAME, attentionOrder, boardErrorTitle, untestedHtml, discardAsk, discardedLine, DISMISS_TITLE, heededAsks, heededWaits, heldActions, HOST_ATTENTION, HOST_MEANS, HOST_NAME, hostState, isAsk, keptLine, killShellAsk, letGoAsk, letGoneLine, loudest, neighboursIn, nextAttended, ON_DUTY_MEANS, reapAsk, resumeAllAsk, resumeStranded, sendHomeAsk, shownKey, SOUNDS, strandedOf, tidiedLine, tidyAllAsk, verbLabel, WAITING_MEANS, WAITING_NAME, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME } from '/lib/cards.js'
 import { ask, asking, toastsCss, watchTips } from '/lib/chrome.js'
 import { addedCommandOf, commandOf, COMMANDS, DEFAULT_KEYS, frameCommandOf, isAddedId, MOVE_COMMAND, PANES, panesOf } from '/lib/keys.js'
-import { actionId, actionWords, addedActions, busOf, declaredLayout, displayed, drawnEntry, isOnScreen, exemptionsOf, fill, headRanked, isCommand, isFresh, layoutKey, layoutOf, lineId, offeredIds, openable, overflowOf, rankedActions, rankedBadges, rankedLines, runCommandWith, usableConfigLayout, viewOn, viewsOf } from '/lib/layout.js'
+import { actionId, actionWords, addedActions, busOf, declaredLayout, displayed, offeredIn, drawnEntry, isOnScreen, exemptionsOf, fill, headRanked, isCommand, isFresh, layoutKey, layoutOf, lineId, offeredIds, openable, overflowOf, rankedActions, rankedBadges, rankedLines, runCommandWith, usableConfigLayout, viewOn, viewsOf } from '/lib/layout.js'
 import { loop, timers } from '/lib/machine.js'
 import { markdownCss } from '/lib/markdown.js'
 import { settingsCss } from '/lib/settings.js'
 import { wireSpawn } from '/lib/spawn.js'
 import '/lib-ui/combobox.js'
+import '/lib-ui/dialog.js'
 import { STATS_ALL } from '/lib/stats.js'
 import { loadTerminalFont } from '/lib/terminal.js'
 import { pressOf, componentsLayer, copyTelling, fileButtonsHtml, fileCall, itemsCss, morphPanel, panelsCss, pressing, pressingAs } from '/lib/view.js'
@@ -128,6 +129,7 @@ function render() {
   extensionsFoot.paint()
   morphPanel($('side-foot'), board().config ? `<span>config</span><code data-tip="${esc(board().config)}"><bdi>${esc(board().config)}</bdi></code>${fileButtonsHtml(board().config)}` : '')
   mainRegion.update()
+  boardDialog.update()
   renderDock()
   drawSettings()
   // Morphs empty every [data-since] span the html draws, so the clock fills them again before the frame is painted.
@@ -600,6 +602,7 @@ const layoutNoteHtml = () => {
 const layout = () => layoutOf(declaredLayout(board(), declared.layout ?? {}), CONFIG_LAYOUT, page.state().layout)
 const KIT = /** @type {readonly KitMember[]} */ (declared.kit ?? [])
 const MAIN = /** @type {Region} */ ((declared.regions ?? []).find((r) => r.id === 'board.main'))
+const DIALOG = /** @type {Region} */ ((declared.regions ?? []).find((r) => r.id === 'board.dialog'))
 
 /** What display reads to place a subject: the board, every view, the regions this renderer and the views declare. @returns {Placing} */
 const placing = () => ({
@@ -643,7 +646,8 @@ function focusedSubject() {
 }
 
 /**
- * Shows `target`, a subject or its key, where the layout puts it (`displayed`, `/lib/layout.js`): a view given stays when
+ * Shows `target`, a subject or its key, where the layout puts it (`displayed`, `/lib/layout.js`): a view given that the
+ * dialog over the page offers opens there, the main pane staying as it is; anything else closes the dialog. A view given stays when
  * it is the one mounted and takes it, on that subject when it is on its kind; a subject below the one the view at its
  * location is on is handed to that view (a worker's showing, conversation or lines open its tab). A worker handed whole
  * is held as a read; one the page doesn't hold is looked up in the floors' archives, or awaited when the page started it.
@@ -655,6 +659,9 @@ function display(target, opts = {}) {
   if (!subject && typeof target === 'string' && target.startsWith('card:')) return void awaitCard(target.slice('card:'.length))
   if (!subject) return toast(`${target} is no longer on the board`)
   const { view: given } = opts
+  const over = given && overPage(subject, given)
+  if (over) return boardDialog.open(over.view, over.subject)
+  boardDialog.close()
   const mounted = viewing('view')?.location
   if (given && mounted?.view === given && mainRegion.show(subject)) {
     const view = /** @type {import('/lib/view.js').View} */ (viewsOf(board()).find((v) => v.id === given))
@@ -667,6 +674,19 @@ function display(target, opts = {}) {
   if (next.t === 'lookup') return toast(`${subject.key} is no longer on the board`)
   go(next)
   if (subject.key !== (at.subject ?? 'board') && !mainRegion.show(subject)) toast(`${subject.key} isn't there any more`)
+}
+
+/**
+ * Where the dialog over the page (`board.dialog`) draws `view`: on `subject` or the nearest subject up its chain that
+ * the region offers it on; nothing when it offers it on none.
+ * @param {Subject} subject @param {string} view @returns {{ view: import('/lib/view.js').View, subject: Subject } | undefined}
+ */
+function overPage(subject, view) {
+  const offered = offeredIn(viewsOf(board()), DIALOG, layout(), KIT, subject).find((v) => v.id === view)
+  if (offered) return { view: offered, subject }
+  const up = parentOf(subject)
+  const above = up === undefined ? undefined : subjectOf(up)
+  return above && overPage(above, view)
 }
 
 /**
@@ -1346,6 +1366,9 @@ const mainRegion = regions({
 /** A floor's trays, a view per collection (`floor.trays`), mounted by the main pane's region code and placed in the sidebar's paint. */
 const floorTrays = mainRegion.rows('floor.trays', 'tray')
 
+/** The dialog over the page (`board.dialog`): a view display asks for there, the page going on behind it. */
+const boardDialog = mainRegion.dialog('board.dialog')
+
 /** The strip at the top of the sidebar (`board.strip`): a view on the board, mounted for as long as the page is open. */
 const boardStrip = mainRegion.rows('board.strip', 'strip')
 
@@ -1809,10 +1832,11 @@ const escapeDismisses = (/** @type {KeyboardEvent} */ e) => e.key === 'Escape' &
 
 /**
  * A terminal's own key handler already ran the keys typed into it; a field's listener, the field's. No shortcut runs
- * behind an ask: what it asks about was read as it opened.
+ * behind an ask, what it asks about read as it opened, nor behind the dialog over the page, which keeps the keys while
+ * it is open.
  */
 document.addEventListener('keydown', (e) => {
-  if (e.defaultPrevented || asking() || escapeDismisses(e)) return
+  if (e.defaultPrevented || asking() || boardDialog.isOpen() || escapeDismisses(e)) return
   const focus = isTyping() ? 'field' : 'page'
   const id = commandOf(board().keys, e, focus)
   if (id && run(id, e)) return (e.preventDefault(), (enterGuard = undefined))

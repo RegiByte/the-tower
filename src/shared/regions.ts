@@ -14,7 +14,7 @@ export const HOLDS = ['verbs', 'commands', 'badges', 'lines', 'marks', 'tidy', '
 export type Hold = (typeof HOLDS)[number]
 
 /** The room a view gets in a region that holds views. */
-export const SCALES = ['chip', 'row', 'cell', 'pane'] as const
+export const SCALES = ['chip', 'row', 'cell', 'pane', 'dialog'] as const
 export type Scale = (typeof SCALES)[number]
 
 /** What a renderer lends the views it hosts. */

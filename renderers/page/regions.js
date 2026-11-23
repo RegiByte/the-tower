@@ -928,6 +928,57 @@ export function regions(deps) {
     }
   }
 
+  /**
+   * The region over the page (`board.dialog`), drawn in the `<tower-dialog>` that names it: one view at a time, the one
+   * display asked for, mounted as it opens, updated with each board and closed with the dialog, however it closes, or
+   * once its subject leaves the board.
+   * @param {string} id
+   */
+  function dialog(id) {
+    const el = /** @type {HTMLElement & { open: boolean, body: HTMLElement }} */ (document.querySelector(`tower-dialog[data-region="${CSS.escape(id)}"]`))
+    /** @type {{ key: string, view: string, root: HTMLElement, hosted: Hosted } | undefined} */
+    let held
+
+    const drop = () => {
+      const was = held
+      held = undefined
+      if (!was) return
+      was.hosted.close()
+      was.root.remove()
+      delete el.dataset.subject
+    }
+
+    el.addEventListener('openchange', (e) => {
+      if (!(/** @type {CustomEvent<{ value: boolean }>} */ (e).detail.value)) drop()
+    })
+
+    return {
+      /** Whether the dialog holds a view. */
+      isOpen: () => held !== undefined,
+      /** Opens it on `view` drawing `subject`, the view already there kept when it is the same. @param {View} view @param {Subject} subject */
+      open(view, subject) {
+        if (held?.view === view.id && held.key === subject.key) return
+        drop()
+        const root = Object.assign(document.createElement('div'), { className: 'view-root' })
+        el.body.append(root)
+        el.setAttribute('label', view.words.label)
+        el.dataset.subject = subject.key
+        const hosted = hosting.mountView(view, root, subject, { scale: 'dialog', options: layout()[id]?.options?.[view.id] ?? {} })
+        held = { key: subject.key, view: view.id, root, hosted }
+        el.open = true
+      },
+      /** Closes it, focus going back to where it was. */
+      close: () => void (el.open = false),
+      /** The view it holds gets the board; one whose subject left it closes the dialog. */
+      update() {
+        if (!held) return
+        const at = subjectOf(held.key)
+        if (at) held.hosted.update(at)
+        else el.open = false
+      },
+    }
+  }
+
   /** The tabs region of the worker in `el`'s card, or of the main pane's: where a tab's chord acts. @param {Element | null} el @returns {TabsRegion | undefined} */
   const tabsAt = (el) => {
     const panels = /** @type {HTMLElement | null | undefined} */ (el?.closest('[data-view="tower/card"]'))
@@ -945,6 +996,7 @@ export function regions(deps) {
     onPick: (fn) => void (pickMain = fn),
     tabsAt,
     rows,
+    dialog,
     mountedView: () => open?.view,
     refont: () => terminals.forEach((t) => void t.refont()),
     rescheme: () => terminals.forEach((t) => t.rescheme()),
