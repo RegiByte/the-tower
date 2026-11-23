@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-11-16",
+  "reviewed": "2026-11-23",
   "refs": [
     "hub/scripts/tower3d-kit.ts",
     "hub/renderers/kaykit/src/scene.ts#layTheme",
@@ -62,9 +62,8 @@ stay the loudest thing on a floor, big planes muted, colour spent on small count
 **How.**
 - The playground (`renderers/kaykit`, a sibling renderer, [`README`](ref:hub/renderers/kaykit/README.md)). Its
   [build](ref:hub/renderers/kaykit/src/measure.ts#build) measures every glTF of the bundle (downloaded apart and
-  passed as `--source`) and every GLB of the forge's props vendored beside the office's ([[forge-kit]]) into
-  `out/catalog.json`, and packs the meshes into one buffer, each primitive bound to the surface it is drawn in (its
-  pack's atlas, glass, decals); the source folders are read only and `out/` is derived. The catalog holds facts as
+  passed as `--source`) and the forge's props ([[forge-kit]]) into `out/catalog.json`, and packs the meshes into one
+  buffer, each primitive bound to the surface it is drawn in; the source folders are read only and `out/` is derived. The catalog holds facts as
   shipped; [`NORMS`](ref:hub/renderers/kaykit/src/catalog.ts#NORMS) turns them into Tower meters and
   [`fit`](ref:hub/renderers/kaykit/src/catalog.ts#fit) derives the placed bounds, so a norm changes in one place.
 - A scene is one JSON shape ([`Scene`](ref:hub/renderers/kaykit/src/scene.ts#Scene)): items (a catalog model, or
@@ -88,7 +87,7 @@ stay the loudest thing on a floor, big planes muted, colour spent on small count
   props, the [`PREFABS`](ref:hub/renderers/tower3d/src/zones.ts#PREFABS) documents and the desk's dressing, the
   city model's), flattens each prefab in every list of its states with
   [`flatFile`](ref:hub/renderers/kaykit/src/files.ts#flatFile) with the footprint a walker bumps into (models and
-  boxes at least 0.25 m tall standing on the floor), and writes one git-ignored file, `out/kaykit/kit.kaykit`
+  boxes standing on the floor, but for those [low](ref:hub/scripts/tower3d-kit.ts#LOW) enough to step over), and writes one git-ignored file, `out/kaykit/kit.kaykit`
   ([`KitFile`](ref:hub/renderers/tower3d/src/kitfile.ts#KitFile)), which the page fetches as it starts
   ([`loadKit`](ref:hub/renderers/tower3d/src/kit.ts#loadKit), [[bundled-renderer]]).
   [`fillLayer`](ref:hub/renderers/tower3d/src/kit.ts#fillLayer) places scene items with the playground's matrices
@@ -134,5 +133,4 @@ stay the loudest thing on a floor, big planes muted, colour spent on small count
 - *A separate headless renderer*: two drawings to keep in step. *Scenes as a tower collection*: no history or
   review, and these are design artifacts.
 
-**Consequences.** Every level is dressed through scene documents agents can check and render. Each level has
-batches of its own, drawn only while the level is ([[tower3d-levels]]).
+**Consequences.** Each level has batches of its own, drawn only while the level is ([[tower3d-levels]]).
