@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-20",
-  "reviewed": "2026-11-16",
+  "reviewed": "2026-11-23",
   "refs": [
     "hub/scripts/tower3d-kit.ts#vendorForge",
     "hub/scripts/tower3d-kit.ts#checkBinding",
@@ -51,12 +51,12 @@ placed prop shows a decal.
   `dist/` is a cross-repo API.
 - A pack: `forge` joins KayKit's packs in `PACKS`, with ids `forge/<forge id>` (`forge/kitchen/coffee_mug_01`), in
   the forge's metres (+Y up, facing +Z). One norm scales it ([`NORMS`](ref:hub/renderers/kaykit/src/catalog.ts#NORMS)),
-  larger than real for now, since the workers and the room packs are drawn chunkier than real; the forge's sources
-  stay real size. A prop's category is read from its vendored sidecar's `category`, so a new forge prop needs no
+  drawing it larger than real while the workers and the room packs are chunkier than real; the forge's sources stay
+  real size. A prop's category is read from its vendored sidecar's `category`, so a new forge prop needs no
   tower code: the forge files props by room and the catalog by what a thing is, so
   [`FORGE_CATEGORIES`](ref:hub/renderers/kaykit/src/rules.ts#FORGE_CATEGORIES) maps each room to the category most of
   its props are, and [`forgeCategory`](ref:hub/renderers/kaykit/src/rules.ts#forgeCategory) fails naming a room the
-  table lacks. The forge's `moves` are not read.
+  table lacks.
 - Measured on the playground's path: [`readGltf`](ref:hub/renderers/kaykit/src/measure.ts#readGltf) reads a `.glb` or
   a `.gltf`, and every primitive is bound to a [`Surface`](ref:hub/renderers/kaykit/src/meshes.ts#Surface): a KayKit
   material is `atlas` when it has a texture and `glass` when not; a forge material by name
@@ -82,8 +82,9 @@ placed prop shows a decal.
 **Alternatives considered.**
 - *A parallel kit* (the forge in a file and draw path of its own): two measured paths, the drift [[office-kaykit]]
   exists to avoid, and the editor blind to forge props.
-- *Path B* (`src/models.ts`, `drawn()`), which loads GLBs one by one: it discards textures, and the forge's props are
-  nothing without the palette.
+- *Loading the GLBs one by one as the Blender models are* ([`drawn`](ref:hub/renderers/tower3d/src/models.ts#drawn)):
+  that path replaces each material by a colour and drops its textures, and the forge's props are nothing without the
+  palette.
 - *Binding as KayKit does* (textured or glass): every forge material has a texture, so glass and decals would be
   drawn as the opaque atlas.
 - *Vendoring only the props the office places*, as KayKit's are: whole, the editor can place any forge prop.
@@ -92,6 +93,3 @@ placed prop shows a decal.
   match a KayKit rule by accident (a `desk_plant` is not a desk).
 - *Gating the decal sheet on the vendored props*: some vendored props always show decals, so the sheet would be in
   every kit.
-
-**Impact.** Forge props cost a batch per pack, theme and surface, and the decal sheet only when a placed prop shows a
-decal.
