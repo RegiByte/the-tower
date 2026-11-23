@@ -43,9 +43,13 @@ export const elements = {
   },
 } satisfies Record<string, ElementContract>
 
-/** The parts the combobox is built of: the text box and the list in its popup, after its label unless another element names it. */
+/**
+ * The parts the combobox is built of: the text box with the button that opens its list at its end, and the list in its
+ * popup, after its label unless another element names it. The button is out of the tab order: the box opens the list
+ * by keyboard.
+ */
 const PARTS =
-  '<ui-combobox-input><input></ui-combobox-input>' +
+  '<div><ui-combobox-input><input></ui-combobox-input><ui-combobox-trigger><button aria-label="Show options"></button></ui-combobox-trigger></div>' +
   '<ui-combobox-content hidden><ui-combobox-empty></ui-combobox-empty><ui-combobox-list></ui-combobox-list></ui-combobox-content>'
 
 /** Every option's value in `data`, its groups' included. */
