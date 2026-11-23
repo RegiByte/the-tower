@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-11-15",
+  "reviewed": "2026-11-23",
   "refs": ["hub/src/update.ts#update", "hub/src/update.ts#moveTo", "hub/src/update.ts#leftBehindNote", "hub/src/update.ts#releasesBetween", "hub/src/update.ts#entriesFor", "hub/src/update.ts#sourcesOf", "hub/src/update.ts#changedSince", "hub/src/update.ts#updateJobs", "hub/src/cli.ts", "hub/CHANGELOG.md#L3-L13", "hub/.github/workflows/release.yml", "hub/src/machine.ts#REPO", "hub/src/checkouts.ts#updateRefusal", "hub/src/machine.ts#runningCheckouts"]
 }
 ---
@@ -28,12 +28,8 @@ their sessions; an update has to tell them what it asks of them, and never end t
      or when its checkout can't be told ([`updateRefusal`](ref:hub/src/checkouts.ts#updateRefusal)). The system root comes
      from the environment and not from the checkout, so a second checkout would otherwise stop the daemons and start
      them from its own tree. A daemon's checkout is its working directory
-     ([`runningCheckouts`](ref:hub/src/machine.ts#runningCheckouts)), which `tower up` set: nothing records it, and it
-     holds for daemons older releases started. Nothing running means nothing to compare, so stopping the daemons and
-     starting them from a new checkout stays the way to move a system. The refusal names the command to run in the
-     other checkout, unless that would be refused too or the checkout is gone, and how to move here only the daemons
-     that aren't; a daemon `tower up` didn't start can't be stopped with `tower down`, so it is told to stop it where
-     it runs;
+     ([`runningCheckouts`](ref:hub/src/machine.ts#runningCheckouts)), which `tower up` set: nothing records it. The
+     refusal says how to move the daemons here;
   2. fetches the tags; up to date when the newest release is already in `HEAD`'s history (a checkout ahead of a
      release is left alone);
   3. shows the changelog entries after the release `HEAD` descends from
