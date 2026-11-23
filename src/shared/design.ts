@@ -485,7 +485,8 @@ ${reduced("button[aria-busy='true']::after, .icon-btn[aria-busy='true']::after",
  * The cascade layers of a tower page, lowest first, declared before any of its CSS: the UI SDK's parts, vendored sheets
  * (xterm's), the design, the tower's elements, the renderer's own sheet, views' styles, then themes. A later layer wins
  * over an earlier one whatever its selectors weigh, and an `!important` in an earlier one over any in a later one, so a
- * theme can't undo what the tower sets `!important`, reduced motion among it. CSS in no layer wins over every layer.
+ * theme can't undo what the tower sets `!important`: reduced motion, and `[hidden]`, which hides whatever display any
+ * later rule gives the element. CSS in no layer wins over every layer.
  */
 const LAYERS = '@layer ui-sdk, tower.vendor, tower.design, tower.elements, tower.page, tower.views, theme;'
 
@@ -531,6 +532,7 @@ ${faces.join('\n')}
 :root[data-contrast='more'][data-scheme='dark'] { ${moreDark} }
 @media (prefers-contrast: more) and (prefers-color-scheme: dark) { :root:not([data-scheme='light']) { ${moreDark} } }
 @media (prefers-contrast: more) { :root[data-scheme='dark'] { ${moreDark} } }
+[hidden]:not([hidden='until-found']) { display: none !important; }
 ${COMPONENTS}
 }`
 }

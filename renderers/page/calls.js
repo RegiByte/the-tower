@@ -35,7 +35,7 @@ export function watchCalls(side) {
   const arrow = (way) => {
     const b = document.createElement('button')
     b.className = `edge-call ${way}`
-    b.hidden = true
+    b.toggleAttribute('data-gone', true)
     document.body.append(b)
     return b
   }
@@ -61,7 +61,7 @@ export function watchCalls(side) {
   const draw = (way, out, box) => {
     const b = arrows[way]
     nearest[way] = way === 'up' ? out.at(-1) : out[0]
-    b.hidden = !out.length
+    b.toggleAttribute('data-gone', !out.length)
     if (!out.length) return
     const n = out.reduce((sum, el) => sum + waitsIn(el), 0)
     const tone = loudest(out.map((el) => /** @type {any} */ ({ attention: attentionOf(el) }))) ?? 'ready'

@@ -160,7 +160,7 @@ body:has(.crew-group.dragged) .tower-tip { visibility: hidden; }
 .edge-call .icon { width: var(--icon-m); height: var(--icon-m); }
 .edge-call.up .icon { rotate: 180deg; }
 /* Hidden, an arrow keeps blinking unseen, so it shows again in step rather than starting its blink over. */
-.edge-call[hidden] { display: inline-flex; visibility: hidden; }
+.edge-call[data-gone] { visibility: hidden; }
 :is(.sess.sel, .pane-tab.on, .tab.open, .tray.on, .side-views button.on) { color: var(--ink); border-color: var(--ink); box-shadow: var(--selected); }
 .floors .sess.sel { border-left-color: var(--c); }
 .sess .top { display: flex; align-items: center; gap: var(--sp-m); }

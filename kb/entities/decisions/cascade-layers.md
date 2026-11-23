@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-11-23",
   "reviewed": "2026-11-23",
-  "refs": ["hub/src/shared/design.ts#designCss", "hub/src/shared/view-parts.ts#viewLayer", "hub/src/shared/view-parts.ts#componentsLayer", "hub/src/shared/view-parts.ts#rendererLayer", "hub/src/shared/view-parts.ts#viewCss", "hub/src/lib-ui/look.css", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/shared/tips.ts#watchTips", "hub/src/shared/ask.ts", "hub/renderers/tower3d/index.html", "hub/renderers/week/index.html"],
+  "refs": ["hub/src/shared/design.ts#designCss", "hub/src/shared/view-parts.ts#viewLayer", "hub/src/shared/view-parts.ts#componentsLayer", "hub/src/shared/view-parts.ts#rendererLayer", "hub/src/shared/view-parts.ts#viewCss", "hub/src/lib-ui/look.css", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/page/calls.js#watchCalls", "hub/src/shared/tips.ts#watchTips", "hub/src/shared/ask.ts", "hub/renderers/tower3d/index.html", "hub/renderers/week/index.html"],
   "links": [
     { "to": "design-system", "verb": "orders", "carries": "/design.css's tokens and shared components in tower.design" },
     { "to": "tower-elements", "verb": "orders", "carries": "look.css's parts in tower.elements, its --ui-* mapping in tower.design" },
@@ -31,7 +31,9 @@ be something the tower chooses once, not weights nobody chose on purpose. The UI
 `/design.css` first among its sheets. A later layer wins over an earlier one whatever its selectors weigh; within one,
 weight and order decide as before. CSS in no layer wins over every layer, and an `!important` in an earlier layer over
 one in a later layer, so `[data-tucked]` and reduced motion, `!important` in the tower's sheets, hold against any
-theme. `[hidden]` hides by the browser's own rule, which any author rule outweighs.
+theme. So does `[hidden]`: `tower.design` sets `display: none !important` on every hidden element but one
+`until-found`, so no theme or view can show what the tower hides. An element that must stay drawn while unseen (the
+sidebar's edge arrows, which keep blinking in step) is marked otherwise, never `hidden`.
 - `tower.vendor`: xterm's sheet, imported by the page and Tower 3D as `@import url(/xterm.css) layer(tower.vendor)`.
 - `tower.design`: the tokens and shared components of `/design.css`; the shared component sheets, through
   [`componentsLayer`](ref:hub/src/shared/view-parts.ts#componentsLayer), wherever a renderer or a view inserts them;
@@ -69,6 +71,7 @@ Changes, a card's menu, the new-worker form's combobox and the settings popover.
   them in `tower.design` but adds a name to the order.
 - *`light-dark()` palettes instead of layers*: removes the dark-mode fight only.
 
-**Impact.** A theme in the `theme` layer outweighs the tower with any selector and can't undo what the tower sets `!important`. A
+**Impact.** A theme in the `theme` layer outweighs the tower with any selector and can't undo what the tower sets `!important`,
+`[hidden]` among it. A
 view that writes a raw `<style>` with neither helper outweighs every layer, themes included. Inside a layer, selector
 weight still matters, so new rules keep it flat. `/lib/view.js` gained `viewLayer`, `componentsLayer` and `rendererLayer`.
