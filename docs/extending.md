@@ -140,10 +140,10 @@ The ranking is shared code in `/lib/layout.js`, so every renderer orders a regio
   ``rankedActions(heldActions(region.holds, addedActions(board, s)).filter((a) => !(isCommand(a) && omit.includes(`${a.cap}/${a.command}`))), entry)``.
 - `menuPins(menu, holds)`, in `/lib/palette.js`: what a region beside a subject can pin of the subject's menu
   (`subjectMenu`): an extension's action by its `actionId` where the region holds its kind, and the menu's own lines by
-  their id, the same on every subject of a kind (`out` and `worker` on a showing, `MENU_LINE_IDS`). Draw a pinned line
+  their id, the same on every subject of a kind (`out`, a file's `reveal` and `edit`, and `worker` on a showing, `MENU_LINE_IDS`). Draw a pinned line
   with its `icon`, its label where it has none, and run it as the menu runs it. The tower page's `shown.tab` is drawn
-  so: its ⋯ is the subject menu, whose "Pin to the tab" pins any of them, and its layout pins `out` with `actions: 0`,
-  so a showing's tab draws the browser tab's ↗ and the rest stays in the ⋯ until pinned; a link's tab draws no `out`,
+  so: its ⋯ is the subject menu, whose "Pin to the tab" pins any of them, and its layout pins `out`, `reveal` and `edit` with `actions: 0`,
+  so a showing's tab draws the browser tab's ↗, a file's also its Finder and editor icons, and the rest stays in the ⋯ until pinned; a link's tab draws no `out`,
   since the link opens outside the tower and its name's ↗ already says so.
 - `rankedBadges(board, subject)`: the folds' badges, the most severe tone first, board order within a tone. A card's exemptions are
   apart (`exemptionsOf`): draw them with its identity and never tuck them. `badgesOf(board, subject)` is the two
@@ -1064,7 +1064,7 @@ config declares; this table says it for the ones that ship, generated from their
 | `card` | `card.row`, the worker's row in the sidebar: badges, lines<br>`card.head`, the worker's header, and the palette: badges, lines, verbs, commands<br>`card.panes`, the worker's tabs (terminal, brief, changes, reviews, shown files): views<br>`card.composer`, at the foot of the worker's Brief, under its latest turn: what writes to the worker: views | `card.desk`, the worker's panel at its desk: badges, lines, verbs | not drawn | `card.whoami`, under the worker in `tower whoami`: lines |
 | `conversation` | `conversation.head`, the conversation's heading in the Brief: badges, verbs, commands | `conversation.head`, the conversation's heading in the logbook: badges | not drawn | not drawn |
 | `floor` | `floor.sign`, the floor's sign in the sidebar while the floor is open, and the palette: each command its icon alone, its label and hint the tip: commands<br>`floor.section`, the floor's section in the sidebar, its Tidy and the palette: badges, verbs, asks, tidy | `floor.console`, the floor's Tidy: tidy | not drawn | not drawn |
-| `shown` | `shown.head`, beside the worker's tabs while the showing is open: badges, verbs<br>`shown.tab`, inside the showing's tab while it is open, before its ⋯: what is pinned of its menu, an extension's command or one of the menu's own lines (out, worker; a link's tab no out), each its icon alone, its label and hint the tip; the rest tucked in the ⋯, which pins them: commands | not drawn | not drawn | not drawn |
+| `shown` | `shown.head`, beside the worker's tabs while the showing is open: badges, verbs<br>`shown.tab`, inside the showing's tab while it is open, before its ⋯: what is pinned of its menu, an extension's command or one of the menu's own lines (out, a file's reveal and edit, worker; a link's tab no out), each its icon alone, its label and hint the tip; the rest tucked in the ⋯, which pins them: commands | not drawn | not drawn | not drawn |
 | `lines` | `lines.acts`, under lines picked in a worker's Changes: what acts on them, a review's note box among them: commands, views | `lines.acts`, under lines picked in a worker's Changes at its desk: what writes a note on them: views | not drawn | not drawn |
 | `said` | `said.acts`, beside a prompt's or an answer's copy in the Brief: commands | not drawn | not drawn | not drawn |
 | `section` | `section.acts`, in a gutter beside a markdown document, level with each of its sections: commands | not drawn | not drawn | not drawn |

@@ -89,14 +89,18 @@ test("a worker's processes are one line that asks first, none while it works; it
     assert.ok(!labels(menuOf({ ...left, status } as Card).groups[0]).some((l) => l.startsWith('End')), `${status}: its processes may be its own work in flight`)
 })
 
-test("a showing's menu offers a browser tab and its worker's tab, not the showing a click opens already", () => {
+test("a showing's menu offers a browser tab, a file's Finder and editor, and its worker's tab, not the showing a click opens already", () => {
   const menu = subjectMenu(board, 'shown:w1/10', { open: [{ view: 'tower/document', subject: 'shown:w1/10' }], origins: {} })!
-  assert.deepEqual(labels(menu.groups[0]), ['Open in a browser tab', "Show ODIN-07's terminal"])
-  assert.deepEqual((menu.groups[0].lines[0] as MenuLine).does, { t: 'link', href: '/shown/s1/tmp/a/report.html' })
-  assert.deepEqual((menu.groups[0].lines[1] as MenuLine).does, { t: 'action', subject: 'card', verb: 'drive', id: 'w1' })
+  assert.deepEqual(labels(menu.groups[0]), ['Open in a browser tab', 'Reveal in Finder', 'Open in your editor', "Show ODIN-07's terminal"])
+  assert.deepEqual(menu.groups[0].lines.map((l) => (l as MenuLine).does), [
+    { t: 'link', href: '/shown/s1/tmp/a/report.html' },
+    { t: 'file', verb: 'reveal', path: '/tmp/a/report.html' },
+    { t: 'file', verb: 'edit', path: '/tmp/a/report.html' },
+    { t: 'action', subject: 'card', verb: 'drive', id: 'w1' },
+  ])
   const home = { ...card, onDuty: false, actions: [{ verb: 'brief' }] } as unknown as Card
   const gone = subjectMenu({ ...board, floors: [{ ...floor, cards: [home] }] } as unknown as Board, 'shown:w1/10', nothingOpen)!
-  assert.deepEqual((gone.groups[0].lines[1] as MenuLine).label, "Show ODIN-07's brief", 'a worker gone home has no terminal')
+  assert.deepEqual((gone.groups[0].lines[3] as MenuLine).label, "Show ODIN-07's brief", 'a worker gone home has no terminal')
 })
 
 test("a menu's line ids are each its own: a menu that would hold two alike throws", () => {

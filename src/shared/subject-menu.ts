@@ -20,6 +20,9 @@ export type DisplayPick = { t: 'display'; subject: string }
 /** A floor's `shell` or `editor` on one of its dirs, the hub or a repo. */
 export type DirPick = { t: 'dir'; verb: 'shell' | 'editor'; project: string; dir: string }
 
+/** A file a worker showed, revealed in Finder or opened in the user's editor: the `reveal` or `edit` call on its path. @since 2.24 */
+export type FilePick = { t: 'file'; verb: 'reveal' | 'edit'; path: string }
+
 /** A page of the web, opened beside the renderer. */
 export type LinkPick = { t: 'link'; href: string }
 
@@ -30,7 +33,7 @@ export type GoPick = { t: 'go'; target: GoTarget }
  * What picking a line of a subject's menu does, tagged by `t`: a verb the board offers, an extension's action, a view
  * opened or a place gone to, as the palette's entries do; or one of the menu's own.
  */
-export type MenuPick = ActionPick | AddedPick | OpenPick | GoPick | DisplayPick | DirPick | LinkPick
+export type MenuPick = ActionPick | AddedPick | OpenPick | GoPick | DisplayPick | DirPick | FilePick | LinkPick
 
 /**
  * One line: its `id`, unique in the menu; `open`, on what can be open, whether the renderer has it open (a tick),
@@ -162,9 +165,11 @@ const workerLine = (c: Card): MenuLine[] => {
   return [{ id: 'worker', label: `Show ${c.callsign}'s ${verb === 'drive' ? 'terminal' : 'brief'}`, hint: verbHint('card', verb, c), icon: verb === 'drive' ? 'shell' : 'thread', does: { t: 'action', subject: 'card', verb, id: c.id } }]
 }
 
-/** A showing's own lines, by id: a browser tab and its worker's tab. */
+/** A showing's own lines, by id: a browser tab, a file's Finder and editor, and its worker's tab. */
 const SHOWN_LINES = {
   out: (_: Card, s: CardShown): MenuLine[] => [{ id: 'out', label: 'Open in a browser tab', hint: s.target, icon: 'remote', does: { t: 'link', href: shownHref(s) } }],
+  reveal: (_: Card, s: CardShown): MenuLine[] => (s.kind === 'file' ? [{ id: 'reveal', label: 'Reveal in Finder', hint: s.target, icon: 'finder', does: { t: 'file', verb: 'reveal', path: s.target } }] : []),
+  edit: (_: Card, s: CardShown): MenuLine[] => (s.kind === 'file' ? [{ id: 'edit', label: 'Open in your editor', hint: s.target, icon: 'editor', does: { t: 'file', verb: 'edit', path: s.target } }] : []),
   worker: (c: Card): MenuLine[] => workerLine(c),
 } satisfies Record<string, (c: Card, s: CardShown) => MenuLine[]>
 
