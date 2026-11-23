@@ -231,29 +231,26 @@
 
   /** @type {Set<() => void>} */
   const themeWatchers = new Set()
-  /** The theme URLs this page loaded last, as the board said them; unknown before the first board. @type {string | undefined} */
-  let themesHeard
   let themesLoaded = 0
 
   /**
    * A renderer's page follows its themes as the board says them: the tower links the stylesheet importing them into the
-   * page it serves (`data-tower-themes`), and when they change this links it again, drops the old link once the new one
-   * has loaded, and tells `onThemes` then, so what a page computes from the tokens (a terminal's colours) is read again.
+   * page it serves, naming their URLs in `data-tower-themes`, and when they change this links it again, drops the old
+   * link once the new one has loaded, and tells `onThemes` then, so what a page computes from the tokens (a terminal's
+   * colours) is read again.
    * @param {string[]} urls
    */
   const followThemes = (urls) => {
     if (served !== 'r') return
-    const heard = urls.join('\n')
+    const heard = urls.join(' ')
     const linked = [...document.querySelectorAll('link[data-tower-themes]')]
-    const first = themesHeard === undefined
-    if (heard === themesHeard || (first && urls.length > 0 === linked.length > 0)) return void (themesHeard = heard)
-    themesHeard = heard
+    if (heard === (/** @type {HTMLLinkElement | undefined} */ (linked.at(-1))?.dataset.towerThemes ?? '')) return
     const done = () => (linked.forEach((link) => link.remove()), themeWatchers.forEach((fn) => fn()))
     if (!urls.length) return done()
     const link = document.createElement('link')
     link.rel = 'stylesheet'
     link.href = `/renderers/${encodeURIComponent(servedAs)}/themes.css?${++themesLoaded}`
-    link.dataset.towerThemes = ''
+    link.dataset.towerThemes = heard
     link.addEventListener('load', done, { once: true })
     link.addEventListener('error', done, { once: true })
     document.head.append(link)

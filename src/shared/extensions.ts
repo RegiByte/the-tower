@@ -1070,7 +1070,7 @@ export const Manifest = z
         .record(z.string().regex(/^[\w-]+(\.[\w-]+)?$/, "a renderer's name: page, week, tower3d or an extension's"), z.array(Path).min(1))
         .optional()
         .describe(
-          "Themes it contributes, by renderer: stylesheets inside the extension that the renderer's pages load after their own, while it is accepted, before the config's renderers.<name>.themes. Each is imported into a layer of its own, so it outweighs the tower's rules whatever its selectors weigh, and names no layer; the files beside it are served with it.",
+          "Themes it contributes, by renderer: stylesheets inside the extension that the renderer's pages load after their own, while it is accepted, before the config's renderers.<name>.themes. Each is imported into a layer of its own, so it outweighs the tower's rules whatever its selectors weigh, and names no layer; only the stylesheet itself is served.",
         ),
     ),
     shelf: since213(

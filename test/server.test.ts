@@ -575,6 +575,28 @@ test('server: a sandboxed html file read by a script is the file as written; loa
   }
 })
 
+test("server: a renderer's theme is served alone at the tower's origin: its page links it, and no file beside it is served", async () => {
+  const folder = path.join(ROOT, 'theme-home')
+  mkdirSync(folder, { recursive: true })
+  writeFileSync(path.join(folder, 'theme.css'), ':root { --accent: red; }')
+  writeFileSync(path.join(folder, 'private.txt'), 'not for the web')
+  const before = readFileSync(CONFIG, 'utf8')
+  try {
+    handEdit((config) => (config.renderers = { ...config.renderers, plain: { ...config.renderers.plain, themes: [path.join(folder, 'theme.css')] } }))
+    const page = await get('/r/plain/')
+    assert.match(page.body, /<link rel="stylesheet" href="\/renderers\/plain\/themes\.css" data-tower-themes="\/renderers\/plain\/themes\/0\/theme\.css">/)
+    assert.equal((await get('/renderers/plain/themes.css')).body, '@import url("/renderers/plain/themes/0/theme.css") layer(theme.t0);')
+    const theme = await request('/renderers/plain/themes/0/theme.css', { headers: { origin: 'https://elsewhere.example' } })
+    assert.equal(theme.status, 200)
+    assert.equal(theme.body, ':root { --accent: red; }')
+    assert.equal(theme.headers['access-control-allow-origin'], undefined)
+    for (const beside of ['private.txt', '..%2Fconfig.json', '%2E%2E%2Ftheme-home%2Fprivate.txt'])
+      assert.equal((await get(`/renderers/plain/themes/0/${beside}`)).status, 404, beside)
+  } finally {
+    writeFileSync(CONFIG, before)
+  }
+})
+
 /** The `tower` command as a worker runs it: its output, or its failure's. */
 const cli = (session: string, ...args: string[]) =>
   execFileSync(process.execPath, ['--import', 'tsx', path.join('src', 'cli.ts'), ...args], { cwd: REPO, env: { ...ENV, TOWER_SESSION_ID: session }, encoding: 'utf8' })
