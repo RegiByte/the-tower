@@ -90,6 +90,7 @@ export function watchTips(doc: Document) {
     if (shown) shown.removeAttribute('aria-describedby')
     else redrawn.observe(doc.body, { childList: true, subtree: true, attributeFilter: ['aria-describedby'] })
     shown = el
+    waiting = undefined
     tip.textContent = el.dataset.tip ?? ''
     if (!tip.matches(':popover-open')) tip.showPopover()
     placeBeside(tip, el)
@@ -103,6 +104,7 @@ export function watchTips(doc: Document) {
   }
   const hide = () => {
     clearTimeout(pending)
+    waiting = undefined
     if (!shown) return
     shown.removeAttribute('aria-describedby')
     shown = undefined
