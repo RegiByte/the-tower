@@ -1108,7 +1108,7 @@ config declares; this table says it for the ones that ship, generated from their
 | `item.*` | `item.head`, the item's view, the drafts editor for a draft, and the palette: badges, verbs, commands | not drawn | not drawn | not drawn |
 | `collection` | `floor.trays`, a floor's row of trays in the sidebar, one view for each of its collections: the id names where it sits, its subject is the collection: views | not drawn | not drawn | not drawn |
 | `shelf` | not drawn | not drawn | not drawn | not drawn |
-| `board` | `board.main`, the main pane (a worker, the skyline, a floor's archive, a collection, a shelf entry): views<br>`board.strip`, a strip at the top of the sidebar, its view mounted for as long as the page is open: what an extension keeps in sight, or plays, whatever the main pane shows: views<br>`board.sign`, beside the sidebar's Floors and Stats, and the palette: commands about no one floor, such as a new floor, each its icon alone, its label and hint the tip: commands<br>`board.skyline`, in the skyline's greeting, the welcome on a new tower included: commands about no one floor, each its icon and label: commands<br>`board.notes`, the notes at the top of the sidebar, for asks about no floor: asks | not drawn | not drawn | not drawn |
+| `board` | `board.main`, the main pane (a worker, the skyline, a floor's archive, a collection, a shelf entry): views<br>`board.dialog`, over the page, modal: a view to read or act in while the page goes on behind it, opened by display with that view, closed by its close button, Escape or a press outside: views<br>`board.strip`, a strip at the top of the sidebar, its view mounted for as long as the page is open: what an extension keeps in sight, or plays, whatever the main pane shows: views<br>`board.sign`, beside the sidebar's Floors and Stats, and the palette: commands about no one floor, such as a new floor, each its icon alone, its label and hint the tip: commands<br>`board.skyline`, in the skyline's greeting, the welcome on a new tower included: commands about no one floor, each its icon and label: commands<br>`board.notes`, the notes at the top of the sidebar, for asks about no floor: asks | not drawn | not drawn | not drawn |
 <!-- /regions -->
 
 An extension's own kinds are drawn by none of them (`subjectAt` finds one, for a renderer of your own). A renderer
@@ -1333,6 +1333,23 @@ keeps no room for it. Whether the worker takes a prompt is the card's `prompt` v
 the call is `submit/at-prompt`, which says why it refused ([The API](#the-api)). A draft kept across reloads goes in
 `tower.store`, by card. Tower 3D draws no `card.composer`. [`examples/extensions/chat`](../examples/extensions/chat/) is one to copy: a
 text box that sends with the keymap's `submit` chord and says each refusal's message under it, keeping the text.
+
+**The dialog region.** Over the tower page, `board.dialog` holds one view on the board at `dialog` scale (API 2.31): a
+modal for reading or acting in while the page goes on behind it, a worker's terminal still running under it. A view
+declares it by its scale, as for any region, and lists `pane` beside it:
+
+```json
+"center": { "module": "center.js", "export": "mount", "on": ["board"], "scales": ["dialog", "pane"], "words": { "label": "Learning center", "hint": "…" } }
+```
+
+It opens the way a main-pane view does, by display with the view named: `kit.display('board', { view: 'guides/center' })`
+from a command, the view's chord, its palette line or "Open <label>". The page opens the dialog on it, titled by the
+view's `label`, and leaves the main pane and the location as they are, so a reload closes it. Its close button, Escape
+and a press outside close it, and display of anything else does too; focus returns to where it was. While it is open
+the page behind is inert and its shortcuts don't run. A view there reads `ctx.scale === 'dialog'` to leave out a
+title and a close of its own. A renderer that draws no dialog, Tower 3D or one of your own, offers the view at `pane`
+in its main region instead, which is why a dialog view lists `pane` too: one with `dialog` alone is offered nowhere
+there. [`extensions/guides`](../extensions/guides/) is one to copy.
 
 **The bus.** What a view draws that the board never carries, and that a user can still point at, is a
 viewer subject: a prompt or an answer in the Brief (`said`), a section of a markdown document (`section`), lines
