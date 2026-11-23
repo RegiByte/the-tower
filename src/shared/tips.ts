@@ -72,6 +72,8 @@ export function watchTips(doc: Document) {
   doc.body.append(tip)
   let shown: HTMLElement | undefined
   let pending: ReturnType<typeof setTimeout> | undefined
+  /** The element whose tip shows once the pointer has rested on it. */
+  let waiting: HTMLElement | undefined
   let warmUntil = 0
   /**
    * A redraw may take the element away while its tip shows: the tip goes with it. A morph that keeps the element strips
@@ -96,6 +98,7 @@ export function watchTips(doc: Document) {
   const showSoon = (el: HTMLElement) => {
     if (shown || performance.now() < warmUntil) return show(el)
     clearTimeout(pending)
+    waiting = el
     pending = setTimeout(() => el.isConnected && show(el), INTENT_MS)
   }
   const hide = () => {
@@ -121,14 +124,23 @@ export function watchTips(doc: Document) {
    * matches `:focus-visible`. A key clears it, so the focus a Tab gives after a press that focused nothing still does.
    */
   let pressed = false
+  /**
+   * Whether a key came since the last press: focus a script moves on a key, as a menu's arrow keys do, is keyboard focus
+   * too, which WebKit doesn't mark `:focus-visible`.
+   */
+  let keyed = false
   doc.addEventListener('focusin', (e) => {
     const byPress = pressed
     pressed = false
     const el = tipped(e.target)
-    if (el && !byPress && (e.target as Element).matches(':focus-visible')) show(el)
+    if (el && !byPress && (keyed || (e.target as Element).matches(':focus-visible'))) show(el)
   })
-  doc.addEventListener('focusout', hide)
-  doc.addEventListener('pointerdown', () => ((pressed = true), hide()), true)
+  /** Focus leaving the element the tip is for hides it; focus moving elsewhere, as a menu's items take it under the pointer, doesn't. */
+  doc.addEventListener('focusout', (e) => {
+    const el = tipped(e.target)
+    if (el && (el === shown || el === waiting)) hide()
+  })
+  doc.addEventListener('pointerdown', () => ((pressed = true), (keyed = false), hide()), true)
   doc.addEventListener('scroll', hide, true)
-  doc.addEventListener('keydown', (e) => ((pressed = false), e.key === 'Escape' && hide()), true)
+  doc.addEventListener('keydown', (e) => ((pressed = false), (keyed = true), e.key === 'Escape' && hide()), true)
 }
