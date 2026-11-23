@@ -310,7 +310,6 @@ dialog.palette[open] { display: flex; flex-direction: column; max-height: min(56
 .region-menu .menu-head { display: flex; flex-direction: column; gap: var(--sp-xs); padding: var(--sp-s) var(--sp-m); border-bottom: 1px solid var(--line); color: var(--muted); }
 .region-menu .menu-head:empty { display: none; }
 .region-menu .menu-head p { margin: 0; overflow-wrap: anywhere; }
-.region-menu .menu-badges { display: flex; flex-wrap: wrap; gap: var(--sp-xs); }
 .region-menu [role="menu"] { display: flex; flex-direction: column; padding-top: var(--sp-xs); }
 .region-menu .menu-label { padding: var(--sp-xs) var(--sp-m) var(--sp-2xs); color: var(--faint); font-size: var(--fs-xs); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
 .region-menu [role="separator"] { margin: var(--sp-xs) 0; border-top: 1px solid var(--line); }
@@ -323,8 +322,6 @@ dialog.palette[open] { display: flex; flex-direction: column; max-height: min(56
 .region-menu [role="menuitemcheckbox"]::before { content: '✓'; flex: none; align-self: center; display: grid; place-items: center; width: 14px; height: 14px; border: 1px solid var(--line);
   border-radius: var(--radius-s); color: transparent; font-size: 10px; line-height: 1; }
 .region-menu [role="menuitemcheckbox"][aria-checked="true"]::before { color: var(--panel); background: var(--ink); border-color: var(--ink); }
-.region-menu .menu-head .menu-once { color: var(--accent); }
-.region-menu .menu-head .menu-line { color: var(--ink); }
 .region-menu .menu-item.fresh .menu-word::after { content: ''; display: inline-block; width: 6px; height: 6px; margin-left: var(--sp-xs); border-radius: 50%; background: var(--accent); vertical-align: middle; }
 
 .pane-tab { min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-s); color: var(--muted); background: none; }

@@ -110,6 +110,9 @@ one renderer ([[renderer-is-disposable]]). And the tower stores only intent, fac
   answers what a region can pin of a menu, and `tower config check` takes those ids as pins of a region holding
   commands. The tower page's `shown.tab` offers `menu` alone, its ⋯ being the showing's subject menu, and its own
   layout pins `out`, `reveal` and `edit` with `actions: 0`: a file's Finder and editor icons are menu lines, unpinned like any pin.
+  Its `card.head` keeps the measured `menu` form, but its ⋯ is the worker's subject menu too, so a worker has one menu:
+  the region adds what only it tucked (new actions, the view's controls, badges, lines and cut text) and "Pin to the
+  head"; a worker row's ⋯, the same menu, pins the extensions' lines into `card.row` ("Pin to the row").
 - *"New" without a stored fact.* The viewer keeps a seen set in `tower.store`, per action id across every head and
   every renderer of theirs ([`seenOf`](ref:hub/src/shared/viewer.ts#seenOf)). With nothing kept, everything offered
   counts as seen, so a fresh tower highlights nothing. An action stops being new when the viewer runs it, pins it,
