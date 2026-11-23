@@ -169,8 +169,9 @@ exactly:
 
 A region whose declaration gives a `label` ("Extensions on a worker's head") offers the viewer a choice beside the
 budgets: its buttons on screen, or in the menu only (`onScreen: false` in its layout entry, the highest layer's).
-`drawnEntry(entry)` in `/lib/layout.js` is the entry to draw by: in the menu only, every budget is `0`, so the region
-draws what is pinned and nothing else, in any form, `wrap` included; `isOnScreen(entry)` says which. A region that holds
+`drawnEntry(entry)` in `/lib/layout.js` is the entry to draw by: in the menu only, the `lines` and `actions` budgets
+are `0`, so the region draws what is pinned of those, in any form, `wrap` included, and its badges, which are
+information, not buttons; `isOnScreen(entry)` says which. A region that holds
 nothing (`holds: []`) is declared for its label alone: it names a group of the renderer's own buttons, which the
 renderer draws or not by `isOnScreen`. Hide nothing the subject's menu and the palette don't reach. An extension's region that holds views takes no `label`: its manifest is refused, since only buttons move to the menu. The tower page
 offers it for a floor's sign, directories, section, trays and shelf, and for a worker's row and head, extensions' and

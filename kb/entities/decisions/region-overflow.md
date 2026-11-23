@@ -117,8 +117,8 @@ one renderer ([[renderer-is-disposable]]). And the tower stores only intent, fac
   head"; a worker row's ⋯, the same menu, pins the extensions' lines into `card.row` ("Pin to the row").
 - *On screen, or in the menu only.* A region a renderer gives a `label` offers the viewer one more choice, per
   region: its buttons on screen (the default), or in the menu only (`onScreen: false`, the highest layer's, so the
-  config can set it for the user). Off screen, every budget is 0 ([`drawnEntry`](ref:hub/src/shared/regions.ts#drawnEntry)),
-  so the region draws its pins alone in any form; a labelled region that holds nothing names a group of the
+  config can set it for the user). Off screen, the lines and actions budgets are 0 ([`drawnEntry`](ref:hub/src/shared/regions.ts#drawnEntry)),
+  so the region draws its pins of those in any form and keeps its badges, which are information, never hidden; a labelled region that holds nothing names a group of the
   renderer's own buttons, drawn or not by [`isOnScreen`](ref:hub/src/shared/regions.ts#isOnScreen). It never hides a
   capability: only regions whose buttons the subject's menu and the palette reach take a label.
 - *"New" without a stored fact.* The viewer keeps a seen set in `tower.store`, per action id across every head and

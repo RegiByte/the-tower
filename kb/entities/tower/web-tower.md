@@ -155,7 +155,7 @@ floor's sign, a floor, a worker's row and head and beside a showing's tabs, a fl
 own buttons declared as regions holding nothing (`floor.dirs`, `floor.shelf`, `card.row-verbs`, `card.head-verbs`, the
 last tucking the head's `data-tuck` controls whole). The viewer chooses in the settings popover's "Buttons on screen" and
 in a "Show on screen" group at the end of a Pin to… submenu, both written by
-[`screenIn`](ref:hub/renderers/page/page.js#screenIn) to their layer of the layout. A floor's asks always stay. A ⋯-opened menu is anchored to its button, which the SDK
+[`screenIn`](ref:hub/renderers/page/page.js#screenIn) to their layer of the layout. A floor's asks and every region's badges always stay, and a floor set to Menu lists the views its section opens in its ⋯. A ⋯-opened menu is anchored to its button, which the SDK
 closes it on losing: the floors' and the tab row's morphs keep a row's, a sign's or a tab's ⋯ through boards, so a
 board drawn while the menu is open leaves it open where it was.
 
