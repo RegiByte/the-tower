@@ -87,6 +87,9 @@ const addedLines = (board: Board, subject: Subject): MenuLine[] =>
 /** The groups that have lines. */
 const groups = (...all: MenuGroup[]): MenuGroup[] => all.filter((g) => g.lines.length)
 
+/** How many items a collection keeps, as its line's hint says it: `none kept yet`, `1 kept`, `3 kept`. */
+const keptCount = (n: number) => (n ? `${n} kept` : 'none kept yet')
+
 const floorMenu = (board: Board, f: Floor, ctx: MenuContext): SubjectMenu => {
   const key = `floor:${f.id}`
   const verbs = f.actions.filter((a) => !UNLISTED.has(verbId('floor', a.verb))).map((a): MenuLine => {
@@ -97,7 +100,7 @@ const floorMenu = (board: Board, f: Floor, ctx: MenuContext): SubjectMenu => {
   const archive: MenuLine[] = past ? [{ id: 'archive', label: 'Archive', hint: `${past} past workers and their conversations`, open: isOpen(ctx, key, 'tower/archive'), does: { t: 'open', subject: key, view: 'tower/archive' } }] : []
   const kept = f.collections.map((c): MenuLine => {
     const subject = `collection:${f.id}/${c.id}`
-    return { id: subject, label: c.label, hint: `${c.items.length} kept${c.description ? `: ${c.description}` : ''}`, open: isOpen(ctx, subject, COLLECTION_VIEW), does: { t: 'open', subject, view: COLLECTION_VIEW } }
+    return { id: subject, label: c.label, hint: `${keptCount(c.items.length)}${c.description ? `: ${c.description}` : ''}`, open: isOpen(ctx, subject, COLLECTION_VIEW), does: { t: 'open', subject, view: COLLECTION_VIEW } }
   })
   const shelf = (f.shelf ?? []).map((entry, n): MenuLine => {
     const subject = `shelf:${f.id}/${n}`
