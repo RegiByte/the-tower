@@ -5,7 +5,7 @@ import { esc } from '/lib/words.js'
 import { type Broken, byCategory, type Guide, GUIDES, guideOf, isGuide, matches, TOWER_WIDE } from './guide.ts'
 
 /**
- * `guides/center`, the learning center on the board: every guide in the tower-wide `guides` collection, the ones the
+ * `guides/center`, the learning center on the board, over the page where a renderer draws a dialog: every guide in the tower-wide `guides` collection, the ones the
  * guides extension ships, those other extensions contribute and the user's own, listed by category and order and
  * searched by title, keywords and body, the one picked drawn beside the list. A guide's relative images are read from beside
  * it in the collection.
@@ -50,7 +50,9 @@ const bodyHtml = (guide: Guide) => {
   return page.innerHTML
 }
 
-export const mount: Mount = (host, { tower, board: first, kit }) => {
+export const mount: Mount = (host, { tower, board: first, kit, scale }) => {
+  /** Over the page, the dialog names it and closes it: its head keeps the tour alone. */
+  const over = scale === 'dialog'
   let board: Board = first
   let query = ''
   let open: string | undefined
@@ -59,7 +61,7 @@ export const mount: Mount = (host, { tower, board: first, kit }) => {
   const reading = new Map<string, number>()
 
   host.innerHTML = `<style>${STYLE}${componentsLayer(markdownCss)}</style>
-  <div class="shelf-head"><span class="label">Learning center</span><span class="dim">how to do things in the tower</span>
+  <div class="shelf-head">${over ? '' : '<span class="label">Learning center</span>'}<span class="dim">how to do things in the tower</span>
     <button class="tour primary" data-tour>Take the tour</button><span class="actions"></span></div>
   <div class="center"><nav class="index" aria-label="guides"><input type="search" placeholder="Search guides" aria-label="search guides"><div class="list"></div></nav>
     <article class="reader" aria-live="polite"></article></div>`
@@ -109,7 +111,7 @@ export const mount: Mount = (host, { tower, board: first, kit }) => {
     const all = files().flatMap((i) => (reads.has(i.id) ? [reads.get(i.id)!.guide] : []))
     const guides = all.filter(isGuide)
     if (!open || !guides.some((g) => g.id === open)) open = byCategory(guides)[0]?.guides[0]?.id
-    paintOnce($('.shelf-head .actions'), closeHtml(board.keys))
+    if (!over) paintOnce($('.shelf-head .actions'), closeHtml(board.keys))
     paintOnce($('.list'), listHtml(guides, all.filter((g): g is Broken => !isGuide(g))))
     const guide = guides.find((g) => g.id === open)
     paintOnce($('.reader'), guide ? `<div class="md"><h1>${esc(guide.title)}</h1>${bodyHtml(guide)}</div>` : '<p class="empty">Pick a guide.</p>')

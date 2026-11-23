@@ -1,6 +1,6 @@
 # Guides
 
-The learning center: short guides to the tower's gestures, read in a view of their own, and a guided tour given by a
+The learning center: short guides to the tower's gestures, read in a dialog over the page, and a guided tour given by a
 worker on your own floors.
 
 ## What it adds
@@ -14,13 +14,14 @@ welcome on a new tower to every day after, beside Floors and Stats in the sideba
 | --- | --- |
 | ![The welcome with New floor, Learning center and Take the tour](shots/welcome-light.png) | ![The welcome with New floor, Learning center and Take the tour](shots/welcome-dark.png) |
 
-**The learning center** (`guides/center`, in the main pane) lists every guide by category, in each guide's order,
+**The learning center** (`guides/center`, over the page in the `board.dialog` region, so a worker keeps running
+behind it; in the main pane of a renderer that draws no dialog) lists every guide by category, in each guide's order,
 searched by title, keywords and body. The picked guide is drawn beside the list. A guide another extension
 contributes carries its name after its title. A file that doesn't read as a guide is listed at the bottom with why.
 
 | Light | Dark |
 | --- | --- |
-| ![The learning center: guides by category on the left, the command palette guide on the right](shots/center-light.png) | ![The learning center: guides by category on the left, the command palette guide on the right](shots/center-dark.png) |
+| ![The learning center over the page: guides by category on the left, the command palette guide on the right](shots/center-light.png) | ![The learning center over the page: guides by category on the left, the command palette guide on the right](shots/center-dark.png) |
 
 **Take the tour** (`guides/tour`) starts a worker on the first floor in board order, in its hub, asked "Give me a
 tour of the tower.", and goes to it. The worker follows the `tower:guide` skill, which reads the guides as the gestures

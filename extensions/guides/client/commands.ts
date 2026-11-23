@@ -6,7 +6,7 @@ import type { CommandKit } from '/lib/view.js'
 /** What the tour's worker is asked: the words the `tower:guide` skill answers. */
 export const TOUR_PROMPT = 'Give me a tour of the tower.'
 
-/** `guides/open`, on the board: the learning center in the main pane. */
+/** `guides/open`, on the board: the learning center, over the page where the renderer draws a dialog, else in its main pane. */
 export const openCenter = ({ kit }: { target: Subject; kit: CommandKit }) => kit.display('board', { view: 'guides/center' })
 
 /** How long the tour waits for its worker to reach the board. */

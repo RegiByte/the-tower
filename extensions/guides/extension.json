@@ -3,7 +3,7 @@
   "version": "1.0",
   "title": "Guides",
   "description": "The learning center: short guides to the tower's gestures, its own and any extension's, read in a view of their own, and a guided tour by a worker.",
-  "requires": { "tower": "2.14" },
+  "requires": { "tower": "2.31" },
   "client": "client",
   "collections": {
     "guides": {
@@ -18,7 +18,7 @@
       "module": "commands.js",
       "export": "openCenter",
       "on": ["board"],
-      "words": { "label": "Learning center", "hint": "guides to the tower's gestures, searched by title, keywords and body", "icon": "help" }
+      "words": { "label": "Learning center", "hint": "guides to the tower's gestures, searched by title, keywords and body, over the page", "icon": "help" }
     },
     "tour": {
       "module": "commands.js",
@@ -32,7 +32,7 @@
       "module": "center.js",
       "export": "mount",
       "on": ["board"],
-      "scales": ["pane"],
+      "scales": ["dialog", "pane"],
       "needs": ["display", "run", "toast"],
       "words": { "label": "Learning center", "hint": "the tower's guides by category, searched by title, keywords and body" }
     }
