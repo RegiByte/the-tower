@@ -374,8 +374,8 @@ export function briefHtml({ briefs, agent, said, promptBy, open, expanded = new 
 /** Scoped under `.brief-view`; reads the design's tokens from `/design.css`, and `markdownCss` sets the words. */
 export const briefCss = `.brief-view { display: flex; flex-direction: column; gap: var(--sp-xs); font: var(--fs-l)/1.55 var(--ui); color: var(--ink); }
 .brief-view .brief-bar { position: sticky; top: 0; z-index: 1; display: flex; justify-content: flex-end; padding: var(--sp-s) 0; background: var(--panel); }
-.brief-view .seg { display: flex; gap: var(--sp-2xs); padding: var(--sp-2xs); border-radius: var(--radius); background: var(--sunk); }
-.brief-view .seg button { padding: var(--sp-2xs) var(--sp-l); border: 0; border-radius: var(--radius); background: none; color: var(--muted); font: 700 var(--fs-s)/1.4 var(--ui); cursor: pointer; }
+.brief-view .seg { display: flex; gap: var(--sp-2xs); padding: var(--sp-2xs); border-radius: var(--radius-control); background: var(--sunk); }
+.brief-view .seg button { padding: var(--sp-2xs) var(--sp-l); border: 0; border-radius: var(--radius-control); background: none; color: var(--muted); font: 700 var(--fs-s)/1.4 var(--ui); cursor: pointer; }
 .brief-view .seg button:hover { color: var(--ink); } .brief-view .seg button.on { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px #0003; }
 .brief-view h3 { margin: .6em 0 .2em; line-height: 1.4; }
 .brief-view .brief-session-head { margin-top: 1.4em; padding-top: 1em; border-top: 1px solid var(--line); }
@@ -394,7 +394,7 @@ export const briefCss = `.brief-view { display: flex; flex-direction: column; ga
 .brief-view .bubble.working .lamp { margin: 0 var(--sp-2xs) 0 var(--sp-xs); vertical-align: -1px; }
 .brief-view .bubble > header .acts { margin-left: auto; display: flex; gap: var(--sp-xs); opacity: .55; }
 .brief-view .bubble:hover > header .acts, .brief-view .bubble > header .acts:focus-within { opacity: 1; }
-.brief-view .bubble > header button { padding: 0 var(--sp-m); font: 700 var(--fs-xs)/1.6 var(--ui); letter-spacing: 0; color: var(--muted); background: none; border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer; }
+.brief-view .bubble > header button { padding: 0 var(--sp-m); font: 700 var(--fs-xs)/1.6 var(--ui); letter-spacing: 0; color: var(--muted); background: none; border: 1px solid var(--line); border-radius: var(--radius-control); cursor: pointer; }
 .brief-view .bubble > header button:hover { color: var(--ink); }
 .brief-view .raw { white-space: pre-wrap; overflow-wrap: anywhere; font: var(--fs-m)/1.55 var(--mono); font-variant-ligatures: none; }
 .brief-view .long > :is(.md, .raw) { max-height: 18em; overflow: hidden; mask-image: linear-gradient(#000 65%, transparent); }
@@ -404,11 +404,11 @@ export const briefCss = `.brief-view { display: flex; flex-direction: column; ga
 .brief-view .more input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .brief-view .more:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-s); }
 .brief-view .more .hide, .brief-view .more:has(input:checked) .show { display: none; } .brief-view .more:has(input:checked) .hide { display: inline; }
-.brief-view .brief-session { margin: .3em 0; border: 1px solid var(--line); border-radius: var(--radius); padding: 0 var(--sp-l); }
+.brief-view .brief-session { margin: .3em 0; border: 1px solid var(--line); border-radius: var(--radius-card); padding: 0 var(--sp-l); }
 .brief-view .brief-session[open] { padding-bottom: var(--sp-s); }
 .brief-view .brief-session > summary { cursor: pointer; padding: var(--sp-m) 0; line-height: 1.4; }
 .brief-view .idle { color: var(--faint); font-style: italic; }
-.brief-view .earlier { justify-self: start; margin: 0 0 var(--sp-l); padding: var(--sp-2xs) var(--sp-l); border: 1px solid var(--line); border-radius: var(--radius); background: none; color: var(--muted); font: 700 var(--fs-s)/1.4 var(--ui); cursor: pointer; }
+.brief-view .earlier { justify-self: start; margin: 0 0 var(--sp-l); padding: var(--sp-2xs) var(--sp-l); border: 1px solid var(--line); border-radius: var(--radius-control); background: none; color: var(--muted); font: 700 var(--fs-s)/1.4 var(--ui); cursor: pointer; }
 .brief-view .earlier:hover { color: var(--ink); }
 .brief-view .steps { display: grid; gap: var(--sp-xs); min-width: 0; margin-left: var(--sp-m); padding-left: var(--sp-l); border-left: 2px solid var(--line); }
 .brief-view .bubble.step { padding: var(--sp-2xs) 0; border: 0; background: none; }
@@ -425,7 +425,7 @@ export const briefCss = `.brief-view { display: flex; flex-direction: column; ga
 .brief-view details.tool .ended { flex: none; color: var(--faint); }
 .brief-view details.tool:is(.error, .denied) .ended { color: var(--broken-text); }
 .brief-view details.tool.running .ended { color: var(--working-text); }
-.brief-view .tool-body { margin: var(--sp-2xs) 0 var(--sp-m); padding: var(--sp-m) var(--sp-l); border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2); font-size: var(--fs-s); }
+.brief-view .tool-body { margin: var(--sp-2xs) 0 var(--sp-m); padding: var(--sp-m) var(--sp-l); border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--panel-2); font-size: var(--fs-s); }
 .brief-view .tool-input { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--sp-2xs) var(--sp-l); margin: 0; }
 .brief-view .tool-input dt { color: var(--muted); font: 700 var(--fs-xs)/1.8 var(--ui); }
 .brief-view .tool-input dd { margin: 0; min-width: 0; }

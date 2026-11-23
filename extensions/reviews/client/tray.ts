@@ -18,11 +18,11 @@ const STYLE = `:where([data-view="${ID}"]) {
   ${itemsCss}
   .threads { padding: var(--sp-m) 0 0; }
   .threads-head { display: flex; align-items: center; padding: 0 var(--sp-2xs) 0 var(--sp-m); }
-  .thread-row { display: grid; width: 100%; grid-template-columns: auto minmax(0, 1fr); column-gap: var(--sp-s); padding: var(--sp-xs) var(--sp-m); border: none; border-radius: var(--radius);
+  .thread-row { display: grid; width: 100%; grid-template-columns: auto minmax(0, 1fr); column-gap: var(--sp-s); padding: var(--sp-xs) var(--sp-m); border: none; border-radius: var(--radius-control);
     background: none; font-size: var(--fs-s); font-weight: 400; text-align: left; color: var(--muted); cursor: pointer; white-space: nowrap; }
   .thread-row .t { overflow: hidden; text-overflow: ellipsis; }
   .thread-row .meta { grid-column: 2; overflow: hidden; text-overflow: ellipsis; color: var(--faint); font: var(--fs-xs)/1.4 var(--mono); letter-spacing: .02em; }
-  .thread-row:hover { background: var(--panel-2); color: var(--ink); }
+  .thread-row:hover { background: var(--hover); color: var(--ink); }
   .thread-row > .icon { align-self: center; color: var(--muted); }
   .threads-none { color: var(--faint); font-style: italic; font-size: var(--fs-s); padding: var(--sp-2xs) var(--sp-m); }
   .landed-fold { display: flex; align-items: center; gap: var(--sp-xs); min-height: var(--control); margin: var(--sp-xs) 0 0; padding: 0 var(--sp-m); border: none; background: none;

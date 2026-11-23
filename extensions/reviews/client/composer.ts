@@ -15,11 +15,11 @@ import type { Appended } from './reviews.ts'
 const ID = 'reviews/composer'
 
 const CSS = `:where([data-view="${ID}"]) {
-  & .note-box { margin: var(--sp-s) var(--sp-l) var(--sp-l); padding: var(--sp-m) var(--sp-l); border: 1px solid var(--accent); border-radius: var(--radius); background: var(--panel); font: var(--fs-m)/1.4 var(--ui); white-space: normal; }
+  & .note-box { margin: var(--sp-s) var(--sp-l) var(--sp-l); padding: var(--sp-m) var(--sp-l); border: 1px solid var(--accent); border-radius: var(--radius-card); background: var(--panel); font: var(--fs-m)/1.4 var(--ui); white-space: normal; }
   & .where { display: flex; align-items: center; gap: var(--sp-s); margin-bottom: var(--sp-s); color: var(--muted); font-size: var(--fs-s); }
   & code { font: var(--fs-s) var(--mono); color: var(--ink); }
   & textarea { display: block; width: 100%; min-height: 72px; resize: vertical; padding: var(--sp-s) var(--sp-m);
-    border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--panel-2); color: var(--ink); font: var(--fs-m)/1.45 var(--ui); }
+    border: 1px solid var(--line-strong); border-radius: var(--radius-control); background: var(--panel-2); color: var(--ink); font: var(--fs-m)/1.45 var(--ui); }
   & textarea::placeholder { color: var(--faint); }
   & .actions { display: flex; align-items: center; gap: var(--sp-s); margin-top: var(--sp-s); }
   & .actions .hint { margin-left: auto; color: var(--faint); font-size: var(--fs-xs); }

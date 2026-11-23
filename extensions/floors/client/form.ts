@@ -19,10 +19,10 @@ const HUB_HINT = 'Where its sessions start by default; the new-worker form can s
 const STYLE = viewCss(
   ID,
   `& .floor-form { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: var(--sp-xl); padding: var(--sp-xl) var(--sp-2xl);
-    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-card); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
   & fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
   & .sources { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--sp-m); }
-  & .sources label { display: flex; flex-direction: column; gap: var(--sp-xs); padding: var(--sp-l); border: 1px solid var(--line-strong); border-radius: var(--radius); cursor: pointer; }
+  & .sources label { display: flex; flex-direction: column; gap: var(--sp-xs); padding: var(--sp-l); border: 1px solid var(--line-strong); border-radius: var(--radius-control); cursor: pointer; }
   & .sources label:has(input:checked) { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
   & .sources input { position: absolute; opacity: 0; pointer-events: none; }
   & .sources label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -32,20 +32,20 @@ const STYLE = viewCss(
   & .field > span { font-weight: 600; font-size: var(--fs-s); }
   & .field > span small { font-weight: 400; color: var(--muted); }
   & .row { display: grid; grid-template-columns: 2fr 1fr; gap: var(--sp-l); }
-  & input[type=text] { padding: var(--sp-m) var(--sp-l); font: var(--fs-m)/1.3 var(--mono); color: var(--ink); background: var(--panel); border: 1px solid var(--line-strong); border-radius: var(--radius); }
+  & input[type=text] { padding: var(--sp-m) var(--sp-l); font: var(--fs-m)/1.3 var(--mono); color: var(--ink); background: var(--panel); border: 1px solid var(--line-strong); border-radius: var(--radius-control); }
   & input[type=text]:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
   ${DIRS_CSS}
   & .repos { display: flex; flex-direction: column; gap: var(--sp-xs); margin: 0; padding: 0; list-style: none; }
   & .repos li { display: flex; align-items: center; gap: var(--sp-m); font: var(--fs-s)/1.3 var(--mono); }
   & .repos li code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  & .picker { display: flex; flex-direction: column; gap: var(--sp-s); padding: var(--sp-m); border: 1px dashed var(--line-strong); border-radius: var(--radius); }
+  & .picker { display: flex; flex-direction: column; gap: var(--sp-s); padding: var(--sp-m); border: 1px dashed var(--line-strong); border-radius: var(--radius-card); }
   & .picker-actions { display: flex; align-items: center; gap: var(--sp-m); }
   & .picker-actions .hint { flex: 1; min-width: 0; }
   & .error { margin: 0; color: var(--broken); }
   & .error:empty { display: none; }
   & footer { display: flex; align-items: center; gap: var(--sp-l); margin-top: auto; }
   & footer .summary { flex: 1; min-width: 0; }
-  & footer .primary { padding: var(--sp-m) var(--sp-xl); border: 0; border-radius: var(--radius); background: var(--ink); color: var(--panel); font-weight: 700; cursor: pointer; }
+  & footer .primary { padding: var(--sp-m) var(--sp-xl); border: 0; border-radius: var(--radius-control); background: var(--primary); color: var(--on-primary); font-weight: 700; cursor: pointer; }
   & footer .primary:disabled { opacity: .5; cursor: default; }
   & [hidden] { display: none !important; }`,
 )

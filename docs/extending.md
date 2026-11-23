@@ -635,12 +635,16 @@ host.addEventListener('valuechange', (e) => keep(e.detail.value))
 **The look.** `/lib-ui/` ships the tower's stylesheet for the parts inside its elements, built on the design's tokens.
 It reads them through the SDK's variables, each set on the `tower-*` element from a token, so a page restyles an
 element by setting one of them on it: `--ui-background` (`--panel`), `--ui-foreground` (`--ink`), `--ui-muted`
-(`--panel-2`), `--ui-muted-foreground` (`--muted`), `--ui-border` (`--line`), `--ui-input` (`--line-strong`),
-`--ui-ring` (`--accent`), `--ui-destructive` (`--broken-text`), `--ui-radius` (`--radius`), `--ui-spacing`
+(`--hover`: a highlighted item and a field's fill), `--ui-muted-foreground` (`--muted`), `--ui-border` (`--line`),
+`--ui-input` (`--line-strong`), `--ui-primary` (`--primary`), `--ui-primary-foreground` (`--on-primary`), `--ui-ring`
+(`--accent`), `--ui-destructive` (`--broken-text`), `--ui-radius` (`--radius-control`), `--ui-spacing`
 (`--sp-xs`), `--ui-font-size` (`--fs-s`), `--ui-font-sans` (`--ui`), `--ui-shadow` (`--shadow-pop`),
 `--ui-icon-chevron` and `--ui-icon-check`. The ⋯ button also reads `--control`. The outer elements are yours to lay
 out: `<tower-combobox>` is a block, `<tower-menu>` is out of the page's flow (`position: fixed`, its content in the top
 layer), `<tower-menu-area>` turns off iOS's long-press callout, and the rest keep the browser's defaults.
+Only these variables and the design's tokens are promised inside a `tower-*` element: its parts' `data-slot`
+attributes, like the page's own classes and state classes, are reached by selectors at best effort and may change in
+any release.
 
 **Versioning.** `test/served-exports.json`'s `libUi` lists each module's tags, each attribute, property, event and state
 with the minor it arrived in, read from the module's `elements` export; the table above is generated from the same
@@ -658,6 +662,24 @@ The tower serves a few things next to the library, each on its own terms:
 | `/x/<cap>/<module>.js` | an extension's client modules; the bundled ones are under `/x/drafts/`, `/x/floors/`, `/x/policies/`, `/x/quota/` and `/x/reviews/` | the extension's own `contract.json`, at its major ([the author's loop](#extensions)) |
 | `/x/tower/<name>.js` | the core's views, which a renderer mounts by id ([Views](#views)) | the view's id and what it `needs`, which a renderer relies on; the library holds no types for these modules |
 | `/xterm.js`, `/xterm.css`, `/addon-fit.js`, `/addon-web-links.js`, `/addon-unicode-graphemes.js`, `/marked.js` | the libraries the tower's own page uses, at the version it depends on | none: those are the libraries' APIs. Vendor your own copy when you need one to stay put |
+
+**Character.** Beside the palette and the scales, `/design.css` holds the tokens a theme sets to reshape every
+renderer at once, each defaulting to an existing token or a fixed value, alike in both schemes and in more contrast:
+
+| Token | What it sets | Default |
+|---|---|---|
+| `--primary`, `--on-primary` | the fill of the one emphasized action (`button.primary`), and its text | `var(--ink)`, `var(--panel)` |
+| `--hover` | the fill under the pointer: rows, menu and palette items | `var(--panel-2)` |
+| `--radius-card` | corners of cards, panels, popovers, dialogs, toasts and the terminal | `var(--radius)` |
+| `--radius-control` | corners of buttons, fields, tabs, segments and rows | `var(--radius)` |
+| `--shadow-card` | a worker's card at rest (`--shadow` raises it under the pointer, and raises the heads of views) | `none` |
+| `--display-weight` | the display face's weight: headings, signs, callsigns, labels; the brand and the greeting draw 100 heavier | `800` |
+| `--heading-case`, `--heading-tracking` | headings and signs; callsigns take the tracking alone | `uppercase`, `.06em` |
+| `--label-case`, `--label-tracking` | labels: `.eyebrow`, menu group labels, the heads of lists | `uppercase`, `.08em` |
+
+A page's terminal takes `--enamel` (its background) and `--term-fg` (its text) as the page computes them, so a
+stylesheet that sets them recolours it; its sixteen ANSI colours stay the design's. `npm run tool:contrast` measures
+the role pairs (`roles` in `src/shared/design.ts`) as it does the palette's.
 
 A bundled extension's client holds what a renderer draws of that extension. `/x/drafts/drafts.js` edits a floor's
 drafts over the generic `collection/*` verbs: the floor's drafts collection while the extension is on there

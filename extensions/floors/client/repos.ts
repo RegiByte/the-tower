@@ -14,11 +14,11 @@ const ID = 'floors/repos'
 const STYLE = viewCss(
   ID,
   `& .floor-repos { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: var(--sp-xl); padding: var(--sp-xl) var(--sp-2xl);
-    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-card); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
   & section { display: flex; flex-direction: column; gap: var(--sp-s); }
   & h3 { margin: 0; font-size: var(--fs-s); font-weight: 600; }
   & .hint { color: var(--muted); font-size: var(--fs-s); }
-  & ul { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: var(--radius); }
+  & ul { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: var(--radius-card); }
   & li { display: flex; align-items: center; gap: var(--sp-m); padding: var(--sp-s) var(--sp-l); border-bottom: 1px solid var(--line); font: var(--fs-m)/1.3 var(--mono); }
   & li:last-child { border-bottom: 0; }
   & li code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

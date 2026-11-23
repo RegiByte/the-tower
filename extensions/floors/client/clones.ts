@@ -17,13 +17,13 @@ const SCREEN_KEPT_MS = 10 * 60_000
 const STYLE = viewCss(
   ID,
   `& .clones { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: var(--sp-xl); padding: var(--sp-xl) var(--sp-2xl);
-    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-card); }
   & .clone { display: flex; flex-direction: column; gap: var(--sp-s); }
   & .clone header { display: flex; align-items: baseline; gap: var(--sp-m); font: var(--fs-m)/1.3 var(--mono); }
   & .clone header code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   & .clone .state { font: var(--fs-s)/1 var(--ui); color: var(--muted); }
   & .clone .into { color: var(--muted); font: var(--fs-s)/1.3 var(--mono); }
-  & .clone .screen { height: min(62vh, 560px); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  & .clone .screen { height: min(62vh, 560px); border: 1px solid var(--line); border-radius: var(--radius-card); overflow: hidden; }
   & .none { color: var(--faint); }`,
 )
 

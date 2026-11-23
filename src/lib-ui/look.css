@@ -9,14 +9,15 @@
   :where(tower-menu, tower-menu-button, tower-combobox) {
     --ui-background: var(--panel);
     --ui-foreground: var(--ink);
-    --ui-muted: var(--panel-2);
+    --ui-muted: var(--hover);
     --ui-muted-foreground: var(--muted);
     --ui-border: var(--line);
     --ui-input: var(--line-strong);
-    --ui-primary: var(--accent);
+    --ui-primary: var(--primary);
+    --ui-primary-foreground: var(--on-primary);
     --ui-ring: var(--accent);
     --ui-destructive: var(--broken-text);
-    --ui-radius: var(--radius);
+    --ui-radius: var(--radius-control);
     --ui-spacing: var(--sp-xs);
     --ui-font-size: var(--fs-s);
     --ui-font-sans: var(--ui);
@@ -147,8 +148,9 @@
   tower-menu [data-slot="menu-group-label"] {
     padding: var(--ui-spacing) calc(var(--ui-spacing) * 2.5) calc(var(--ui-spacing) / 2);
     color: var(--ui-muted-foreground);
-    font-size: 0.85em;
-    font-weight: 600;
+    font: var(--display-weight) 0.85em / 1.4 var(--display);
+    letter-spacing: var(--label-tracking);
+    text-transform: var(--label-case);
   }
 
   tower-menu [data-slot="menu-separator"] {

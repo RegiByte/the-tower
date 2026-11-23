@@ -6,7 +6,7 @@ import { viewLayer } from './view-parts.ts'
  */
 const ASK_CSS = `
 dialog[data-tower-ask], dialog[data-tower-ask] * { box-sizing: border-box; }
-dialog[data-tower-ask] { width: min(520px, 92vw); padding: var(--sp-2xl); background: var(--panel); color: var(--ink); font: var(--fs-l)/1.45 var(--ui); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-pop); }
+dialog[data-tower-ask] { width: min(520px, 92vw); padding: var(--sp-2xl); background: var(--panel); color: var(--ink); font: var(--fs-l)/1.45 var(--ui); border: 1px solid var(--line); border-radius: var(--radius-card); box-shadow: var(--shadow-pop); }
 dialog[data-tower-ask]::backdrop { background: var(--backdrop); }
 dialog[data-tower-ask][open] { display: flex; flex-direction: column; overflow: hidden; }
 dialog[data-tower-ask] form { display: flex; flex-direction: column; min-height: 0; }
@@ -14,9 +14,9 @@ dialog[data-tower-ask] h2 { flex: none; margin: 0 0 var(--sp-l); max-height: 30v
 dialog[data-tower-ask] .confirm-body { flex: 0 1 auto; min-height: 3em; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--muted); }
 dialog[data-tower-ask] .confirm-body:empty { display: none; }
 dialog[data-tower-ask] .actions { flex: none; display: flex; justify-content: flex-end; align-items: center; gap: var(--sp-m); margin-top: var(--sp-xl); color: var(--faint); font-size: var(--fs-s); }
-dialog[data-tower-ask] button { font: inherit; font-weight: 700; font-size: var(--fs-m); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--sp-xs) var(--sp-l); cursor: pointer; transition: border-color .15s ease-out, background .15s ease-out; }
+dialog[data-tower-ask] button { font: inherit; font-weight: 700; font-size: var(--fs-m); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius-control); padding: var(--sp-xs) var(--sp-l); cursor: pointer; transition: border-color .15s ease-out, background .15s ease-out; }
 dialog[data-tower-ask] button:hover { border-color: var(--deco); }
-dialog[data-tower-ask] button.primary { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+dialog[data-tower-ask] button.primary { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
 dialog[data-tower-ask] button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 `
 

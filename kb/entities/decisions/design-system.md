@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-03",
   "reviewed": "2026-11-23",
-  "refs": ["hub/src/shared/design.ts", "hub/src/shared/design.ts#size", "hub/src/shared/design.ts#space", "hub/src/shared/design.ts#controls", "hub/src/shared/design.ts#iconSize", "hub/src/shared/icons.ts#ICON", "hub/src/shared/icons.ts#withIcons", "hub/src/shared/design.ts#fonts", "hub/src/shared/design.ts#terminalTheme", "hub/src/shared/design.ts#terminalThemeOn", "hub/src/shared/term-view.ts", "hub/src/shared/design.ts#designCss", "hub/src/shared/design.ts#skyAt", "hub/src/shared/design.ts#documentCss", "hub/src/bridge/board.ts", "hub/src/tower/http.ts#design", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/tower/tower.js", "hub/renderers/tower3d/src/outside.ts", "hub/renderers/tower3d/src/cards.ts#WORLD", "hub/renderers/tower3d/src/ui.ts", "hub/renderers/tower3d/src/toon.ts#loadFaces", "hub/src/shared/design.ts#projectTones", "hub/renderers/tower3d/src/sign.ts#paintSign", "hub/renderers/tower3d/src/palette.ts#floorPalette", "hub/scripts/contrast.ts"]
+  "refs": ["hub/src/shared/design.ts", "hub/src/shared/design.ts#size", "hub/src/shared/design.ts#space", "hub/src/shared/design.ts#controls", "hub/src/shared/design.ts#iconSize", "hub/src/shared/design.ts#roles", "hub/src/shared/design.ts#character", "hub/src/shared/icons.ts#ICON", "hub/src/shared/icons.ts#withIcons", "hub/src/shared/design.ts#fonts", "hub/src/shared/design.ts#terminalTheme", "hub/src/shared/design.ts#terminalThemeOn", "hub/src/shared/term-view.ts", "hub/src/shared/design.ts#designCss", "hub/src/shared/design.ts#skyAt", "hub/src/shared/design.ts#documentCss", "hub/src/bridge/board.ts", "hub/src/tower/http.ts#design", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/tower/tower.js", "hub/renderers/tower3d/src/outside.ts", "hub/renderers/tower3d/src/cards.ts#WORLD", "hub/renderers/tower3d/src/ui.ts", "hub/renderers/tower3d/src/toon.ts#loadFaces", "hub/src/shared/design.ts#projectTones", "hub/renderers/tower3d/src/sign.ts#paintSign", "hub/renderers/tower3d/src/palette.ts#floorPalette", "hub/scripts/contrast.ts"]
 }
 ---
 **Problem.** The tower page and Tower 3D looked generic and unlike each other, every status colour equally loud,
@@ -67,8 +67,16 @@ terminal that is a block of the ink colour.
 - **Type, space and corners**: a type scale in rem ([`size`](ref:hub/src/shared/design.ts#size), `--fs-*`), so every
   panel follows the browser's text size times the viewer's Text size (terminals and Tower 3D's canvas keep their
   own); a spacing scale in px ([`space`](ref:hub/src/shared/design.ts#space), `--sp-*`), so text grows and the space
-  around it stays; one label style, `.eyebrow`; Overpass's ascent and descent overridden in its `@font-face` so
-  capitals sit on the middle of a line; corner radii as tokens; italics as real faces.
+  around it stays; Overpass's ascent and descent overridden in its `@font-face` so capitals sit on the middle of a
+  line; corner radii as tokens; italics as real faces.
+- **Character as tokens**, for a theme to set ([`roles`](ref:hub/src/shared/design.ts#roles),
+  [`character`](ref:hub/src/shared/design.ts#character)): colour roles that name a palette token (`--primary` and
+  `--on-primary` for the one emphasized action, `--hover` for what is under the pointer), corners per kind of surface
+  (`--radius-card`, `--radius-control`), a card's resting elevation (`--shadow-card`), and type in three roles at one
+  `--display-weight`: headings and signs (`--heading-case`, `--heading-tracking`), names (callsigns, the heading's
+  tracking without its case) and labels (`.eyebrow`, menu group labels, the heads of lists: the display face, small,
+  `--label-case`, `--label-tracking`), one label style wherever a label is drawn. Each defaults to an existing token
+  or a fixed value, so the stock look and every scheme keep their values; the sites read the tokens, never a literal.
 - **Icons, controls and selection**: one SVG icon set ([`ICON`](ref:hub/src/shared/icons.ts#ICON)) in
   `currentColor`, hidden from assistive tech, the control naming itself; shared words keep their text marks
   (`⎇`, `❯`) for tooltips, notifications and the CLI, and a DOM renderer draws them as icons

@@ -12,7 +12,7 @@ const ID = 'tower/extensions'
 
 const STYLE = viewCss(
   ID,
-  `& .extensions { flex: 1; min-height: 0; overflow-y: auto; padding: var(--sp-m); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius);
+  `& .extensions { flex: 1; min-height: 0; overflow-y: auto; padding: var(--sp-m); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius-card);
     scrollbar-width: thin; scrollbar-color: var(--line) transparent; scrollbar-gutter: stable; }`,
 )
 

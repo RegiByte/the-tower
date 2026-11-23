@@ -15,11 +15,11 @@ export const DIRS_CSS = `
   & .browse { display: flex; flex-direction: column; gap: var(--sp-s); }
   & .crumb { display: flex; align-items: center; gap: var(--sp-m); font: var(--fs-s)/1.3 var(--mono); color: var(--muted); }
   & .crumb code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
-  & .dirs { max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--radius); scrollbar-width: thin; }
+  & .dirs { max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--radius-card); scrollbar-width: thin; }
   & .dirs button { display: flex; align-items: center; gap: var(--sp-m); padding: var(--sp-s) var(--sp-l); border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none;
     color: var(--ink); text-align: left; font: var(--fs-m)/1.3 var(--mono); cursor: pointer; }
   & .dirs button:last-child { border-bottom: 0; }
-  & .dirs button:hover, & .dirs button:focus-visible { background: var(--panel-2); }
+  & .dirs button:hover, & .dirs button:focus-visible { background: var(--hover); }
   & .dirs .git { margin-left: auto; font: var(--fs-xs)/1 var(--mono); color: var(--muted); }
   & .dirs .empty { padding: var(--sp-m) var(--sp-l); color: var(--faint); }`
 
