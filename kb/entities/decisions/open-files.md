@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-11-19",
+  "reviewed": "2026-11-23",
   "refs": [
     "hub/src/shared/api.ts#VERBS",
     "hub/src/tower/dispatch.ts#onPath",
@@ -62,7 +62,8 @@ for the user.
 - *Buttons drawn once.* [`fileButtonsHtml`](ref:hub/src/shared/file-acts.ts#fileButtonsHtml) draws a quiet Finder and
   editor pair as `data-reveal` / `data-edit` (`data-line`) buttons, each named for its file ("reveal main.md in
   Finder"), in the Tab order; [`fileSpansHtml`](ref:hub/src/shared/file-acts.ts#fileSpansHtml) draws the same pair as
-  `role=button` spans for the one place a button may not sit, inside another button;
+  `role=button` spans for a place a button may not sit, inside another button (the tower page's shown tab draws a
+  file's pair as its subject menu's `reveal` and `edit` lines instead, pinned by default, [[region-overflow]]);
   [`fileCall`](ref:hub/src/shared/file-acts.ts#fileCall) turns a click into the call. Each renderer wires it once, as a
   capturing click listener on the document, so a button inside a file header or an anchor never also folds the
   file or jumps to Changes. The shared panels draw them on changed files, a thread's file and each note's anchor (the

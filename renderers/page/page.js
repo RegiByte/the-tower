@@ -481,6 +481,7 @@ function doPick(does, press) {
 const MENU_PICKS = {
   display: (does) => display(does.subject),
   link: (does) => void window.open(does.href, '_blank', 'noreferrer'),
+  file: (does) => void told(tower.run([does.verb, { path: does.path }])),
   dir: (does, press) => {
     const f = /** @type {Floor} */ (floorOf(does.project))
     return does.verb === 'shell' ? void spawnShellAt(f.id, does.dir) : void openInEditor(press, f, does.dir)

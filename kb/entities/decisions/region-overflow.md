@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-01",
-  "reviewed": "2026-11-19",
+  "reviewed": "2026-11-23",
   "refs": [
     "hub/src/shared/subject-menu.ts#MENU_LINE_IDS",
     "hub/src/shared/subject-menu.ts#menuPins",
@@ -105,11 +105,11 @@ one renderer ([[renderer-is-disposable]]). And the tower stores only intent, fac
 - *One id space.* Pins, hides and "seen" name an action by its verb or `<cap>/<command>` and lines by capability
   ([`actionId`](ref:hub/src/shared/adds.ts#actionId)), in the same space as view ids, so a manifest that names a verb,
   a command or a view alike is refused. A region beside a subject also pins the subject's own menu lines, by ids the
-  same on every subject of its kind ([`MENU_LINE_IDS`](ref:hub/src/shared/subject-menu.ts#MENU_LINE_IDS), `out` and
+  same on every subject of its kind ([`MENU_LINE_IDS`](ref:hub/src/shared/subject-menu.ts#MENU_LINE_IDS), `out`, a file's `reveal` and `edit`, and
   `worker` on a showing), so one pin means the same line everywhere; [`menuPins`](ref:hub/src/shared/subject-menu.ts#menuPins)
   answers what a region can pin of a menu, and `tower config check` takes those ids as pins of a region holding
   commands. The tower page's `shown.tab` offers `menu` alone, its ⋯ being the showing's subject menu, and its own
-  layout pins `out` with `actions: 0`.
+  layout pins `out`, `reveal` and `edit` with `actions: 0`: a file's Finder and editor icons are menu lines, unpinned like any pin.
 - *"New" without a stored fact.* The viewer keeps a seen set in `tower.store`, per action id across every head and
   every renderer of theirs ([`seenOf`](ref:hub/src/shared/viewer.ts#seenOf)). With nothing kept, everything offered
   counts as seen, so a fresh tower highlights nothing. An action stops being new when the viewer runs it, pins it,

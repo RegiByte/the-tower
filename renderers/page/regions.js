@@ -7,7 +7,7 @@ import { panesOf } from '/lib/keys.js'
 import { domId } from '/lib/morph.js'
 import { menuPins, subjectMenu } from '/lib/palette.js'
 import { mountTermView } from '/lib/terminal.js'
-import { fileSpansHtml, ICON, keyedTip, morphPanel, viewHost } from '/lib/view.js'
+import { ICON, keyedTip, morphPanel, viewHost } from '/lib/view.js'
 import { ago, esc } from '/lib/words.js'
 import { actionsHtml, badgesHtml, iconActionsHtml } from './added.js'
 import { menu } from './menu.js'
@@ -304,7 +304,6 @@ export function regions(deps) {
         `<button class="shown-pick" role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" id="${esc(id)}" aria-controls="${esc(panel)}" data-tip="${esc(what)}" data-tab="${esc(key)}">` +
         `<span class="shown-name">${s.kind === 'link' ? `${ICON.remote} ` : ''}${esc(shownTitle(s))}</span>${from ? `<small>${from.mark}</small>` : ''}</button>` +
         (on ? tabPinsHtml(subject, s) : '') +
-        (on && s.kind === 'file' ? fileSpansHtml(s.target) : '') +
         (on ? subjectButtonHtml(`${mountScope}/tab`, subject.key, `${shownTitle(s)}: menu`) : '') +
         `<span class="icon-btn" data-unshow="${esc(shownKey(s))}" aria-hidden="true" data-tip="close: it comes back if shown again">${ICON.close}</span></span>`)
     }
