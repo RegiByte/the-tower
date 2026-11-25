@@ -1310,7 +1310,9 @@ subject leaves the board. A view draws only inside its host, which carries `data
 `viewLayer` for rules it writes whole and `componentsLayer` for the shared components it draws (`panelsCss`,
 `itemsCss`, `markdownCss`): they put the view's rules over the renderer's own sheet when the renderer brings it
 through `rendererLayer`, and the shared components under it, whatever their selectors weigh; a `<style>` with neither
-outweighs both; it never imports another view; it keeps its state in `ctx.state`; it wires its own presses; and it calls verbs only on a press inside
+outweighs both. A view that writes its rules whole and fits the pane holding it declares `PANE_FIT` on its element and
+reads `--fit-hair`, `--fit-inner` and `--fit-outer` for its borders and corners, as `viewCss` does (since 2.41). A view
+never imports another view; it keeps its state in `ctx.state`; it wires its own presses; and it calls verbs only on a press inside
 it. A view whose module doesn't load, lacks its export, throws or hasn't mounted in 10 s is one line where it would
 draw, and the page goes on. A view that keeps something in the viewer's record (a dismissal) sets it with
 `tower.store.set`, and every renderer that keeps that record hears it through `tower.store.on`.

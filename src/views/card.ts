@@ -1,6 +1,6 @@
 import { type Board, callOf, can, type Card, type Floor, noLongerOffered, offeredCall, sentHome, type Subject } from '/lib/board.js'
 import { BLOCKED_TEXT, type DaemonVerb, detailsOf, gistLine, lampOf, LET_GO_MEANS, letGoAsk, letGoneLine, reapAsk, resumesRow, sendHomeAsk, statusName, statusTitle, verbHint, verbLabel, whereLineOf, whyNot } from '/lib/cards.js'
-import { ICON, keyedTip, morphPanel, type Mount, pressing, viewLayer, withIcons } from '/lib/view.js'
+import { ICON, keyedTip, morphPanel, type Mount, PANE_FIT, pressing, viewLayer, withIcons } from '/lib/view.js'
 import { domId } from '/lib/morph.js'
 import { keysHint, keyshortcuts } from '/lib/keys.js'
 import { esc, modelName, when } from '/lib/words.js'
@@ -40,8 +40,7 @@ export type CardOptions = { head?: boolean; acts?: CardAct[]; pick?: CardPick; o
 const ID = 'tower/card'
 
 const CSS = `:where([data-view="${ID}"]) {
-  --fit-pad: var(--pane-pad, var(--sp-xl)); --fit-hair: min(1px, var(--fit-pad)); --fit-inner: min(var(--radius-card), var(--fit-pad));
-  --fit-outer: max(var(--fit-inner), calc(var(--main-radius) - var(--fit-pad)));
+  ${PANE_FIT}
   gap: min(var(--sp-m), var(--fit-pad));
   & .bar { --tabs-room: var(--sp-m); flex: none; container: card-head / inline-size; padding: var(--sp-m) var(--sp-xl); background: var(--panel); border: 1px solid var(--line); border-width: var(--fit-hair) var(--fit-hair) 1px; border-radius: var(--fit-outer) var(--fit-outer) var(--fit-inner) var(--fit-inner); box-shadow: var(--shadow-head); }
   & .bar-top { display: flex; flex-direction: column; gap: var(--sp-xs); min-width: 0; }

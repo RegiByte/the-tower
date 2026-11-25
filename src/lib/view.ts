@@ -64,6 +64,7 @@ export {
   closeHtml,
   componentsLayer,
   keyedTip,
+  PANE_FIT,
   paintOnce,
   rendererLayer,
   viewCss,
