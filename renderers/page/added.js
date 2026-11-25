@@ -1,5 +1,5 @@
 import { DISMISS_ASK_TITLE } from '/lib/cards.js'
-import { actionWords, badgeGlyphOf, badgesOf, glyphOf } from '/lib/layout.js'
+import { actionId, actionWords, badgeGlyphOf, badgesOf, glyphOf, isOnScreen } from '/lib/layout.js'
 import { ICON } from '/lib/view.js'
 import { domId } from '/lib/morph.js'
 import { esc, plural, span } from '/lib/words.js'
@@ -9,8 +9,16 @@ import { esc, plural, span } from '/lib/words.js'
  * press the page runs through `runAddedAt`; and the asks, as rows beside the offers.
  * @import { Board, Subject } from '/lib/board.js'
  * @import { Action, Added, Badge, BoardAsk } from '/lib/extension.js'
- * @import { Glyph } from '/lib/layout.js'
+ * @import { Glyph, LayoutEntry } from '/lib/layout.js'
  */
+
+/**
+ * What a region draws of `actions` under its layout `entry`, in their order: less those it hides, and in the menu only
+ * (`LayoutEntry.onScreen`), its pins alone.
+ * @template {Added<Action>} A @param {LayoutEntry | undefined} entry @param {A[]} actions
+ */
+export const drawnActions = (entry, actions) =>
+  actions.filter((a) => !entry?.hidden?.includes(actionId(a)) && (isOnScreen(entry) || entry?.pinned?.includes(actionId(a))))
 
 /** One badge with `more` among its attributes: a link when it has `href`, its glyph before its label when it names one. @param {Added<Badge>} b @param {string} more */
 const badgeWith = (b, more) => {
