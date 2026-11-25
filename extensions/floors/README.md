@@ -7,7 +7,7 @@ project started from scratch, and the repos of a floor.
 
 ### The tower page
 
-**New floor beside Floors and Stats** in the sidebar (the page's `board.sign` region, drawn as stacked floors under
+**New floor at the end of the entries row** in the sidebar (the page's `board.sign` region, drawn as stacked floors under
 a small plus, since a `+` on a floor's row is a new worker), and in the palette, opens the form in the main pane. It
 picks where the hub comes from:
 

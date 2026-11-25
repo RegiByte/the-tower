@@ -234,8 +234,8 @@ use, stays for you to Tidy by hand.
 
 ### Floors
 
-The bundled extension `floors` adds floors from the tower and changes a floor's repos. New floor, beside Floors and
-Stats in the tower page's sidebar (and in the palette), opens a form for a folder already on the machine, a git
+The bundled extension `floors` adds floors from the tower and changes a floor's repos. New floor, at the end of the
+entries row in the tower page's sidebar (and in the palette), opens a form for a folder already on the machine, a git
 repository cloned from its URL, or a new project (a folder, `git init` and a first commit holding a README, so
 worktrees can be cut from it). A clone runs as a job, so restarting the tower doesn't stop it, and a note in the
 sidebar follows it until its floor is added; nothing can type into it, so a repository that asks for a password fails,

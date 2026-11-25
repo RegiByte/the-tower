@@ -3371,6 +3371,10 @@
         "label": {
           "type": "string",
           "description": "What the viewer calls the buttons drawn here when they choose to keep them on screen or in the menu only (`LayoutEntry.onScreen`): \"Extensions on a worker's head\". A region with no label offers no such choice. A region that holds nothing draws the renderer's own buttons alone, and is declared so its label can offer the choice."
+        },
+        "opens": {
+          "type": "string",
+          "description": "The region this one's views open in: it draws each view it offers as an entry, and pressing one mounts the view there (`board.nav` opens in `board.main`). Only on a region of arity `all` that holds views."
         }
       },
       "required": [

@@ -173,7 +173,7 @@ export function regions(deps) {
   })
   hosting.onArrival(() => (tabbed.forEach((r) => r.draw()), arrived.forEach((fn) => fn())))
 
-  /** What else waits for a module to arrive: a stack of sections, to draw its headings again. @type {Set<() => void>} */
+  /** What else waits for a module to arrive: a stack of sections or a row of entries, to draw them again. @type {Set<() => void>} */
   const arrived = new Set()
 
   /** The showings mounted in every tabs region, the least recently shown first. @type {{ key: string, drop: () => void }[]} */
@@ -1019,6 +1019,43 @@ export function regions(deps) {
   }
 
   /**
+   * A region of arity `all` whose views open in another region (`Region.opens`), drawn as a row of entries
+   * (`board.nav`): every view it offers on the board (`sectionViews`), each an entry with its label, its module's
+   * `tab` tally on the board, and its hint as the tip, marked `aria-current` while it is the view `current` names.
+   * Nothing is mounted here: a press displays the view where the region opens. `redraw` is told when a module arrives,
+   * as a tally may change.
+   * @param {string} id @param {() => void} redraw
+   */
+  function entries(id, redraw) {
+    const region = () => /** @type {Region} */ (declared().find((r) => r.id === id))
+    const boardSubject = () => /** @type {Subject} */ (subjectOf('board'))
+    arrived.add(redraw)
+
+    /** What `view`'s tally says: its module's `tab` export on the board, once the module has arrived. @param {View} view @returns {TabWords | undefined} */
+    const wordsOf = (view) => {
+      if (!view.tab) return undefined
+      const module = hosting.loaded(view)
+      return module ? /** @type {Tab} */ (module[view.tab])(board(), boardSubject()) : (void hosting.moduleOf(view), undefined)
+    }
+
+    /** @param {View} view @param {boolean} on */
+    const entryHtml = (view, on) => {
+      const words = wordsOf(view)
+      const tally = words?.text ? ` <b class="nav-tally${words.tone === 'unseen' ? ' unseen' : ''}">${esc(words.text)}</b>` : ''
+      const tip = [words?.hint ?? view.words.hint, words?.tip].filter(Boolean).join(' · ')
+      return `<button class="eyebrow" data-nav-view="${esc(view.id)}"${on ? ' aria-current="page"' : ''}${tip ? ` data-tip="${esc(tip)}"` : ''}>${esc(view.words.label)}${tally}</button>`
+    }
+
+    return {
+      /** The entries in the region's order, the one `current` names marked. @param {string | undefined} current */
+      html: (current) =>
+        sectionViews({ board: board(), views: views(), regions: declared(), layout: layout(), kit: deps.kit, main: region() }, region())
+          .map((v) => entryHtml(v, v.id === current))
+          .join(''),
+    }
+  }
+
+  /**
    * The region over the page (`board.dialog`), drawn in the `<tower-dialog>` that names it: one view at a time, the one
    * display asked for, mounted as it opens, updated with each board and closed with the dialog, however it closes, or
    * once its subject leaves the board.
@@ -1098,6 +1135,7 @@ export function regions(deps) {
     tabsAt,
     rows,
     sections,
+    entries,
     dialog,
     mountedView: () => open?.view,
     refont: () => terminals.forEach((t) => void t.refont()),
