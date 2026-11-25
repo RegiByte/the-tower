@@ -41,6 +41,7 @@ export {
   /** @provisional */ ordered,
   /** @provisional */ paneShows,
   /** @provisional */ pickView,
+  /** @provisional */ placedEntries,
   /** @provisional */ sectionViews,
   /** @provisional */ shownOf,
   usableConfigLayout,

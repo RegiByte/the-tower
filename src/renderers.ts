@@ -86,6 +86,7 @@ const RegionSchema: z.ZodType<Region> = z.strictObject({
     .optional(),
   label: z.string().min(1).optional(),
   opens: z.string().regex(REGION_ID).optional(),
+  optIn: z.boolean().optional(),
 })
   .refine((r) => r.holds.length > 0 || r.label !== undefined, { message: 'a region holds something, or is labelled: one that holds nothing draws the renderer\'s own buttons, and offers only the choice of showing them' })
   .refine((r) => r.opens === undefined || (r.holds.includes('views') && r.arity === 'all'), { message: 'opens: only a region of arity all that holds views draws its views as entries that open elsewhere' })
@@ -112,6 +113,7 @@ export const LayoutSchema: z.ZodType<Layout> = z.record(
     lines: Budget,
     badges: Budget,
     actions: Budget,
+    views: Budget,
     onScreen: z.boolean().optional(),
     folded: z.array(z.string()).optional(),
   }),
@@ -138,7 +140,13 @@ const PINNABLE: readonly Hold[] = ['verbs', 'commands', 'lines']
 
 const FORM_VERB: Record<Overflow, string> = { menu: 'tucks into a menu', count: 'counts', wrap: 'wraps', scroll: 'scrolls' }
 
-const BUDGET_NOUN: Record<keyof typeof BUDGETS, string> = { lines: 'line', badges: 'badge', actions: 'action' }
+const BUDGET_NOUN: Record<keyof typeof BUDGETS, string> = { lines: 'line', badges: 'badge', actions: 'action', views: 'entry' }
+
+/** Whether a region pins what it holds: actions or lines, or views it draws as entries that open elsewhere (`Region.opens`). */
+const pinsIn = (region: Region) => region.holds.some((h) => PINNABLE.includes(h)) || region.opens !== undefined
+
+/** Whether `key` budgets something `region` holds: views only where it draws them as entries. */
+const budgets = (region: Region, key: keyof typeof BUDGETS) => BUDGETS[key].some((h) => region.holds.includes(h)) && (key !== 'views' || region.opens !== undefined)
 
 /** `items` as words: `a, b or c`. */
 const either = (items: readonly string[]) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} or ${items.at(-1)}` : items[0])
@@ -155,7 +163,7 @@ export const layoutProblems = (renderer: string, configLayout: Layout, declared:
     const at = `renderers.${renderer}.layout.${id}`
     const region = regions.find((r) => r.id === id)
     if (!region) return [{ level: 'warn', key: at, problem: `neither ${renderer} nor any extension that would start declares region ${id}` }]
-    return [...regionProblems(renderer, at, region, entry, declared.layout[id], reach.offered), ...foldProblems(renderer, at, region, entry, reach.views)]
+    return [...regionProblems(renderer, at, region, entry, declared.layout[id], region.opens === undefined ? reach.offered : reach.views), ...foldProblems(renderer, at, region, entry, reach.views)]
   })
 }
 
@@ -175,22 +183,25 @@ const foldProblems = (renderer: string, at: string, region: Region, entry: Layou
 /** The lines of its subject's own menu a region can pin: one holding commands, beside a subject whose menu has them. */
 const ownLines = (region: Region): readonly string[] => (region.holds.includes('commands') ? (MENU_LINE_IDS[region.subject] ?? []) : [])
 
-/** The problems of one region's entry in the config's layout; `own`, the renderer's own entry for it, the layer below. */
+/**
+ * The problems of one region's entry in the config's layout; `own`, the renderer's own entry for it, the layer below;
+ * `offered`, the ids a pin there can name: views' in a region that opens them elsewhere, else actions' and lines'.
+ */
 const regionProblems = (renderer: string, at: string, region: Region, entry: LayoutEntry, own: LayoutEntry | undefined, offered: readonly string[]): LayoutProblem[] => {
   const fail = (key: string, problem: string): LayoutProblem => ({ level: 'fail', key: `${at}.${key}`, problem })
   const warn = (key: string, problem: string): LayoutProblem => ({ level: 'warn', key: `${at}.${key}`, problem })
-  const pins = region.holds.some((h) => PINNABLE.includes(h))
+  const pins = pinsIn(region)
   if (!region.overflows?.length && pins) {
     const unread = `${renderer} doesn't read ${region.id}'s pins, hides, form or budgets yet`
     return [
       ...(['overflow', 'pinned', 'unpinned', ...(Object.keys(BUDGETS) as (keyof typeof BUDGETS)[])] as const).filter((key) => entry[key] !== undefined).map((key) => fail(key, unread)),
-      ...(entry.hidden ?? []).flatMap((id, n) => (offered.includes(id) ? [fail(`hidden[${n}]`, unread)] : [])),
+      ...(region.opens === undefined ? (entry.hidden ?? []).flatMap((id, n) => (offered.includes(id) ? [fail(`hidden[${n}]`, unread)] : [])) : []),
     ]
   }
   const screen = entry.onScreen !== undefined && !region.label ? [fail('onScreen', `${renderer} offers no choice of keeping ${region.id}'s buttons off screen: it gives the region no label`)] : []
   if (!region.holds.length) return [...screen, ...(['overflow', 'pinned', 'unpinned', 'hidden', 'order', ...(Object.keys(BUDGETS) as (keyof typeof BUDGETS)[])] as const).filter((key) => entry[key] !== undefined).map((key) => fail(key, `${region.id} draws ${renderer}'s own buttons alone: only onScreen applies`))]
   const form = region.overflows?.length ? overflowOf(region as Region & { overflows: Overflow[] }, entry) : undefined
-  const nothingToPin = `${region.id} holds no actions or lines to pin${region.holds.includes('views') ? `: its ${region.arity === 'tabs' ? 'tabs' : 'views'} take order` : ''}`
+  const nothingToPin = `${region.id} holds no actions, lines or entries to pin${region.holds.includes('views') ? `: its ${region.arity === 'tabs' ? 'tabs' : 'views'} take order` : ''}`
   return [
     ...screen,
     ...(entry.overflow === undefined
@@ -202,7 +213,7 @@ const regionProblems = (renderer: string, at: string, region: Region, entry: Lay
           : [fail('overflow', `${renderer} draws ${region.id} as ${either(region.overflows)}, not ${entry.overflow}`)]),
     ...(Object.keys(BUDGETS) as (keyof typeof BUDGETS)[]).flatMap((key): LayoutProblem[] => {
       if (entry[key] === undefined) return []
-      if (!BUDGETS[key].some((h) => region.holds.includes(h))) return [fail(key, `${region.id} holds no ${key}`)]
+      if (!budgets(region, key)) return [fail(key, key === 'views' && region.holds.includes('views') ? `${region.id} mounts its views: only a region that opens them elsewhere draws them as entries to budget` : `${region.id} holds no ${key}`)]
       return form === 'wrap' || form === 'scroll' ? [warn(key, `${region.id} ${FORM_VERB[form]}, so it draws every ${BUDGET_NOUN[key]}: ${key} is unused`)] : []
     }),
     ...(entry.pinned === undefined
@@ -212,7 +223,9 @@ const regionProblems = (renderer: string, at: string, region: Region, entry: Lay
         : entry.pinned.flatMap((id, n) =>
             offered.includes(id) || ownLines(region).includes(id)
               ? []
-              : [warn(`pinned[${n}]`, `no extension that would start offers "${id}"${offered.length ? `: they offer ${offered.join(', ')}` : ''}${ownLines(region).length ? `, and ${region.subject}'s menu offers ${ownLines(region).join(', ')}` : ''}`)],
+              : region.opens !== undefined
+                ? [warn(`pinned[${n}]`, `no view "${id}" in the core or an extension that would start`)]
+                : [warn(`pinned[${n}]`, `no extension that would start offers "${id}"${offered.length ? `: they offer ${offered.join(', ')}` : ''}${ownLines(region).length ? `, and ${region.subject}'s menu offers ${ownLines(region).join(', ')}` : ''}`)],
           )),
     ...(entry.unpinned === undefined
       ? []
