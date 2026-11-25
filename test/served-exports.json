@@ -1021,6 +1021,9 @@
           "since": "2.0",
           "stability": "provisional"
         },
+        "WAIT_SAID": {
+          "since": "2.31"
+        },
         "WORKTREE_ASK": {
           "since": "2.0"
         },
@@ -1944,6 +1947,10 @@
           "since": "2.0",
           "stability": "provisional"
         },
+        "sectionViews": {
+          "since": "2.31",
+          "stability": "provisional"
+        },
         "shownOf": {
           "since": "2.0",
           "stability": "provisional"
@@ -2256,6 +2263,10 @@
         "settingsHtml": {
           "since": "2.0"
         },
+        "sidebarSection": {
+          "since": "2.31",
+          "stability": "provisional"
+        },
         "soundSection": {
           "since": "2.0"
         },
@@ -2270,6 +2281,14 @@
       "types": {
         "ScreenGroup": {
           "since": "2.25",
+          "stability": "provisional"
+        },
+        "SectionChoice": {
+          "since": "2.31",
+          "stability": "provisional"
+        },
+        "SectionState": {
+          "since": "2.31",
           "stability": "provisional"
         }
       }

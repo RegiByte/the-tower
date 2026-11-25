@@ -3354,7 +3354,8 @@
           "type": "string",
           "enum": [
             "one",
-            "tabs"
+            "tabs",
+            "all"
           ]
         },
         "description": {
@@ -3378,7 +3379,7 @@
         "holds"
       ],
       "additionalProperties": false,
-      "description": "A place a renderer draws for subjects of one kind. `id`: `<subject kind>.<place>`; `subject`: the kind, `item.*` for every collection's items; `scale` and `arity` matter to one that holds views, `one` at a time or several as `tabs`; `description`: where it is on screen, in words."
+      "description": "A place a renderer draws for subjects of one kind. `id`: `<subject kind>.<place>`; `subject`: the kind, `item.*` for every collection's items; `scale` and `arity` matter to one that holds views, `one` at a time, several as `tabs`, or `all` (@since 2.32): every view offered, each drawn, in the layout's `order`, less its `hidden` (`sectionViews`); `description`: where it is on screen, in words."
     },
     "Hold": {
       "type": "string",
@@ -3400,7 +3401,8 @@
         "row",
         "cell",
         "pane",
-        "dialog"
+        "dialog",
+        "list"
       ]
     },
     "Overflow": {

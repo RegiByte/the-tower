@@ -22,8 +22,8 @@ and a framed document's section are the same thing.
 
 **How.**
 - *Regions* ([[renderers-in-config]]): a renderer declares, in its `renderer.json`, places for one subject kind
-  (`board.main`, `card.panes`), each holding contributions or views at a scale (`chip`, `row`, `cell`, `pane`, `dialog`), one at
-  a time or as tabs. A view declares the regions inside it in its manifest's `regions`; one id has one meaning, and two
+  (`board.main`, `card.panes`), each holding contributions or views at a scale (`chip`, `row`, `cell`, `pane`, `dialog`, `list`), one at
+  a time, as tabs, or all of them, each a section of its own ([[sidebar-regions]]). A view declares the regions inside it in its manifest's `regions`; one id has one meaning, and two
   extensions declaring it with other fields are both refused ([`resolve`](ref:hub/src/bridge/extensions.ts#resolve)).
 - *Views* ([`Manifest`](ref:hub/src/shared/extensions.ts#Manifest)'s `views`): a module's export `mount(host, ctx)`
   returning `{ update, show?, visible?, tab?, options?, close }` ([`Mounted`](ref:hub/src/shared/views.ts#Mounted)), on
@@ -301,6 +301,7 @@ flowchart LR
   board["the page"] --> main["board.main: one view, pane scale"]
   board --> strip["board.strip: one view of the board, row"]
   board --> dialog["board.dialog: one view of the board, over the page"]
+  board --> sections["board.sections: every view of the board, list, each a section"]
   board --> bsign["board.sign: commands about no floor, as icons"]
   main --> sky["board.skyline: commands about no floor, in tower/skyline's greeting"]
   board --> notes["board.notes: asks about no floor"]

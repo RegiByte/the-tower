@@ -65,6 +65,18 @@ dialog h2 { margin: 0 0 var(--sp-l); font: var(--display-weight) var(--fs-xl)/1 
 .limits .extra { margin-top: calc(-1 * var(--sp-s)); color: var(--faint); }
 .limits .extra.spent { color: var(--broken-text); }
 .limits .probe:is(.working, .broken) { color: var(--muted); }
+.side-sections { display: grid; grid-template-columns: minmax(0, 1fr); border-bottom: 1px solid var(--line); }
+.side-sections:not(:has(> .side-section:not([hidden]))) { display: none; }
+.side-section { display: grid; grid-template-columns: minmax(0, 1fr); padding: 0 var(--sp-l) var(--sp-s); }
+.side-section + .side-section:not([hidden]) { border-top: 1px solid var(--line); }
+.section-head { display: flex; align-items: center; gap: var(--sp-s); min-height: var(--control); padding: 0 var(--sp-xs); border: 0; background: none; color: var(--muted); text-align: left; }
+.section-head:hover { color: var(--ink); }
+.section-head .icon { width: var(--icon-s); height: var(--icon-s); transition: rotate .12s; }
+.section-head[aria-expanded='false'] .icon { rotate: -90deg; }
+.section-tally { margin-left: auto; min-width: 2ch; padding: 0 var(--sp-s); border-radius: var(--radius-pill); background: var(--panel-2); color: var(--ink); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; text-align: center; }
+.section-tally.unseen { background: var(--ink); color: var(--panel); }
+.side-section[data-folded] .section-body { display: none; }
+.section-body { max-height: 12.5rem; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .side-views { display: flex; gap: var(--sp-xs); padding: var(--sp-m) var(--sp-xl); border-bottom: 1px solid var(--line); }
 .side-views button { min-height: var(--control); padding: 0 var(--sp-m); border-color: transparent; background: none; color: var(--muted); }
 .side-views .board-sign { margin-left: auto; display: flex; gap: var(--sp-xs); }
@@ -473,6 +485,7 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, [data-view="tow
   <div class="side-notes" id="notes"></div>
   <div class="tally" id="tally"></div>
   <div class="limits-bar" id="limits-bar"><button class="chip" id="limits-open" popovertarget="limits"></button><div class="settings-pop limits" id="limits" popover></div></div>
+  <div class="side-sections" id="sections"></div>
   <div class="side-views"><button class="eyebrow" data-side-view="floors">Floors</button><button class="eyebrow" data-side-view="stats" data-tip="spend, work and waits, from the logs">Stats</button><span class="board-sign" id="board-sign"></span></div>
   <nav class="floors" id="floors" aria-label="floors"></nav>
   <div class="stats-side" id="stats"></div>

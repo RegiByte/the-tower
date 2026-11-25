@@ -121,6 +121,7 @@ export {
   neighboursIn,
   nextAttended,
   transitions,
+  WAIT_SAID,
   /** @provisional */ waitingCards,
 } from '../shared/waits.ts'
 export {

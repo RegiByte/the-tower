@@ -114,6 +114,7 @@ function render() {
   const host = lostAt() ? 'unknown' : hostState(board())
   morphPanel($('host'), `<span class="host-state ${HOST_ATTENTION[host]}" tabindex="0" data-tip="${esc(HOST_MEANS[host])}"><span class="lamp"></span>${HOST_NAME[host]}</span>`)
   paintStrip()
+  paintSections()
   morphPanel($('notes'), `${untestedHtml(board()) ?? ''}${layoutNoteHtml()}${asksHtml(board(), heededAsks(board(), heed()).filter((a) => !projectOfKey(board(), a.subject)), pageNow())}`)
   paintKeys()
   morphPanel($('board-sign'), boardSignHtml())
@@ -367,7 +368,15 @@ const { showLanding, showKeys } = dialogs({ board })
 
 const { alerts, playSound, showShownAlert, showAskAlert, showAlert } = alerting({ callsign, select, openShown: (c, s) => display(shownSubject(c, s)), floorOf, board, openAsk })
 
-const { drawSettings } = settingsPane({ page, viewer, playSound, screens: () => screensOf(placing().regions.map((r) => r.id)), screen: screenIn })
+const { drawSettings } = settingsPane({
+  page,
+  viewer,
+  playSound,
+  screens: () => screensOf(placing().regions.filter((r) => r.arity !== 'all').map((r) => r.id)),
+  screen: screenIn,
+  sections: () => sidebarSections.choices().map(({ view, folded, hidden }) => ({ view: view.id, label: view.words.label, state: hidden ? 'off' : folded ? 'folded' : 'open' })),
+  section: (view, state) => (showIn('board.sections', view, state !== 'off'), state !== 'off' && foldIn('board.sections', view, state === 'folded')),
+})
 
 const { floorInView, drawSideView, sideView } = await stats({ view, findCard, floorsTopDown, board, viewer, lostAt })
 
@@ -827,6 +836,45 @@ function screenIn(id, on) {
     const below = layoutOf(declaredLayout(board(), declared.layout ?? {}), CONFIG_LAYOUT, undefined)[id]
     const { onScreen: _, ...rest } = stored[id] ?? {}
     tower.store.set(LAYOUT_KEY, { ...stored, [id]: { ...rest, ...(on !== isOnScreen(below) && { onScreen: on }) } })
+  })
+}
+
+/** What the layers under the viewer's lay out in region `id`: the renderer's own and the config's. @param {string} id */
+const laidBelow = (id) => layoutOf(declaredLayout(board(), declared.layout ?? {}), CONFIG_LAYOUT, undefined)[id]
+
+/**
+ * Folds the section of view `view` in region `id` to its heading for the viewer, or opens it (`LayoutEntry.folded`):
+ * their layer of the layout, written as `pinIn` writes it. Their `folded` replaces the layers' below whole, so it is
+ * written whole, and dropped while it says what the layers below say.
+ * @param {string} id @param {string} view @param {boolean} on
+ */
+function foldIn(id, view, on) {
+  pinWrites = pinWrites.then(async () => {
+    const stored = /** @type {Layout} */ ((await tower.store.get(LAYOUT_KEY)) ?? {})
+    const below = laidBelow(id)?.folded ?? []
+    const { folded: was = below, ...rest } = stored[id] ?? {}
+    const folded = [...was.filter((v) => v !== view), ...(on ? [view] : [])]
+    const same = folded.length === below.length && folded.every((v) => below.includes(v))
+    tower.store.set(LAYOUT_KEY, { ...stored, [id]: { ...rest, ...(!same && { folded }) } })
+  })
+}
+
+/**
+ * Hides view `view` from region `id` for the viewer, or shows it again (`LayoutEntry.hidden`): their layer of the
+ * layout, written as `pinIn` writes it. A view a layer below hides is shown by naming it in their `order`, which
+ * un-hides it (`layoutOf`), after the views the region orders now.
+ * @param {string} id @param {string} view @param {boolean} on
+ */
+function showIn(id, view, on) {
+  pinWrites = pinWrites.then(async () => {
+    const stored = /** @type {Layout} */ ((await tower.store.get(LAYOUT_KEY)) ?? {})
+    const below = laidBelow(id)
+    const { hidden: was = [], order: orderWas, ...rest } = stored[id] ?? {}
+    const hidden = [...was.filter((v) => v !== view), ...(on ? [] : [view])]
+    const unhide = on && below?.hidden?.includes(view)
+    const base = orderWas ?? below?.order ?? []
+    const order = unhide && !base.includes(view) ? [...base, view] : orderWas
+    tower.store.set(LAYOUT_KEY, { ...stored, [id]: { ...rest, ...(hidden.length && { hidden }), ...(order && { order }) } })
   })
 }
 
@@ -1380,6 +1428,18 @@ const paintStrip = () => {
   boardStrip.place(strip)
 }
 
+/** The sidebar's sections (`board.sections`): every view the region offers on the board, each under its heading. */
+const sidebarSections = mainRegion.sections('board.sections', 'section', () => paintSections())
+
+/** The sidebar's sections in their place, each view in its section's body. */
+const paintSections = () => {
+  const root = $('sections')
+  morphPanel(root, sidebarSections.html())
+  sidebarSections.place(root)
+}
+// A section's view says its tally changed.
+$('sections').addEventListener('tab', () => paintSections())
+
 /** Where each of a floor's collections goes in its row of trays, in the order the region places them. @param {Floor} f */
 const trayRowsHtml = (f) =>
   !isOnScreen(layout()['floor.trays']) ? '' : floorTrays
@@ -1705,6 +1765,8 @@ document.addEventListener('click', async (e) => {
   if (letGoButton) return letGo(pressOf(letGoButton), /** @type {Card} */ (findCard(letGoButton.dataset.letGo)))
   const resumeButton = target.closest('[data-resume]')
   if (resumeButton) return resume(pressOf(resumeButton), JSON.parse(/** @type {string} */ (resumeButton.dataset.resume)))
+  const fold = target.closest('[data-fold-section]')
+  if (fold) return foldIn('board.sections', /** @type {string} */ (fold.dataset.foldSection), fold.getAttribute('aria-expanded') === 'true')
   if (target.closest('[data-side]')) return toggleSide()
   const sideTo = /** @type {SideView | undefined} */ (target.closest('[data-side-view]')?.dataset.sideView)
   if (sideTo) return sideView.dispatch({ type: 'side', side: sideTo })

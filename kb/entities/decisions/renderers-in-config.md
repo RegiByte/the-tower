@@ -49,7 +49,7 @@ update of the core never touches it.
   them with [`renderersHtml`](ref:hub/src/shared/shelf-words.ts#renderersHtml).
 - *Declared regions.* A renderer's `renderer.json` at its root ([`declaredAt`](ref:hub/src/renderers.ts#declaredAt))
   holds its `regions` ([`Region`](ref:hub/src/shared/regions.ts#Region): an id `<kind>.<place>`, the subject kind,
-  what it holds, for views their scale and arity, and words for where it is), its `kit`, the chords it `keeps` and its
+  what it holds, for views their scale and arity (`one`, `tabs`, or `all`: [[sidebar-regions]]), and words for where it is), its `kit`, the chords it `keeps` and its
   default `layout`, all served in `GET /renderers` beside its fields; a renderer with no file declares nothing. The
   file declares for its `entry` (`index.html` unless set), so a second renderer on one root (Tower 3D's Lab) declares
   nothing from it. Tower 3D's build copies its file into `out/`. The `tower` command's regions are `cli.regions` in

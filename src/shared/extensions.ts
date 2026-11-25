@@ -971,7 +971,7 @@ const View = z.strictObject({
   on: since(Kinds.describe('The subject kinds it mounts on: a region offers it on these, at a scale it has.')),
   shows: since(Kinds.optional().describe('The kinds it is handed through show while mounted on an ancestor, never mounted on.')),
   accepts: since(MediaTypes.optional().describe("The media types of a file-bearing subject it draws, matched against the subject's value.type.")),
-  scales: since(z.array(z.enum(SCALES)).min(1).describe('The room it can draw in: chip, row, cell, pane, dialog (2.31: over the page, modal; list pane too, for a renderer that draws no dialog).')),
+  scales: since(z.array(z.enum(SCALES)).min(1).describe('The room it can draw in: chip, row, cell, pane, dialog (2.31: over the page, modal; list pane too, for a renderer that draws no dialog), list (2.32: a section in a stack of them, under a heading with its tally).')),
   needs: since(z.array(z.enum(KIT_MEMBERS)).optional().describe("The kit members it can't draw without: a renderer whose kit lacks one doesn't offer it.")),
   regions: since(z.array(z.string()).optional().describe("The regions it declares inside it, each one of the manifest's regions.")),
   options: since(Schema.optional().describe("Its options' JSON Schema, as a region's layout sets them.")),
@@ -982,7 +982,7 @@ const View = z.strictObject({
       .string()
       .min(1)
       .optional()
-      .describe("An export of its module, (board, subject) => { text?, tip?, tone?, hint? } | undefined, read from the board alone: in a tabs region, whether it has a tab on the subject and the tab's tally."),
+      .describe("An export of its module, (board, subject) => { text?, tip?, tone?, hint? } | undefined, read from the board alone: in a tabs region, whether it has a tab on the subject and the tab's tally; in a region of arity all (2.32), whether its section is drawn and the tally on its heading."),
   ),
 })
 const RegionDecl = z.strictObject({

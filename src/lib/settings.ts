@@ -11,10 +11,13 @@ export {
   section,
   settingsCss,
   settingsHtml,
+  /** @provisional */ sidebarSection,
   soundSection,
   /** @provisional */ tipsSection,
   wirePrefs,
 } from '../shared/settings.ts'
 export type {
   /** @provisional */ ScreenGroup,
+  /** @provisional */ SectionChoice,
+  /** @provisional */ SectionState,
 } from '../shared/settings.ts'
