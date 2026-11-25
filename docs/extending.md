@@ -107,6 +107,11 @@ declares beside its fields; a renderer with no file declares nothing. The tower 
   config entry has a `fail` among them is drawn by its default: pass `usableConfigLayout(renderer)` as `configured`,
   the config's layout less each such region, never `configLayout` itself (`layoutKey` and `usableConfigLayout` in
   `/lib/layout.js`).
+- `themeSample`: a module in its root whose `sample()` returns `{ html, bodyClass }`: the html of its own parts on
+  sample data (a floor's plate, a worker row), drawn with its own functions, and the class the frame's body takes for
+  them to draw (the page's `drawer`, its sidebar open in a frame that narrow): the Theme dialog (`tower/themes`) frames it with the page's
+  stylesheets and each theme, beside the shared parts (buttons, a menu, a terminal strip). A renderer without one
+  previews those alone.
 - `entry`: the page the file declares for, `index.html` unless set. Two renderers may share a root with different
   entries (Tower 3D's Lab is its `out/` with `lab.html`): only the one whose `entry` matches reads the file.
 
@@ -325,6 +330,16 @@ a palette in both schemes and in more contrast, rounder corners, and headings in
 - **Live.** A page loads with its themes, and follows a change of them (the config's `theme` or list, the active theme's
   extension accepted or turned off) as the board says it: `tower.onThemes` tells it when the new ones have loaded. An edit to a theme's
   file shows on the next load.
+
+**A screen's own theme.** The config's `theme` is the tower's. A viewer can draw another on their own screen from the
+palette's **Open Theme** (the `tower/themes` dialog), which previews every offered theme and the renderer's own look
+on real parts, in either scheme, and makes one the tower's too. `tower.theme` (since 2.37) is the same for any page:
+`get()` says `{ screen, tower, drawn }`, `use(id)` draws one here (`null` the renderer's own look), `follow()` the
+tower's again, `pick(id)` writes the config's `theme` through the config verbs, and `sheet(id)` is the stylesheet a
+frame links to preview one, `/renderers/<name>/themes.css?theme=<id>`, with the config's tweak sheets still over it.
+The screen's choice is kept per renderer in `tower.store`; a choice no extension offers any more draws the tower's. A
+document the tower draws in a frame (a markdown file, a kept item) takes the theme drawn: `frameLook(tower)` in
+`/lib/design.js` gives its root's attributes and the stylesheets to link.
 
 Every renderer the tower serves at `/r/<name>/` takes its themes, a renderer of your own included: the tower links
 `/renderers/<name>/themes.css`, the stylesheet importing them, into the page it serves, and the board carries each

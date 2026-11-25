@@ -52,8 +52,9 @@ update of the core never touches it.
   holds its `regions` ([`Region`](ref:hub/src/shared/regions.ts#Region): an id `<kind>.<place>`, the subject kind,
   what it holds, for views their scale and arity (`one`, `tabs`, or `all`: [[sidebar-regions]]) and, on one of arity `all`,
   the region its views open in as entries (`opens`: [[sidebar-nav]]), whether it offers only the views that ask for it
-  (`optIn`), and words for where it is), its `kit`, the chords it `keeps` and its
-  default `layout`, all served in `GET /renderers` beside its fields; a renderer with no file declares nothing. The
+  (`optIn`), and words for where it is), its `kit`, the chords it `keeps`, its
+  default `layout` and its `themeSample`, the module whose `sample()` draws its own parts for the Theme dialog
+  ([[themes]]), all served in `GET /renderers` beside its fields; a renderer with no file declares nothing. The
   file declares for its `entry` (`index.html` unless set), so a second renderer on one root (Tower 3D's Lab) declares
   nothing from it. Tower 3D's build copies its file into `out/`. The `tower` command's regions are `cli.regions` in
   `/schema` ([`CLI_REGIONS`](ref:hub/src/shared/regions.ts#CLI_REGIONS)). An ask lands in the board's regions only
