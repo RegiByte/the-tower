@@ -77,12 +77,13 @@ dialog h2 { margin: 0 0 var(--sp-l); font: var(--display-weight) var(--fs-xl)/1 
 .section-tally.unseen { background: var(--ink); color: var(--panel); }
 .side-section[data-folded] .section-body { display: none; }
 .section-body { max-height: 12.5rem; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
-.side-views { display: flex; gap: var(--sp-xs); padding: var(--sp-m) var(--sp-xl); border-bottom: 1px solid var(--line); }
+.side-views { display: flex; align-items: flex-start; gap: var(--sp-xs); padding: var(--sp-m) var(--sp-xl); border-bottom: 1px solid var(--line); }
+.side-nav { display: flex; flex-wrap: wrap; gap: var(--sp-xs); min-width: 0; }
 .side-views button { min-height: var(--control); padding: 0 var(--sp-m); border-color: transparent; background: none; color: var(--muted); }
 .side-views .board-sign { margin-left: auto; display: flex; gap: var(--sp-xs); }
 .side-views .board-sign:empty { display: none; }
-.stats-side { display: none; flex: 1; overflow-y: auto; padding: 0 var(--sp-xl) var(--sp-xl); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
-.side.on-stats .stats-side { display: block; } .side.on-stats .floors { display: none; }
+.nav-tally { margin-left: var(--sp-xs); padding: 0 var(--sp-s); border-radius: var(--radius-pill); background: var(--panel-2); color: var(--ink); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
+.nav-tally.unseen { background: var(--ink); color: var(--panel); }
 .floors { flex: 1; overflow-y: auto; padding: var(--sp-l) var(--sp-xl) var(--sp-xl); display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--sp-xl);
   scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .floor { --pt: color-mix(in oklab, var(--p, var(--ink)) var(--p-text-mix), var(--ink)); --pw: color-mix(in oklab, var(--p, var(--deco)) var(--p-wash-mix), var(--panel)); }
@@ -173,7 +174,7 @@ body:has(.crew-group.dragged) .tower-tip { visibility: hidden; }
 .edge-call.up .icon { rotate: 180deg; }
 /* Hidden, an arrow keeps blinking unseen, so it shows again in step rather than starting its blink over. */
 .edge-call[data-gone] { visibility: hidden; }
-:is(.sess.sel, .pane-tab.on, .tab.open, .tray.on, .side-views button.on) { color: var(--ink); border-color: var(--ink); box-shadow: var(--selected); }
+:is(.sess.sel, .pane-tab.on, .tab.open, .tray.on, .side-views button[aria-current]) { color: var(--ink); border-color: var(--ink); box-shadow: var(--selected); }
 .floors .sess.sel { border-left-color: var(--c); }
 .sess .top { display: flex; align-items: center; gap: var(--sp-m); }
 .sess .call, .past .call { color: inherit; text-decoration: none; }
@@ -275,7 +276,7 @@ body:has(.crew-group.dragged) .tower-tip { visibility: hidden; }
 }
 @media (max-width: 900px), (max-height: 560px) {
   .side { overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
-  .side :is(.floors, .stats-side) { flex: none; overflow: visible; }
+  .side .floors { flex: none; overflow: visible; }
 }
 .rail .count { display: grid; place-items: center; min-width: 20px; min-height: 20px; border-radius: var(--radius-pill); background: var(--panel-2); color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); font-weight: 700; font-size: var(--fs-xs); }
 .rail .lamp { width: 11px; height: 11px; cursor: pointer; }
@@ -466,7 +467,7 @@ dialog .actions { display: flex; justify-content: flex-end; align-items: center;
 dialog .actions small { margin-right: auto; }
 dialog.sheet header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-m); }
 dialog.sheet header .icon-btn { flex: none; font-size: var(--fs-m); }
-.floors, .stats-side, .side, dialog.sheet { scrollbar-gutter: stable; }
+.floors, .side, dialog.sheet { scrollbar-gutter: stable; }
 .board-error { position: fixed; left: 50%; top: 20px; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--broken);
   color: var(--ink); box-shadow: var(--shadow); padding: var(--sp-m) var(--sp-xl); border-radius: var(--radius-card); z-index: 20; max-width: min(720px, 90vw); }
 .board-error b { display: block; margin-bottom: var(--sp-2xs); }
@@ -487,9 +488,8 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, [data-view="tow
   <div class="tally" id="tally"></div>
   <div class="limits-bar" id="limits-bar"><button class="chip" id="limits-open" popovertarget="limits"></button><div class="settings-pop limits" id="limits" popover></div></div>
   <div class="side-sections" id="sections"></div>
-  <div class="side-views"><button class="eyebrow" data-side-view="floors">Floors</button><button class="eyebrow" data-side-view="stats" data-tip="spend, work and waits, from the logs">Stats</button><span class="board-sign" id="board-sign"></span></div>
+  <div class="side-views"><nav class="side-nav" id="nav" aria-label="the sidebar's entries"></nav><span class="board-sign" id="board-sign"></span></div>
   <nav class="floors" id="floors" aria-label="floors"></nav>
-  <div class="stats-side" id="stats"></div>
   <div class="side-extensions"><button class="extensions-open" id="extensions-open"></button><div class="settings-pop extensions-pop" id="extensions-pop" popover="manual" aria-label="extensions"></div></div>
   <div class="side-foot" id="side-foot"></div>
   <div class="side-renderers" id="renderers"></div>

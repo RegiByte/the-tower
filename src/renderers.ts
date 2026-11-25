@@ -85,7 +85,10 @@ const RegionSchema: z.ZodType<Region> = z.strictObject({
     .refine((forms) => new Set(forms).size === forms.length, { message: 'each form once' })
     .optional(),
   label: z.string().min(1).optional(),
-}).refine((r) => r.holds.length > 0 || r.label !== undefined, { message: 'a region holds something, or is labelled: one that holds nothing draws the renderer\'s own buttons, and offers only the choice of showing them' })
+  opens: z.string().regex(REGION_ID).optional(),
+})
+  .refine((r) => r.holds.length > 0 || r.label !== undefined, { message: 'a region holds something, or is labelled: one that holds nothing draws the renderer\'s own buttons, and offers only the choice of showing them' })
+  .refine((r) => r.opens === undefined || (r.holds.includes('views') && r.arity === 'all'), { message: 'opens: only a region of arity all that holds views draws its views as entries that open elsewhere' })
 
 /** A layout's problems in a line, each at its path. */
 const layoutIssues = (error: z.ZodError) => error.issues.map((i) => `${i.path.join('.') || '(top)'}: ${i.message}`).join('; ')
@@ -228,7 +231,12 @@ const regionProblems = (renderer: string, at: string, region: Region, entry: Lay
 /** `renderer.json`: what the renderer whose page is `entry` declares, each key but `regions` empty when left out. */
 const DeclaredFile = z.strictObject({
   entry: z.string().min(1).default('index.html'),
-  regions: z.array(RegionSchema).refine((regions) => new Set(regions.map((r) => r.id)).size === regions.length, { message: 'each region id once' }),
+  regions: z
+    .array(RegionSchema)
+    .refine((regions) => new Set(regions.map((r) => r.id)).size === regions.length, { message: 'each region id once' })
+    .refine((regions) => regions.every((r) => r.opens === undefined || regions.some((o) => o.id === r.opens && o.holds.includes('views') && o.arity !== 'all')), {
+      message: 'opens names a region of the same renderer that holds views one at a time or as tabs',
+    }),
   kit: z.array(z.enum(KIT_MEMBERS)).default([]),
   keeps: z
     .array(z.string())

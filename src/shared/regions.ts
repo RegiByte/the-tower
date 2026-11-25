@@ -57,6 +57,11 @@ export type Region = {
    * @since 2.25
    */
   label?: string
+  /**
+   * The region this one's views open in: it draws each view it offers as an entry, and pressing one mounts the view
+   * there (`board.nav` opens in `board.main`). Only on a region of arity `all` that holds views.
+   */
+  opens?: string
 }
 
 /**
