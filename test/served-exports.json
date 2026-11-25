@@ -1596,6 +1596,9 @@
         "documentCss": {
           "since": "2.0"
         },
+        "frameLook": {
+          "since": "2.36"
+        },
         "mixOklab": {
           "since": "2.0",
           "stability": "provisional"
@@ -1620,6 +1623,9 @@
         }
       },
       "types": {
+        "FrameLook": {
+          "since": "2.36"
+        },
         "Scheme": {
           "since": "2.0",
           "stability": "provisional"

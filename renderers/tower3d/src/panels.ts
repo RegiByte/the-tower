@@ -5,6 +5,7 @@ import { byKind, keepsThreads, reviewAction, type Act, type ActOf, type ByKind, 
 import { briefKey, expandedSaid, openFolds, openTools, saidText, saidWhat, toolCallHtml, toolCallSettled, withWhole, withWholesRead, type BriefMarkdown } from '/lib/brief.js'
 import { type StatsRange, STATS_ALL, statsHtml } from '/lib/stats.js'
 import { fenceText } from '/lib/markdown.js'
+import { frameLook } from '/lib/design.js'
 import { keepShownTabs, morphPanel, keepingFocus, failedHtml, fileCall, pressing, itemKind, itemPath, keptOf, readsText } from '/lib/view.js'
 import { readViewer, seenOf } from '/lib/viewer.js'
 import { actionId, offeredIds, layoutKey, type Layout } from '/lib/layout.js'
@@ -358,7 +359,7 @@ export function startPanels(started: PanelsDeps) {
       return media?.setAttribute('src', `${shownHref(sh)}?v=${modifiedAt}`)
     }
     const md = await tower.text(shownHref(sh).slice(1)).catch((err: Error) => `*${err.message}*`)
-    if (still()) redrawMd(el.querySelector('iframe'), mdPage(md, shownHref(sh), tower.prefs.attributes()))
+    if (still()) redrawMd(el.querySelector('iframe'), mdPage(md, shownHref(sh), frameLook(tower)))
   }
 
   /** Entering the Stats panel: read now, and again every minute while it is open. */
@@ -437,7 +438,7 @@ export function startPanels(started: PanelsDeps) {
     const doc = panelAs('doc')
     if (doc?.project !== project || doc.n !== n) return
     patchPanel({ ...doc, file: shown })
-    $('doc-body').innerHTML = docHtml({ files, file: shown, text, url: shelfUrl(project, n, shown ?? ''), hub: boardNow()!.floors.find((f) => f.id === project)!.hub }, tower.prefs.attributes())
+    $('doc-body').innerHTML = docHtml({ files, file: shown, text, url: shelfUrl(project, n, shown ?? ''), hub: boardNow()!.floors.find((f) => f.id === project)!.hub }, frameLook(tower))
   }
 
   /** The shelf file open in the reader changed on disk: read and set again where it was scrolled to. */
@@ -445,7 +446,7 @@ export function startPanels(started: PanelsDeps) {
     const text = await shelfText(tower, project, n, file).catch((err: Error) => `*${err.message}*`)
     const doc = panelAs('doc')
     if (!latest() || doc?.project !== project || doc.n !== n || doc.file !== file) return
-    redrawMd($('doc-body').querySelector('iframe'), mdPage(text, shelfUrl(project, n, file), tower.prefs.attributes()))
+    redrawMd($('doc-body').querySelector('iframe'), mdPage(text, shelfUrl(project, n, file), frameLook(tower)))
   }
 
   /** The open `html` entry's page, given the board and the API. Tower 3D reads what it keeps in `tower.store` as it boots. */
@@ -484,7 +485,7 @@ export function startPanels(started: PanelsDeps) {
       if (panelNow() === panel) $('doc-body').innerHTML = failedHtml(item.tag, err.message, 'data-kept-read')
     })
     if (text === undefined || panelNow() !== panel) return
-    $('doc-body').innerHTML = keptTextHtml(item, text, tower.prefs.attributes())
+    $('doc-body').innerHTML = keptTextHtml(item, text, frameLook(tower))
   }
 
   /** The kept item open, read afresh. */
@@ -515,14 +516,14 @@ export function startPanels(started: PanelsDeps) {
     const { id, target } = panel
     const { worker, shown: sh } = pictureOf(planNow().galleries, boardNow()!, id, target)!
     see(sh)
-    $('doc-body').innerHTML = shownHtml(worker.callsign, sh, tower.prefs.attributes())
+    $('doc-body').innerHTML = shownHtml(worker.callsign, sh, frameLook(tower))
     const still = () => panelAs('picture')?.id === id && panelAs('picture')?.target === target
     if (sh.kind === 'file') readerFile.follow(shownHref(sh).slice(1), (at, latest) => void shownChanged($('doc-body'), sh, at, () => latest() && still()))
     if (!isMarkdown(sh)) return
     const md = await tower.text(shownHref(sh).slice(1)).catch((err: Error) => `*${err.message}*`)
     const open = panelAs('picture')
     if (open?.id !== id || open.target !== target) return
-    $('doc-body').innerHTML = shownHtml(worker.callsign, sh, tower.prefs.attributes(), md)
+    $('doc-body').innerHTML = shownHtml(worker.callsign, sh, frameLook(tower), md)
   }
 
   /** A panel of the side whose enter doesn't show it, opened over what is open: a drawer. */
@@ -1110,14 +1111,14 @@ export function startPanels(started: PanelsDeps) {
   async function shownEntered(id: string, sh: Shown) {
     const c = findCard(boardNow()!, id)!
     see(sh)
-    $('desk-shown').innerHTML = shownHtml(c.callsign, sh, tower.prefs.attributes())
+    $('desk-shown').innerHTML = shownHtml(c.callsign, sh, frameLook(tower))
     show('desk-shown', true)
     const still = () => atDesk() === id && deskTabNow() === shownTab(sh)
     if (sh.kind === 'file') deskFile.follow(shownHref(sh).slice(1), (at, latest) => void shownChanged($('desk-shown'), sh, at, () => latest() && still()))
     if (!isMarkdown(sh)) return
     const md = await tower.text(shownHref(sh).slice(1)).catch((err: Error) => `*${err.message}*`)
     if (atDesk() !== id || deskTabNow() !== shownTab(sh)) return
-    $('desk-shown').innerHTML = shownHtml(c.callsign, sh, tower.prefs.attributes(), md)
+    $('desk-shown').innerHTML = shownHtml(c.callsign, sh, frameLook(tower), md)
   }
 
   function closeShown() {

@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-11-23",
   "reviewed": "2026-11-25",
-  "refs": ["hub/src/renderers.ts#themesOf", "hub/src/renderers.ts#themeSheet", "hub/src/renderers.ts#themeUrls", "hub/src/renderers.ts#themeFile", "hub/src/renderers.ts#themesPicking", "hub/src/renderers.ts#pickedThemeUrls", "hub/src/shared/shelf-page.ts#ThemeApi", "hub/src/bridge/extensions.ts#offeredThemes", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/http.ts#preloaded", "hub/src/tower/http.ts#withThemes", "hub/test/server.test.ts", "hub/src/tower/http.ts#themesCss", "hub/src/tower/http.ts#themeServed", "hub/src/tower/publisher.ts", "hub/src/bridge/board.ts#Board", "hub/src/bridge/board.ts#BoardTheme", "hub/src/tower/tower.js", "hub/renderers/page/page.js#recolourTerminals", "hub/renderers/tower3d/src/term.ts", "hub/src/config-check.ts#themeProblems", "hub/examples/extensions/harbor/harbor.css", "hub/extensions/themes/extension.json"],
+  "refs": ["hub/src/renderers.ts#themesOf", "hub/src/renderers.ts#themeSheet", "hub/src/renderers.ts#themeUrls", "hub/src/renderers.ts#themeFile", "hub/src/renderers.ts#themesPicking", "hub/src/renderers.ts#pickedThemeUrls", "hub/src/shared/shelf-page.ts#ThemeApi", "hub/src/shared/design.ts#frameLook", "hub/src/bridge/extensions.ts#offeredThemes", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/http.ts#preloaded", "hub/src/tower/http.ts#withThemes", "hub/test/server.test.ts", "hub/src/tower/http.ts#themesCss", "hub/src/tower/http.ts#themeServed", "hub/src/tower/publisher.ts", "hub/src/bridge/board.ts#Board", "hub/src/bridge/board.ts#BoardTheme", "hub/src/tower/tower.js", "hub/renderers/page/page.js#recolourTerminals", "hub/renderers/tower3d/src/term.ts", "hub/src/config-check.ts#themeProblems", "hub/examples/extensions/harbor/harbor.css", "hub/extensions/themes/extension.json"],
   "links": [
     { "to": "cascade-layers", "verb": "loads into", "carries": "each theme in a layer of its own inside theme" },
     { "to": "design-system", "verb": "sets", "carries": "the palette and the character tokens" },
@@ -61,6 +61,11 @@ touches, the same for the user's config and for an extension that ships a look.
   window of the viewer's. A choice no extension offers any more draws the tower's. The board marks the offered theme
   the config picks `picked`, so a page shows both choices; `tower.theme.pick` makes one the tower's through the config
   verbs, with the value as read.
+
+- *Framed documents too.* A document the tower draws in a frame of its own writing (a markdown file shown or kept,
+  a link page, Tower 3D's documents) links the design's tokens and the renderer's themes as this screen draws them
+  ([`frameLook`](ref:hub/src/shared/design.ts#frameLook)), and is drawn again on `onThemes`. A shown html page is its
+  author's and loads only what it links.
 
 Only tokens are promised to a theme. The page's classes and state classes and the elements' `data-slot` parts are
 reached at best effort and may change in any release (`docs/extending.md`, "Write a theme"). The example,
