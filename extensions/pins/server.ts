@@ -27,7 +27,7 @@ const start: Start = (ctx) => {
         const pin = (own.streams[PINS] as PinsState)[card.id]
         const call = { session: card.id }
         return pin
-          ? { badges: [{ label: 'pinned', tone: 'quiet', hint: pin.note || 'pinned to come back to' }], actions: [{ verb: `${ctx.provides}/unpin`, call }] }
+          ? { badges: [{ label: 'pinned', tone: 'quiet', hint: pin.note || 'pinned to come back to', icon: 'pin.svg' }], actions: [{ verb: `${ctx.provides}/unpin`, call }] }
           : { actions: [{ verb: `${ctx.provides}/pin`, call }] }
       },
       board: (_board: Board, { own, callsignOf }: FoldCtx): Part => ({ x: { pins: pinsOf(own.streams[PINS] as PinsState, callsignOf) } }),
