@@ -36,7 +36,7 @@ import { actionsHtml, asksHtml, badgeHtml, badgesHtml, drawCount, iconButtonsHtm
 export const workerRowHtml = (c, p) => {
   const key = `card:${c.id}`
   return `<div class="sess ${lampOf(c)} ${c.waiting ? 'waits' : ''} ${p.calls ? 'calls' : ''} ${p.selected ? 'sel' : ''} ${onDuty(c) ? '' : 'gone'}" data-id="${c.id}" data-hold="${c.id}">${subjectAreaHtml('row', key, `
-    <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${p.selected ? ' aria-current="true"' : ''}${p.adds.by}>${p.callsign}</a><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusWord(c)}${c.stuck || c.stranded ? `<span class="sr-only">: ${esc(statusTitle(c))}</span>` : ''}</span><span class="ago" translate="no" data-since="${c.enteredAt}"></span>${subjectButtonHtml('row', key, `${p.callsign}: menu`)}</div>
+    <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${p.selected ? ' aria-current="true"' : ''}${p.adds.by}>${p.callsign}</a><span class="state"><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusWord(c)}${c.stuck || c.stranded ? `<span class="sr-only">: ${esc(statusTitle(c))}</span>` : ''}</span><span class="ago" translate="no" data-since="${c.enteredAt}"></span></span>${subjectButtonHtml('row', key, `${p.callsign}: menu`)}</div>
     ${c.worktree ? `<div class="branch" data-tip="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${withIcons(esc(p.branch))}</div>` : ''}
     ${p.adds.lines}
     <div class="line">${lineOf(c)}</div>
