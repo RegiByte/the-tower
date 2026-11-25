@@ -2,7 +2,7 @@ import type { FitAddon } from '@xterm/addon-fit'
 import type { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes'
 import type { WebLinksAddon } from '@xterm/addon-web-links'
 import type { ILink, Terminal } from '@xterm/xterm'
-import { terminalThemeOn } from './design.ts'
+import { ansi, terminalThemeOn, type Ansi } from './design.ts'
 import type { Keys } from './keymap.ts'
 import { loop, timers, type Handlers, type StateEffect, type TimerEffect } from './loop.ts'
 import type { ScreenMsg, TerminalMsg } from './shelf-page.ts'
@@ -282,8 +282,15 @@ const computedColor = (el: HTMLElement, token: string) => {
   return `#${(a < 255 ? [r, g, b, a] : [r, g, b]).map((c) => c.toString(16).padStart(2, '0')).join('')}`
 }
 
-/** The terminal's theme in the colours the page computes at `el`: `--enamel` behind, `--term-fg` its text. */
-const themeAt = (el: HTMLElement) => terminalThemeOn({ enamel: computedColor(el, '--enamel'), termFg: computedColor(el, '--term-fg') })
+const ansiToken = (name: string) => `--ansi-${name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`
+
+/** The terminal's theme in the colours the page computes at `el`: `--enamel` behind, `--term-fg` its text, `--ansi-*` its sixteen. */
+const themeAt = (el: HTMLElement) =>
+  terminalThemeOn({
+    enamel: computedColor(el, '--enamel'),
+    termFg: computedColor(el, '--term-fg'),
+    ansi: Object.fromEntries(Object.keys(ansi).map((name) => [name, computedColor(el, ansiToken(name))])) as Ansi,
+  })
 
 /** Opens a view of a PTY's stream in `host`, which it fits and watches for resizes, until `close`. */
 export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): TermViewHandle {
