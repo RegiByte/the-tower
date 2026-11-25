@@ -83,7 +83,8 @@ terminal that is a block of the ink colour.
   `--sign-badge`); the frame's elevation (the sidebar's
   `--side-surface` and `--side-rule`, the main pane's `--main-surface`, `--main-inset`, `--main-radius` and
   `--main-shadow`, so a theme can float the main pane over one ground, as Arc and Lobby do, with its foot, the
-  shells' strip, in `--dock-surface` and rounded with it); and a worker card's status
+  shells' strip, in `--dock-surface` and rounded with it, and what it holds `--main-pad` from its sides and foot, `0px`
+  running it edge to edge in a raised pane); and a worker card's status
   edge (`--status-edge`, and `--status-ring-mix`, a percent of the status colour in its other sides, since a colour
   token set on the root would resolve there, where no card's status is); and emphasis on what is active, a glow
   (`--card-glow`, its `-hover` and `-active` states, and `--main-glow` with its `-active` state while focus is in the

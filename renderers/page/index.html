@@ -324,7 +324,7 @@ dialog.palette[open] { display: flex; flex-direction: column; max-height: min(56
 .patterns .summary { margin: 0 0 var(--sp-m); color: var(--muted); }
 @media (max-width: 560px) { .pal-hint { display: none; } .pal-keys { display: none; } }
 
-.main { position: relative; display: flex; flex-direction: column; gap: var(--sp-m); min-width: 0; min-height: 0; padding: var(--sp-xl) var(--sp-xl) 0;
+.main { position: relative; display: flex; flex-direction: column; --pane-pad: var(--main-pad); gap: min(var(--sp-m), var(--main-pad)); min-width: 0; min-height: 0; padding: var(--main-pad) var(--main-pad) 0;
   margin: var(--main-inset); border-radius: var(--main-radius); background: var(--main-surface); box-shadow: var(--main-shadow); }
 .main::after { --glow: var(--main-glow); --glow-mix: var(--main-glow-mix); content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
   box-shadow: 0 0 var(--glow) calc(var(--glow) / -4) color-mix(in oklab, var(--accent) var(--glow-mix), transparent); transition: box-shadow .15s ease-out; }
@@ -444,8 +444,9 @@ dialog.palette[open] { display: flex; flex-direction: column; max-height: min(56
 #s-mode:empty, #s-mode.owner { display: none; }
 .view-failed { margin: auto; padding: var(--sp-m); color: var(--broken-text); font-size: var(--fs-s); }
 
-.dock { position: relative; flex: none; margin: 0 calc(-1 * var(--sp-xl)); background: var(--dock-surface); border-top: 1px solid var(--line); border-radius: 0 0 var(--main-radius) var(--main-radius); }
-.shell-pane { display: none; position: relative; height: var(--shell-h, 38vh); padding: var(--sp-m) var(--sp-l); margin: 0 var(--sp-xl) var(--sp-xl); background: var(--enamel); border-radius: var(--radius-card);
+.dock { position: relative; flex: none; margin: 0 calc(-1 * var(--main-pad)); background: var(--dock-surface); border-top: 1px solid var(--line); border-radius: 0 0 var(--main-radius) var(--main-radius); }
+.shell-pane { display: none; position: relative; height: var(--shell-h, 38vh); padding: var(--sp-m) var(--sp-l); margin: 0 var(--main-pad) var(--main-pad); background: var(--enamel);
+  --edge: min(var(--radius-card), var(--main-pad)); --corner: max(var(--edge), calc(var(--main-radius) - var(--main-pad))); border-radius: var(--edge) var(--edge) var(--corner) var(--corner);
   box-shadow: inset 0 3px 0 var(--p, var(--deco)); }
 .main.shell-open .shell-pane { display: block; }
 .shell-pane .term { width: 100%; height: 100%; }

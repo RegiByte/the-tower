@@ -13,7 +13,7 @@ const ID = 'tower/archive'
 
 const STYLE = viewCss(
   ID,
-  `& .archive { flex: 1; min-height: 0; overflow-y: auto; padding: var(--sp-m); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-card);
+  `& .archive { flex: 1; min-height: 0; overflow-y: auto; padding: var(--sp-m); background: var(--panel); border: var(--fit-hair) solid var(--line); border-radius: var(--fit-inner);
     scrollbar-width: thin; scrollbar-color: var(--line) transparent; scrollbar-gutter: stable;
     display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; align-content: start; gap: var(--sp-2xs); }
   & .crew { --tree-gap: var(--sp-2xs); --tree-x: var(--sp-m); --tree-indent: calc(var(--sp-l) + 4px); }

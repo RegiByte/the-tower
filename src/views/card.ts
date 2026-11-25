@@ -40,8 +40,10 @@ export type CardOptions = { head?: boolean; acts?: CardAct[]; pick?: CardPick; o
 const ID = 'tower/card'
 
 const CSS = `:where([data-view="${ID}"]) {
-  gap: var(--sp-m);
-  & .bar { --tabs-room: var(--sp-m); flex: none; container: card-head / inline-size; padding: var(--sp-m) var(--sp-xl); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-card); box-shadow: var(--shadow-head); }
+  --fit-pad: var(--pane-pad, var(--sp-xl)); --fit-hair: min(1px, var(--fit-pad)); --fit-inner: min(var(--radius-card), var(--fit-pad));
+  --fit-outer: max(var(--fit-inner), calc(var(--main-radius) - var(--fit-pad)));
+  gap: min(var(--sp-m), var(--fit-pad));
+  & .bar { --tabs-room: var(--sp-m); flex: none; container: card-head / inline-size; padding: var(--sp-m) var(--sp-xl); background: var(--panel); border: 1px solid var(--line); border-width: var(--fit-hair) var(--fit-hair) 1px; border-radius: var(--fit-outer) var(--fit-outer) var(--fit-inner) var(--fit-inner); box-shadow: var(--shadow-head); }
   & .bar-top { display: flex; flex-direction: column; gap: var(--sp-xs); min-width: 0; }
   & .bar-top[hidden] { display: none; }
   & .part, & :is([data-holds="badges"], [data-holds="lines"], [data-holds="actions"]) { display: contents; }
@@ -106,7 +108,7 @@ const CSS = `:where([data-view="${ID}"]) {
   & .ask .what b { color: var(--needs-text); }
   & .ask .call { font: var(--name-weight) var(--fs-l)/1 var(--display); letter-spacing: var(--name-tracking); }
   & .ask button { margin-left: auto; flex: none; }
-  & .screen { position: relative; flex: 1; min-height: 0; overflow: hidden; border-radius: var(--radius-card); }
+  & .screen { position: relative; flex: 1; min-height: 0; overflow: hidden; border-radius: var(--fit-inner); }
   &.cell { gap: 0; }
   &.cell .bar { --tabs-room: 0px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; column-gap: var(--sp-m); padding: var(--sp-xs) var(--sp-m);
     border: 0; border-bottom: 1px solid var(--line); border-radius: 0; box-shadow: none; }

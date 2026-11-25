@@ -119,6 +119,7 @@
       "--main-glow-active-mix",
       "--main-glow-mix",
       "--main-inset",
+      "--main-pad",
       "--main-radius",
       "--main-shadow",
       "--main-surface",
