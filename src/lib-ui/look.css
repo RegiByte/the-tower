@@ -52,7 +52,7 @@
     max-width: min(26rem, calc(100vw - 16px));
     max-height: var(--available-height);
     margin: 0;
-    padding: var(--ui-spacing) 0;
+    padding: var(--ui-spacing);
     overflow-y: auto;
     overscroll-behavior: contain;
     border: 1px solid var(--ui-border);
@@ -72,7 +72,8 @@
     display: flex;
     align-items: center;
     gap: calc(var(--ui-spacing) * 2);
-    padding: var(--ui-spacing) calc(var(--ui-spacing) * 2.5);
+    padding: var(--ui-spacing) calc(var(--ui-spacing) * 1.5);
+    border-radius: max(0px, var(--ui-radius) - var(--ui-spacing) - 1px);
     outline: none;
     cursor: default;
     user-select: none;
@@ -170,7 +171,7 @@
   }
 
   :where(tower-menu, tower-combobox) :is([data-slot="menu-group-label"], [data-slot="combobox-group-label"]) {
-    padding: var(--ui-spacing) calc(var(--ui-spacing) * 2.5) calc(var(--ui-spacing) / 2);
+    padding: var(--ui-spacing) calc(var(--ui-spacing) * 1.5) calc(var(--ui-spacing) / 2);
     color: var(--ui-muted-foreground);
     font: var(--display-weight) 0.85em / 1.4 var(--display);
     letter-spacing: var(--label-tracking);
@@ -179,7 +180,7 @@
 
   tower-menu [data-slot="menu-separator"] {
     height: 1px;
-    margin: var(--ui-spacing) 0;
+    margin: var(--ui-spacing) calc(-1 * var(--ui-spacing));
     background: var(--ui-border);
   }
 
@@ -255,7 +256,7 @@
   }
 
   tower-combobox [data-slot="combobox-empty"]:not(:empty) {
-    padding: var(--ui-spacing) calc(var(--ui-spacing) * 2.5);
+    padding: var(--ui-spacing) calc(var(--ui-spacing) * 1.5);
     color: var(--ui-muted-foreground);
   }
 
