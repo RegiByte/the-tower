@@ -12,6 +12,34 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.18.0
+
+The sidebar takes what extensions add, and the page gets two themes to choose from (the sidebar pass: #721–#726).
+API 2.36. **config**: a new key, `renderers.<name>.theme`. **API change of meaning** (see Themes). Nothing to restart
+beyond the tower (`tower update` does it).
+
+- **Sections in the sidebar.** Above Floors, extensions add sections (a view at the new `list` scale), each folding to
+  its heading and count; Settings › Sidebar sets each Open, Folded or Off. The page's own first section is **Waiting
+  on you**: the queue `N` walks, oldest first, a row opening its worker, × dismissing it in every window.
+- **Pins.** A worker's ⋯ and header have **Pin to sidebar** with an optional note; pinned conversations stay in the
+  sidebar's Pinned section after their worker is sent home and open from the archive. Workers pin too:
+  `tower x pins pin --note '…'`, `unpin`, `list`. The badge shows a pin, and any extension's badge can carry an icon
+  (`Badge.icon`).
+- **Nav entries.** The Floors · Stats row holds entries that open a view in the main pane: Floors is home, Stats now
+  opens in the main pane (every floor or one), and the Learning center sits there too. An extension asks for an entry
+  with `"optsInto": ["board.nav"]` on a board view; four show and the rest are behind More…, whose menu pins any of
+  them into the row. The page's `[data-side-view]` buttons and `#stats` are gone: Lobby and Artifacts read them.
+- **Themes are offered, and you pick one.** A manifest's `themes` now names each theme,
+  `{ "page": { "<name>": { "title", "file" } } }`, and offers it as `<extension>/<name>`; nothing loads until the
+  config picks it: `"renderers": { "page": { "theme": "themes/flamingo" } }`. The config's own `themes` paths keep
+  loading on top. **For authors:** the 2.30 list form is refused with the fix in its error; it was loaded as soon as
+  it was installed, which made two bundled themes impossible. This changes what the key means; it shipped two days
+  ago and is treated as fixing v2.17.0's model rather than as a major.
+- **Aqua and Flamingo,** bundled in the `themes` extension, light and dark: sea and horizon; sunset and neon. With
+  them, new character tokens let a theme raise the main pane above the sidebar's ground and ring a worker card in its
+  status colour, and set the terminal's sixteen colours (`--ansi-*`). The default look is unchanged.
+- A crew's drag grip takes its lamp's place on hover again. The page targets current Safari (26+) and Chrome.
+
 ## v2.17.0
 
 The tower page takes a theme, and its look gets one system (pass 3c, the look: #710–#719). API 2.31. **config**: a new
