@@ -4,7 +4,7 @@
   "title": "Pins",
   "description": "Workers pinned as conversations worth coming back to, each with a note on why: a section of the sidebar lists them, the workers sent home included, and a worker's card says it is pinned.",
   "requires": {
-    "tower": "2.32"
+    "tower": "2.33"
   },
   "server": "server.ts",
   "client": "client",
