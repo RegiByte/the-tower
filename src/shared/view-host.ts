@@ -363,8 +363,11 @@ export function viewHost(deps: HostDeps) {
         const now = machine.state()
         return now.t === 'mounted' ? now.done.tab?.() : undefined
       },
-      /** Whether its module has mounted it, so `tab` answers what the view read rather than nothing yet. */
-      ready: () => machine.state().t === 'mounted',
+      /** Whether it is mounted and answers `tab()` itself, so `tab` says what the view read rather than nothing yet. */
+      tallies: () => {
+        const now = machine.state()
+        return now.t === 'mounted' && typeof now.done.tab === 'function'
+      },
       /** The first terminal its kit opened, as a press of its tab's chord focuses it. */
       terminal: () => [...own][0]?.term(),
       close: () => machine.dispatch({ type: 'close' }),

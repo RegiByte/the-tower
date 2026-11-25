@@ -52,7 +52,7 @@ missing was a region that draws every view it offers, not one of them.
   a few rows high and scrolling past that. Sections at `row` would also be offered in `board.strip`, a `row` region of
   arity `one` that picks the first view offered; at `list` the strip never offers them.
 - *A section.* A heading (a button, `aria-expanded`) with the view's label, its hint the tip, and its tally: the
-  view's `tab` words, the module's export from the board until the view has mounted, then the mounted view's `tab()`,
+  view's `tab` words, the module's export from the board until the view has mounted, then the mounted view's `tab()` if it has one,
   drawn again on its `tab` event. A `tab` answering `undefined` leaves the section undrawn for now, its view still
   mounted; a view with no `tab` is always drawn. Each view is mounted once and kept while offered, folded or not, so
   its tally stays current; folded, it is told `visible(false)` ([`regions`](ref:hub/renderers/page/regions.js#regions)).
