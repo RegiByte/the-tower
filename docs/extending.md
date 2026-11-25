@@ -683,6 +683,9 @@ renderer at once, each defaulting to an existing token or a fixed value, alike i
 | `--heading-case`, `--heading-tracking` | headings and signs | `uppercase`, `.06em` |
 | `--name-tracking` | names: callsigns wherever they are drawn | `.04em` |
 | `--label-case`, `--label-tracking` | labels: `.eyebrow`, menu group labels, the heads of lists | `uppercase`, `.08em` |
+| `--side-surface`, `--side-rule` | the sidebar's fill, and the rule between it and the main pane (since 2.34) | `var(--panel)`, `var(--line)` |
+| `--main-surface`, `--main-inset`, `--main-radius`, `--main-shadow` | the main pane's fill, its margin on every side, its corners and its elevation: a transparent sidebar and a panel main pane set in, rounded and raised float it over one ground (since 2.34) | `transparent`, `0px`, `0px`, `none` |
+| `--status-edge`, `--status-ring-mix` | a worker card's status: the stroke's width on its leading side, and how much of the status colour its other sides mix into the line, a percent; `100%` with a thin edge is a full status border (since 2.34) | `4px`, `0%` |
 
 A page's terminal takes `--enamel` (its background), `--term-fg` (its text) and its sixteen ANSI colours
 (`--ansi-black`, `--ansi-red`, `--ansi-green`, `--ansi-yellow`, `--ansi-blue`, `--ansi-magenta`, `--ansi-cyan`,

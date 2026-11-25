@@ -208,6 +208,13 @@ export const roles = { primary: 'ink', onPrimary: 'panel', hover: 'panel2' } as 
  * `displayWeight`: headings and signs, in `headingCase`, tracked `headingTracking`; names (callsigns), tracked
  * `nameTracking`; and labels (eyebrows, group heads), small, in `labelCase`, tracked `labelTracking`. The display
  * face's two largest sizes (the brand, the greeting) draw a hundred heavier.
+ *
+ * Elevation is how a renderer's frame stands on the wall: `sideSurface` fills the sidebar, `sideRule` divides it from
+ * the main pane, and the main pane is `mainSurface`, set in by `mainInset` on every side, rounded `mainRadius`, raised
+ * `mainShadow`. By default the sidebar is a panel ruled off a bare main pane; a transparent sidebar and a panel main
+ * pane, inset, rounded and raised, float the main pane over one ground. A worker card's status is a stroke
+ * `statusEdge` wide on its leading side, its other sides the line with `statusRingMix` of the status colour mixed in:
+ * `100%` with a thin edge draws a full status border.
  */
 export const character = {
   radiusCard: 'var(--radius)',
@@ -219,6 +226,14 @@ export const character = {
   nameTracking: '.04em',
   labelCase: 'uppercase',
   labelTracking: '.08em',
+  sideSurface: 'var(--panel)',
+  sideRule: 'var(--line)',
+  mainSurface: 'transparent',
+  mainInset: '0px',
+  mainRadius: '0px',
+  mainShadow: 'none',
+  statusEdge: '4px',
+  statusRingMix: '0%',
 }
 
 /** Icon sizes, as `--icon-<step>`, in rem so they follow the text: `s` beside words, `m` alone in a control. */
