@@ -29,8 +29,8 @@ prompt goes as `--prompt`, which opencode submits once it is ready; a resume ope
 
 **Its callsign in the TUI** ([`tui.ts`](ref:hub/src/mod/opencode/tui.ts)). opencode's TUI loads the TUI part of every
 plugin its server loads, from the same directory, so the tower's plugin shows the worker's callsign right-aligned above
-the composer (the `session.composer.top` slot), where Claude shows `--name`. As of 2.2.5 the server's plugin options
-don't reach a plugin's TUI part: the server hands the TUI only the plugin's path. So every launch, spawn and resume, sets
+the composer (the `session.composer.top` slot), where Claude shows `--name`. The server's plugin options don't reach a
+plugin's TUI part: the server hands the TUI only the plugin's path. So every launch, spawn and resume, sets
 the callsign as `TOWER_CALLSIGN`, the name the tower logged as `tower.named`. opencode's home screen, where a worker
 spawned with no prompt waits, has no slot near its composer, so the label shows from the first prompt on. The part is
 plain calls into OpenTUI's Solid renderer, which opencode hands every TUI plugin as `@opentui/solid`, so it needs no JSX
@@ -50,9 +50,9 @@ session. opencode's cost is its conversation's, cumulative across every session 
 count comes from what each step and compaction charged ([[log-reductions]]). opencode names a conversation itself;
 the title stays in the normalized stream (`conversation.titled`) with no card field.
 
-**What it can't offer.** The board says so per runtime (`board.runtimes.opencode`: no `blocked` or `watching`
-status; `absent` rate limits, `watching`, messages between workers, and slash commands
-other than `/compact`, which run in the TUI process the plugin can't see). Its workers are told in their brief that
+**What it can't offer.** The board says so per runtime (`board.runtimes.opencode`,
+[`DECLARED`](ref:hub/src/bridge/board.ts#DECLARED)): no `blocked` or `watching` status, no rate limits, no messages
+between workers, and no slash commands other than `/compact`, which run in the TUI process the plugin can't see. Its workers are told in their brief that
 they can't message another worker. The models it offers are those its latest session reported, which leaves out
 providers defined in an `opencode.json`, and a model it doesn't know runs on its default without a word: so its list
 is not complete (`absent: modelList`), and the new-worker form and `tower hire` take any model id, saying when it isn't
@@ -72,10 +72,10 @@ milliseconds, before the hire settles, but one that takes longer to fail (a wrap
 only its card says so.
 
 **When the plugin stops hearing it.** The plugin's subscribe loop posts `plugin.failed` with its error when it dies;
-the normalizer reads it as `events.lost`, the fold keeps the error, and the card says it (`card.eventsLost`, API 2.4),
+the normalizer reads it as `events.lost`, the fold keeps the error, and the card says it (`card.eventsLost`),
 drawn as the shared gist: the tower stopped hearing opencode, its status stands where the events stopped, and, while
-it still runs, a kill and a resume start a fresh plugin; an ended card keeps the fact without the advice. It holds for the rest of the session: a plugin reload after it is not read as
-hearing it again.
+it still runs, a kill and a resume start a fresh plugin; an ended card keeps the fact without the advice. It holds for the rest of the session: a plugin reload
+after it is not read as hearing it again.
 
 The recorded fixtures `test/fixtures/opencode-*.jsonl`, with
 [their expectations](ref:hub/test/opencode.test.ts), are the reference for what the bridge expects of it.
