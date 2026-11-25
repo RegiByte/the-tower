@@ -35,7 +35,8 @@ const FOLLOW_BYTES = 1024 * 1024
 const CSS = `:where([data-view="${ID}"]) {
   ${PANE_FIT}
   container-type: inline-size; position: relative;
-  & .fx { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(12rem, 18rem) minmax(0, 1fr); background: var(--panel); border: var(--fit-hair) solid var(--line); border-radius: min(var(--radius), var(--fit-pad)); overflow: hidden; }
+  & .fx { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(12rem, 18rem) minmax(0, 1fr); background: var(--panel); border: var(--fit-hair) solid var(--line); --fx-inner: min(var(--radius), var(--fit-pad)); --fx-outer: max(var(--fx-inner), calc(var(--main-radius) - var(--fit-pad)));
+    border-radius: var(--fx-outer) var(--fx-outer) var(--fx-inner) var(--fx-inner); overflow: hidden; }
   & .fx-tree { overflow: auto; padding: var(--sp-xs) 0 var(--sp-l); border-right: 1px solid var(--line); font-size: var(--fs-s); }
   & .fx-tree .note { padding: var(--sp-s) var(--sp-m); color: var(--muted); }
   & .row { display: flex; align-items: center; gap: var(--sp-2xs); width: 100%; min-height: 0; padding: 1px var(--sp-m) 1px calc(var(--sp-xs) + var(--depth, 0) * 8px); border: 0; border-radius: 0; background: none;
