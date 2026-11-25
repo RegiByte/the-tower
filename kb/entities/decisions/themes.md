@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-11-23",
   "reviewed": "2026-11-25",
-  "refs": ["hub/src/renderers.ts#themesOf", "hub/src/renderers.ts#themeSheet", "hub/src/renderers.ts#themeUrls", "hub/src/renderers.ts#themeFile", "hub/src/bridge/extensions.ts#offeredThemes", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/http.ts#preloaded", "hub/src/tower/http.ts#withThemes", "hub/test/server.test.ts", "hub/src/tower/http.ts#themesCss", "hub/src/tower/http.ts#themeServed", "hub/src/tower/publisher.ts", "hub/src/bridge/board.ts#Board", "hub/src/bridge/board.ts#BoardTheme", "hub/src/tower/tower.js", "hub/renderers/page/page.js#recolourTerminals", "hub/renderers/tower3d/src/term.ts", "hub/src/config-check.ts#themeProblems", "hub/examples/extensions/harbor/harbor.css", "hub/extensions/themes/extension.json"],
+  "refs": ["hub/src/renderers.ts#themesOf", "hub/src/renderers.ts#themeSheet", "hub/src/renderers.ts#themeUrls", "hub/src/renderers.ts#themeFile", "hub/src/renderers.ts#themesPicking", "hub/src/renderers.ts#pickedThemeUrls", "hub/src/shared/shelf-page.ts#ThemeApi", "hub/src/bridge/extensions.ts#offeredThemes", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/http.ts#preloaded", "hub/src/tower/http.ts#withThemes", "hub/test/server.test.ts", "hub/src/tower/http.ts#themesCss", "hub/src/tower/http.ts#themeServed", "hub/src/tower/publisher.ts", "hub/src/bridge/board.ts#Board", "hub/src/bridge/board.ts#BoardTheme", "hub/src/tower/tower.js", "hub/renderers/page/page.js#recolourTerminals", "hub/renderers/tower3d/src/term.ts", "hub/src/config-check.ts#themeProblems", "hub/examples/extensions/harbor/harbor.css", "hub/extensions/themes/extension.json"],
   "links": [
     { "to": "cascade-layers", "verb": "loads into", "carries": "each theme in a layer of its own inside theme" },
     { "to": "design-system", "verb": "sets", "carries": "the palette and the character tokens" },
@@ -50,6 +50,17 @@ touches, the same for the user's config and for an extension that ships a look.
   stylesheet again when the renderer's change, drops the old link once the new one has loaded, and calls
   `tower.onThemes`: the page and Tower 3D take their terminals' colours again
   ([`recolourTerminals`](ref:hub/renderers/page/page.js#recolourTerminals)), as on a change of scheme.
+
+- *A screen's own.* The config's choice is the tower's; a viewer may draw another on their own screen, kept per
+  renderer in `tower.store` (`theme:<name>`), with the config's tweak sheets still over it
+  ([`ThemeApi`](ref:hub/src/shared/shelf-page.ts#ThemeApi), `tower.theme`). `/tower.js` links the stylesheet picking
+  it, `themes.css?theme=<id>` (`?theme=` the renderer's own look), whose imports carry the same query, so the route
+  serving each resolves the same list ([`themesPicking`](ref:hub/src/renderers.ts#themesPicking),
+  [`pickedThemeUrls`](ref:hub/src/renderers.ts#pickedThemeUrls)); an id nothing offers is `not_found`. It reads the
+  choice as the script starts, so a screen's theme is linked before the board arrives, and follows it live in every
+  window of the viewer's. A choice no extension offers any more draws the tower's. The board marks the offered theme
+  the config picks `picked`, so a page shows both choices; `tower.theme.pick` makes one the tower's through the config
+  verbs, with the value as read.
 
 Only tokens are promised to a theme. The page's classes and state classes and the elements' `data-slot` parts are
 reached at best effort and may change in any release (`docs/extending.md`, "Write a theme"). The example,

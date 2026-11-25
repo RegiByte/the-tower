@@ -367,8 +367,11 @@ export type Wait = { id: string; key: string; reason: WaitReason; since: number;
  */
 export type Viewers = { active?: string; last?: Record<string, string>; selected?: Record<string, string> }
 
-/** A theme an extension offers a renderer, as the board shows it. */
-export type BoardTheme = { id: string; title: string; extension: string }
+/**
+ * A theme an extension offers a renderer, as the board shows it: `picked` on the one the config's
+ * `renderers.<name>.theme` names (@since 2.37).
+ */
+export type BoardTheme = { id: string; title: string; extension: string; picked?: true }
 
 /** One `argv` command's account limits, an entry of `board.limits`. @since 1.152 */
 export type CommandLimits = {
@@ -425,8 +428,8 @@ export type Board = {
   themes: Record<string, string[]>
   /**
    * The themes the accepted extensions offer each renderer, by name: `id` (`<provides>/<name>`) is what the config's
-   * `renderers.<name>.theme` takes, `title` what a picker calls it, `extension` the id of the extension offering it.
-   * @since 2.34
+   * `renderers.<name>.theme` takes, `title` what a picker calls it, `extension` the id of the extension offering it,
+   * `picked` set on the one the config names, none when it names none: the tower's theme. @since 2.34
    */
   offeredThemes: Record<string, BoardTheme[]>
   /**

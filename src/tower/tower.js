@@ -64,6 +64,14 @@
  *                                                   `renderers.<name>.theme` picks and its `themes`, loaded after its own) has
  *                                                   loaded: read again what the page computes from the tokens, such as a
  *                                                   terminal's colours; returns unsubscribe. A page loads with its themes.
+ *   tower.theme.get()                               this renderer's theme: { screen, tower, drawn }, each the id of a theme an
+ *                                                   extension offers it or null for its own look; `screen` this screen's choice,
+ *                                                   undefined while it follows the tower's (the config's `renderers.<name>.theme`)
+ *   tower.theme.use(id) / tower.theme.follow()      draw a theme on this screen, live, kept per renderer in tower.store, the
+ *                                                   config's tweak sheets still over it; or the tower's again
+ *   await tower.theme.pick(id)                      make it the tower's, through config/add, set or remove (null): rejects
+ *                                                   with `changed` when the config moved under it
+ *   tower.theme.sheet(id)                           the stylesheet of the renderer's themes picking `id`, for a frame to link
  *   tower.remember(value) / await tower.recall()    a value kept for this page in the viewer's browser (null if none)
  *   tower.store.set(key, value) / await tower.store.get(key)   a value kept in the viewer's browser under a key every page
  *                                                   shares, the tower page included (null if none), such as the files viewed in a diff
@@ -115,6 +123,7 @@
    * @typedef {import('../shared/shelf-page.ts').Tower} Tower
    * @typedef {import('../bridge/board.ts').Board} Board
    * @typedef {import('../shared/prefs.ts').Prefs} Prefs
+   * @typedef {import('../shared/shelf-page.ts').ThemePick} ThemePick
    */
   /** An API error as an `Error` with its code. @typedef {Error & { code: BoardError['code'] }} Failure */
   /** The tower's latest word on the board. @typedef {{ board: Board, self: ShelfSelf | undefined, error?: undefined } | { error: Failure, board?: undefined, self?: undefined }} Latest */
@@ -226,7 +235,7 @@
       return
     }
     latest = { board: msg.board, self }
-    followThemes(msg.board.themes?.[servedAs] ?? [])
+    refollow()
     for (const fn of subscribers) fn(msg.board, self)
   }
 
@@ -235,26 +244,63 @@
   let themesLoaded = 0
 
   /**
-   * A renderer's page follows its themes as the board says them: the tower links the stylesheet importing them into the
-   * page it serves, naming their URLs in `data-tower-themes`, and when they change this links it again, drops the old
-   * link once the new one has loaded, and tells `onThemes` then, so what a page computes from the tokens (a terminal's
-   * colours) is read again.
-   * @param {string[]} urls
+   * A renderer's page follows its themes as the board says them, the screen's choice of theme in place of the
+   * config's when it has one (`pick`, `undefined` while it follows the tower's): the tower links the stylesheet
+   * importing them into the page it serves, naming their URLs in `data-tower-themes`, and when they or the pick change
+   * this links one again, naming the pick in `data-tower-theme`, drops the old link once the new one has loaded, and
+   * tells `onThemes` then, so what a page computes from the tokens (a terminal's colours) is read again. A pick that
+   * fails to load (one no extension offers any more, kept from before) is dropped and the links before it kept.
+   * @param {string[]} urls @param {ThemePick | undefined} pick
    */
-  const followThemes = (urls) => {
+  const followThemes = (urls, pick) => {
     if (served !== 'r') return
     const heard = urls.join(' ')
-    const linked = [...document.querySelectorAll('link[data-tower-themes]')]
-    if (heard === (/** @type {HTMLLinkElement | undefined} */ (linked.at(-1))?.dataset.towerThemes ?? '')) return
+    const picking = pick === undefined ? undefined : pick ?? ''
+    const linked = /** @type {HTMLLinkElement[]} */ ([...document.querySelectorAll('link[data-tower-themes]')])
+    const last = linked.at(-1)
+    if (heard === (last?.dataset.towerThemes ?? '') && picking === last?.dataset.towerTheme) return
     const done = () => (linked.forEach((link) => link.remove()), themeWatchers.forEach((fn) => fn()))
-    if (!urls.length) return done()
+    if (!urls.length && pick === undefined) return done()
     const link = document.createElement('link')
     link.rel = 'stylesheet'
-    link.href = `/renderers/${encodeURIComponent(servedAs)}/themes.css?${++themesLoaded}`
+    link.setAttribute('blocking', 'render')
+    link.href = pick === undefined ? `${themesCssOf(servedAs)}?${++themesLoaded}` : `${themeSheet(pick)}&${++themesLoaded}`
     link.dataset.towerThemes = heard
+    if (picking !== undefined) link.dataset.towerTheme = picking
     link.addEventListener('load', done, { once: true })
-    link.addEventListener('error', done, { once: true })
+    link.addEventListener('error', pick === undefined ? done : () => link.remove(), { once: true })
     document.head.append(link)
+  }
+
+  /** @param {string} renderer */
+  const themesCssOf = (renderer) => `/renderers/${encodeURIComponent(renderer)}/themes.css`
+  /** The stylesheet of this renderer's themes picking `theme`, the config's tweak sheets over it. @param {ThemePick} theme */
+  const themeSheet = (theme) => `${themesCssOf(servedAs)}?${new URLSearchParams({ theme: theme ?? '' })}`
+
+  /** Where `tower.store` keeps this screen's choice of theme for this renderer: `{ theme }`, null while it follows the tower's. */
+  const themeKey = () => `theme:${servedAs}`
+  /** This screen's choice of theme, as `tower.store` last said it. @type {ThemePick | undefined} */
+  let screenTheme
+  /** @param {unknown} kept */
+  const heardScreenTheme = (kept) => {
+    screenTheme = kept && typeof kept === 'object' && 'theme' in kept ? /** @type {{ theme: ThemePick }} */ (kept).theme : undefined
+    if (screenTheme !== undefined || latest?.board) refollow()
+  }
+
+  /** The config's theme for this renderer, the offered one the board marks picked. @param {Board} board @returns {ThemePick} */
+  const towerTheme = (board) => board.offeredThemes[servedAs]?.find((t) => t.picked)?.id ?? null
+  /** The screen's choice while an extension offers it to this renderer, `undefined` otherwise. @param {Board} board @returns {ThemePick | undefined} */
+  const screenPick = (board) =>
+    screenTheme === null || (screenTheme !== undefined && board.offeredThemes[servedAs]?.some((t) => t.id === screenTheme)) ? screenTheme : undefined
+
+  /**
+   * The themes followed again: the board's with the screen's pick; before a board, the ones the tower linked into the
+   * page with the screen's choice as kept, so a screen's own theme loads before the board arrives.
+   */
+  const refollow = () => {
+    if (latest?.board) return followThemes(latest.board.themes?.[servedAs] ?? [], screenPick(latest.board))
+    const linked = /** @type {HTMLLinkElement | undefined} */ ([...document.querySelectorAll('link[data-tower-themes]')].at(-1))
+    followThemes(linked?.dataset.towerThemes?.split(' ').filter(Boolean) ?? [], screenTheme)
   }
 
   /** The tower stopped answering: told once, until a board comes back. */
@@ -678,6 +724,30 @@
   }
   if (!framed) addEventListener('storage', (e) => e.key?.startsWith(STORE_PREFIX) && storeWatchers.forEach((fn) => fn(/** @type {string} */ (e.key).slice(STORE_PREFIX.length))))
 
+  if (served === 'r') {
+    void api.store.get(themeKey()).then(heardScreenTheme)
+    store.on((key) => key === themeKey() && void api.store.get(key).then(heardScreenTheme))
+  }
+
+  /** @type {Tower['theme']} */
+  const theme = {
+    get() {
+      const board = latest?.board
+      const tower = board ? towerTheme(board) : null
+      const shown = board ? screenPick(board) : screenTheme
+      return { screen: screenTheme, tower, drawn: shown === undefined ? tower : shown }
+    },
+    use: (pick) => store.set(themeKey(), { theme: pick }),
+    follow: () => store.set(themeKey(), null),
+    async pick(pick) {
+      const key = ['renderers', servedAs, 'theme']
+      const was = (await api.get('config')).renderers?.[servedAs]?.theme
+      if (pick === null) return void (was !== undefined && (await api.call('config/remove', { key, was })))
+      await (was === undefined ? api.call('config/add', { key, value: pick }) : api.call('config/set', { key, value: pick, was }))
+    },
+    sheet: themeSheet,
+  }
+
   /**
    * A shelf page framed by this page, given the board and the API over `postMessage` (src/shared/shelf-page.ts). The
    * frame loads `url` with a token new to this relay, and the page sends it with every message: a document the frame
@@ -831,5 +901,6 @@
       listen()
       return () => themeWatchers.delete(fn)
     },
+    theme,
   }
 })()

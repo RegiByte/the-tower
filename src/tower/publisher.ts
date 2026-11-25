@@ -152,7 +152,7 @@ export const publisher = defineResource({
         paths,
         keeps: keepsOf(config),
         themes: themeUrls(themesOf(config, offered)),
-        offeredThemes: Object.fromEntries(Object.entries(offered).map(([name, themes]) => [name, themes.map(({ id, title, extension }) => ({ id, title, extension }))])),
+        offeredThemes: Object.fromEntries(Object.entries(offered).map(([name, themes]) => [name, themes.map(({ id, title, extension }) => ({ id, title, extension, ...(config.renderers?.[name]?.theme === id && { picked: true as const }) }))])),
         viewers: viewersNow(),
         now: Date.now(),
       }

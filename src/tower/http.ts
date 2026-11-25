@@ -102,7 +102,7 @@ import { readLanded } from '../landed.ts'
 import { originUrl } from '../machine.ts'
 import { fontFile, packageDir } from '../packages.ts'
 import { readPatterns } from '../patterns.ts'
-import { defaultRenderer, layoutReachOf, rendererFile, renderersOf, themeFile, themesOf, themeSheet, themeUrls, withLayoutProblems, type Themes } from '../renderers.ts'
+import { defaultRenderer, layoutReachOf, pickedThemeUrls, rendererFile, renderersOf, themeFile, themesOf, themesPicking, themeSheet, themeUrls, withLayoutProblems, type Themes } from '../renderers.ts'
 import { CLI_REGIONS } from '../shared/regions.ts'
 import { API_VERSION, apiError, ApiError as ApiErrorSchema, CALLER_HEADERS, ERROR_STATUS, HOOK_DEADLINE, HOOKS, isApiError, ITEM_ID, QUERIES, refusal, TRANSPORT, VERBS, VIEWER_ID, VIEWER_RENDERER, type ApiError, type ErrorCode, type Query, type RouteInput } from '../shared/api.ts'
 import { FLOWS } from '../shared/flows.ts'
@@ -630,17 +630,39 @@ export const httpServer = defineResource({
     /** Each renderer's themes as the config and the accepted extensions give them now. */
     const themesNow = (config: Config): Themes => themesOf(config, offeredThemes(extensions.accepted()))
 
-    /** `/renderers/<name>/themes.css`: the stylesheet importing the renderer's themes, empty when it has none. */
-    const themesCss = (req: http.IncomingMessage, res: http.ServerResponse, name: string) =>
-      withConfig(res, (config) => revalidated(req, res, 'text/css', themeSheet(themeUrls(themesNow(config))[name] ?? [])))
+    /** The theme a query picks in place of the config's: `?theme=<id>`, `?theme=` for the renderer's own look; absent, none. */
+    const pickOf = (search: string): { theme: string | null } | undefined => {
+      const query = new URLSearchParams(search)
+      return query.has('theme') ? { theme: query.get('theme') || null } : undefined
+    }
+
+    /** Why a renderer's themes can't pick `theme`: no accepted extension offers it there. */
+    const notOffered = (res: http.ServerResponse, name: string, theme: string) =>
+      fail(res, 'not_found', `No extension the tower accepted offers the theme "${theme}" to the renderer "${name}": board.offeredThemes lists those it offers`)
 
     /**
-     * Theme `n` of a renderer: its stylesheet alone. Only the renderer's pages load it, at the tower's origin, so it
-     * carries no CORS header.
+     * `/renderers/<name>/themes.css`: the stylesheet importing the renderer's themes, empty when it has none; with
+     * `?theme=`, the themes picking that one in place of the config's (`themesPicking`), each imported with the same query.
      */
-    const themeServed = (res: http.ServerResponse, name: string, n: number, file: string) =>
+    const themesCss = (req: http.IncomingMessage, res: http.ServerResponse, name: string, search: string) =>
       withConfig(res, (config) => {
-        const full = themeFile(themesNow(config), name, n, file)
+        const pick = pickOf(search)
+        if (!pick) return revalidated(req, res, 'text/css', themeSheet(themeUrls(themesNow(config))[name] ?? []))
+        const files = themesPicking(config, offeredThemes(extensions.accepted()), name, pick.theme)
+        if (!files) return notOffered(res, name, String(pick.theme))
+        return revalidated(req, res, 'text/css', themeSheet(pickedThemeUrls(name, files, pick.theme)))
+      })
+
+    /**
+     * Theme `n` of a renderer: its stylesheet alone, of the list `?theme=` picks when it names one. Only the renderer's
+     * pages and the frames they draw load it, at the tower's origin, so it carries no CORS header.
+     */
+    const themeServed = (res: http.ServerResponse, name: string, n: number, file: string, search: string) =>
+      withConfig(res, (config) => {
+        const pick = pickOf(search)
+        const files = pick ? themesPicking(config, offeredThemes(extensions.accepted()), name, pick.theme) : themesNow(config)[name]
+        if (pick && !files) return notOffered(res, name, String(pick.theme))
+        const full = themeFile({ [name]: files ?? [] }, name, n, file)
         return full ? serveFile(res, full, {}) : fail(res, 'not_found', `The renderer "${name}" has no theme ${n} that serves "${file}"`)
       })
 
@@ -1001,8 +1023,8 @@ export const httpServer = defineResource({
       }),
       apiRead('patterns', { path: /^\/patterns$/, answer: () => json(readPatterns() satisfies Reads['patterns']) }),
       apiRead('renderers', { path: /^\/renderers$/, answer: () => renderersRead() }),
-      plain('page', { path: /^\/renderers\/(?<name>[\w-]+(?:\.[\w-]+)?)\/themes\.css$/, serve: ({ req, res, params }) => themesCss(req, res, params.name!) }),
-      plain('page', { path: /^\/renderers\/(?<name>[\w-]+(?:\.[\w-]+)?)\/themes\/(?<n>\d+)\/(?<file>.+)$/, serve: ({ res, params }) => themeServed(res, params.name!, Number(params.n), params.file!) }),
+      plain('page', { path: /^\/renderers\/(?<name>[\w-]+(?:\.[\w-]+)?)\/themes\.css$/, serve: ({ req, res, params, search }) => themesCss(req, res, params.name!, search) }),
+      plain('page', { path: /^\/renderers\/(?<name>[\w-]+(?:\.[\w-]+)?)\/themes\/(?<n>\d+)\/(?<file>.+)$/, serve: ({ res, params, search }) => themeServed(res, params.name!, Number(params.n), params.file!, search) }),
       apiRead('archive/<project>', { path: /^\/archive\/(?<project>[\w-]+)$/, answer: ({ params }) => archive(params.project!) }),
       apiRead('conversations/<id>', { path: /^\/conversations\/(?<id>[\w-]+)$/, answer: ({ params }) => conversations(params.id!) }),
       apiRead('conversations/<id>/<conversation>', { path: /^\/conversations\/(?<id>[\w-]+)\/(?<conversation>[\w-]+)$/, answer: ({ params }) => conversation(params.id!, params.conversation!) }),

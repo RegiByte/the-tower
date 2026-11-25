@@ -590,6 +590,9 @@ test("server: a renderer's theme is served alone at the tower's origin: its page
     assert.equal(theme.status, 200)
     assert.equal(theme.body, ':root { --accent: red; }')
     assert.equal(theme.headers['access-control-allow-origin'], undefined)
+    assert.equal((await get('/renderers/plain/themes.css?theme=')).body, '@import url("/renderers/plain/themes/0/theme.css?theme=") layer(theme.t0);', "the renderer's own look picked keeps the config's tweaks")
+    assert.equal((await get('/renderers/plain/themes/0/theme.css?theme=')).body, ':root { --accent: red; }')
+    assert.equal((await get('/renderers/plain/themes.css?theme=nobody%2Fnone')).status, 404, 'a theme nothing offers the renderer')
     for (const beside of ['private.txt', '..%2Fconfig.json', '%2E%2E%2Ftheme-home%2Fprivate.txt'])
       assert.equal((await get(`/renderers/plain/themes/0/${beside}`)).status, 404, beside)
   } finally {
