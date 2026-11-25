@@ -22,6 +22,41 @@ import { actionsHtml, asksHtml, badgeHtml, badgesHtml, drawCount, iconButtonsHtm
 /** @typedef {{ hires: (c: Card) => Card[], fold: ReturnType<typeof crewFoldsOf>, hiresEverywhere: (c: Card) => Card[], everyone: Card[] }} Crews A floor's crews, indexed once. */
 
 /**
+ * What a worker's row draws beside its card: its callsign, whether it is the one selected and whether it calls the
+ * viewer, what extensions add to it (`by` on its callsign, `lines`, `badges`, `note`), its branch line (drawn on a
+ * worktree), its subagents and its verbs.
+ * @typedef {{ callsign: string, selected: boolean, calls: boolean, adds: { by: string, lines: string, badges: string, note: string }, branch: string, satellites: string, act: string }} RowParts
+ */
+
+/**
+ * A worker's row in the sidebar, from its card and the parts the sidebar reads around it: also what a theme's preview
+ * draws, from a sample card.
+ * @param {Card} c @param {RowParts} p
+ */
+export const workerRowHtml = (c, p) => {
+  const key = `card:${c.id}`
+  return `<div class="sess ${lampOf(c)} ${c.waiting ? 'waits' : ''} ${p.calls ? 'calls' : ''} ${p.selected ? 'sel' : ''} ${onDuty(c) ? '' : 'gone'}" data-id="${c.id}" data-hold="${c.id}">${subjectAreaHtml('row', key, `
+    <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${p.selected ? ' aria-current="true"' : ''}${p.adds.by}>${p.callsign}</a><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusWord(c)}${c.stuck || c.stranded ? `<span class="sr-only">: ${esc(statusTitle(c))}</span>` : ''}</span><span class="ago" translate="no" data-since="${c.enteredAt}"></span>${subjectButtonHtml('row', key, `${p.callsign}: menu`)}</div>
+    ${c.worktree ? `<div class="branch" data-tip="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${withIcons(esc(p.branch))}</div>` : ''}
+    ${p.adds.lines}
+    <div class="line">${lineOf(c)}</div>
+    ${p.adds.badges}
+    ${p.satellites}
+    ${p.act}
+    ${p.adds.note}`)}</div>`
+}
+
+/**
+ * A floor's plate in the sidebar: its sign (its number `n`, its name folding it, then `sign`, what the sign holds open or
+ * folded) over `body`, coloured by `style`. Also what a theme's preview draws, from a sample floor.
+ * @param {Floor} f @param {{ n: number, open: boolean, style: string, sign: string, body: string }} p
+ */
+export const floorPlateHtml = (f, { n, open, style, sign, body }) => `<section class="floor${open ? '' : ' folded'}" id="${esc(domId('floor', `floor:${f.id}`))}" style="${style}" data-hold="floor:${esc(f.id)}">
+    <div class="sign">${subjectHtml('sign', `floor:${f.id}`, `${f.name}: menu`, `<span class="fold" role="heading" aria-level="2"><button data-floor-fold="${esc(f.id)}" aria-expanded="${open}" data-tip="${esc(`${f.name}: ${open ? 'fold' : 'unfold'}`)}"><span class="num">${String(n).padStart(2, '0')}</span><span class="name">${esc(f.name)}</span>${ICON.caret}</button></span>${sign}`)}</div>
+    ${body}
+  </section>`
+
+/**
  * @typedef {{
  *   render: () => void,
  *   selected: () => string | undefined,
@@ -154,19 +189,16 @@ export async function sidebar(deps) {
   const callsYou = (c) => c.waiting && heededWaits(board(), heed()).some((w) => w.id === c.id)
 
   /** @param {Card} c @param {Card} [over] */
-  const sessionHtml = (c, over) => {
-    const adds = rowAdds(c)
-    const key = `card:${c.id}`
-    return `<div class="sess ${lampOf(c)} ${c.waiting ? 'waits' : ''} ${callsYou(c) ? 'calls' : ''} ${c.id === selected() ? 'sel' : ''} ${onDuty(c) ? '' : 'gone'}" data-id="${c.id}" data-hold="${c.id}">${subjectAreaHtml('row', key, `
-    <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected() ? ' aria-current="true"' : ''}${adds.by}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusWord(c)}${c.stuck || c.stranded ? `<span class="sr-only">: ${esc(statusTitle(c))}</span>` : ''}</span><span class="ago" translate="no" data-since="${c.enteredAt}"></span>${subjectButtonHtml('row', key, `${callsign(c.id)}: menu`)}</div>
-    ${c.worktree ? `<div class="branch" data-tip="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${withIcons(esc([branchLine(c), pairLineOf(c.hiredBy && c.hiredBy.callsign === over?.callsign ? { ...c, hiredBy: undefined } : c, undefined)].filter(Boolean).join(' · ')))}</div>` : ''}
-    ${adds.lines}
-    <div class="line">${lineOf(c)}</div>
-    ${adds.badges}
-    ${satellitesHtml(c)}
-    ${can(c, 'resume') && onScreen('card.row-verbs') ? `<div class="act resumes">${heldWhy('resume') ? heldHtml('resume', verbLabel('card', 'resume').toLowerCase(), `${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}`) : `<button data-resume="${esc(JSON.stringify(callOf(c, 'resume')))}" data-tip="${esc(verbHint('card', 'resume', c))}">${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}</button>`}${letGoHtml(c, verbLabel('card', 'let-go').toLowerCase())}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c.unresumable)}</div>` : ''}
-    ${adds.note}`)}</div>`
-  }
+  const sessionHtml = (c, over) =>
+    workerRowHtml(c, {
+      callsign: callsign(c.id),
+      selected: c.id === selected(),
+      calls: callsYou(c),
+      adds: rowAdds(c),
+      branch: [branchLine(c), pairLineOf(c.hiredBy && c.hiredBy.callsign === over?.callsign ? { ...c, hiredBy: undefined } : c, undefined)].filter(Boolean).join(' · '),
+      satellites: satellitesHtml(c),
+      act: can(c, 'resume') && onScreen('card.row-verbs') ? `<div class="act resumes">${heldWhy('resume') ? heldHtml('resume', verbLabel('card', 'resume').toLowerCase(), `${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}`) : `<button data-resume="${esc(JSON.stringify(callOf(c, 'resume')))}" data-tip="${esc(verbHint('card', 'resume', c))}">${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}</button>`}${letGoHtml(c, verbLabel('card', 'let-go').toLowerCase())}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c.unresumable)}</div>` : '',
+    })
 
   /**
    * The worker's subagents running now, a fork marked as its twin, and those that just ended fading out: the fade is an
@@ -518,12 +550,8 @@ export async function sidebar(deps) {
   const floorHtml = (f, i, all) => {
     const heads = crewTreeIn(f.cards, viewer().crewsOrder).filter(({ depth }) => depth === 0).map(({ card }) => card)
     const open = isOpen(f)
-    const n = String(all.length - i).padStart(2, '0')
     const spawn = heldWhy('spawn') ? heldHtml('spawn', `new session on ${f.name}`, ICON.plus) : can(f, 'spawn') ? `<button data-spawn="${f.id}" aria-label="new session on ${esc(f.name)}" data-tip="new session">${ICON.plus}</button>` : ''
-    return `<section class="floor${open ? '' : ' folded'}" id="${esc(domId('floor', `floor:${f.id}`))}" style="${paint(f.id)}" data-hold="floor:${esc(f.id)}">
-    <div class="sign">${subjectHtml('sign', `floor:${f.id}`, `${f.name}: menu`, `<span class="fold" role="heading" aria-level="2"><button data-floor-fold="${esc(f.id)}" aria-expanded="${open}" data-tip="${esc(`${f.name}: ${open ? 'fold' : 'unfold'}`)}"><span class="num">${n}</span><span class="name">${esc(f.name)}</span>${ICON.caret}</button></span>${open ? signHtml(f) : floorSummaryHtml(f)}${spawn}`)}</div>
-    ${open ? floorBodyHtml(f, heads, floorCrews(f)) : ''}
-  </section>`
+    return floorPlateHtml(f, { n: all.length - i, open, style: paint(f.id), sign: (open ? signHtml(f) : floorSummaryHtml(f)) + spawn, body: open ? floorBodyHtml(f, heads, floorCrews(f)) : '' })
   }
 
   /** What extensions add about no one floor (`board.sign`), beside Floors and Stats: their commands, each its icon. */

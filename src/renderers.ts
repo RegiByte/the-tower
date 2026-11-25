@@ -290,6 +290,7 @@ const DeclaredFile = z.strictObject({
     .superRefine((chords, ctx) => chords.forEach((chord, n) => chordProblem(chord) && ctx.addIssue({ code: 'custom', path: [n], message: chordProblem(chord)! })))
     .default([]),
   layout: LayoutSchema.default({}),
+  themeSample: z.string().min(1).optional(),
 })
 
 /**

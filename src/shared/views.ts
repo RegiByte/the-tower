@@ -238,6 +238,7 @@ export const CORE_VIEWS: readonly View[] = [
   { ...pane('changes', ['lines'], { label: 'Changes', hint: "what changed in the worker's repos, as git reads it" }, ['region', 'toast']), regions: ['lines.acts'], tab: 'tab' },
   served(core('tower/archive', ['floor'], ['pane'], { label: 'Archive', hint: "the floor's past workers" }), ['display', 'toast']),
   { ...served(core('tower/waiting', ['board'], ['list'], { label: 'Waiting on you', hint: 'who waits on you and what asks, oldest first: the list N walks' }), ['display', 'go']), tab: 'tab' },
+  served(core('tower/themes', ['board'], ['dialog', 'pane'], { label: 'Theme', hint: 'every theme on the page\'s own parts: draw one on this screen, or make it the tower\'s' }), ['toast']),
   served(core('tower/extensions', ['board'], ['pane'], { label: 'Extensions', hint: 'every extension the tower found: its state, what it declares and its problems' }), ['display']),
   { ...served(core('tower/stats', ['board', 'floor'], ['pane'], { label: 'Stats', hint: 'spend, work and waits, from the logs' }), ['display', 'toast']), optsInto: ['board.nav'] },
   served(core('tower/collection', ['collection'], ['pane'], { label: 'Collection', hint: "a collection's items" }), ['display']),

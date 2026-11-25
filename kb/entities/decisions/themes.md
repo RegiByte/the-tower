@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-11-23",
   "reviewed": "2026-11-25",
-  "refs": ["hub/src/renderers.ts#themesOf", "hub/src/renderers.ts#themeSheet", "hub/src/renderers.ts#themeUrls", "hub/src/renderers.ts#themeFile", "hub/src/renderers.ts#themesPicking", "hub/src/renderers.ts#pickedThemeUrls", "hub/src/shared/shelf-page.ts#ThemeApi", "hub/src/shared/design.ts#frameLook", "hub/src/bridge/extensions.ts#offeredThemes", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/http.ts#preloaded", "hub/src/tower/http.ts#withThemes", "hub/test/server.test.ts", "hub/src/tower/http.ts#themesCss", "hub/src/tower/http.ts#themeServed", "hub/src/tower/publisher.ts", "hub/src/bridge/board.ts#Board", "hub/src/bridge/board.ts#BoardTheme", "hub/src/tower/tower.js", "hub/renderers/page/page.js#recolourTerminals", "hub/renderers/tower3d/src/term.ts", "hub/src/config-check.ts#themeProblems", "hub/examples/extensions/harbor/harbor.css", "hub/extensions/themes/extension.json"],
+  "refs": ["hub/src/renderers.ts#themesOf", "hub/src/renderers.ts#themeSheet", "hub/src/renderers.ts#themeUrls", "hub/src/renderers.ts#themeFile", "hub/src/renderers.ts#themesPicking", "hub/src/renderers.ts#pickedThemeUrls", "hub/src/shared/shelf-page.ts#ThemeApi", "hub/src/shared/design.ts#frameLook", "hub/src/views/themes.ts", "hub/renderers/page/theme-sample.js", "hub/renderers/page/sidebar.js#workerRowHtml", "hub/renderers/page/sidebar.js#floorPlateHtml", "hub/src/bridge/extensions.ts#offeredThemes", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/http.ts#preloaded", "hub/src/tower/http.ts#withThemes", "hub/test/server.test.ts", "hub/src/tower/http.ts#themesCss", "hub/src/tower/http.ts#themeServed", "hub/src/tower/publisher.ts", "hub/src/bridge/board.ts#Board", "hub/src/bridge/board.ts#BoardTheme", "hub/src/tower/tower.js", "hub/renderers/page/page.js#recolourTerminals", "hub/renderers/tower3d/src/term.ts", "hub/src/config-check.ts#themeProblems", "hub/examples/extensions/harbor/harbor.css", "hub/extensions/themes/extension.json"],
   "links": [
     { "to": "cascade-layers", "verb": "loads into", "carries": "each theme in a layer of its own inside theme" },
     { "to": "design-system", "verb": "sets", "carries": "the palette and the character tokens" },
@@ -62,6 +62,14 @@ touches, the same for the user's config and for an extension that ships a look.
   the config picks `picked`, so a page shows both choices; `tower.theme.pick` makes one the tower's through the config
   verbs, with the value as read.
 
+- *The Theme dialog.* The core's view `tower/themes` (the palette's **Open Theme**, over the page where a renderer
+  draws a dialog) frames the renderer's own look and each offered theme, every frame the page's own stylesheets, the
+  theme's (`tower.theme.sheet`) and the renderer's sample: the module its `renderer.json` names as `themeSample`,
+  whose `sample()` draws its parts on sample data with its own functions (the page's sidebar row and floor plate,
+  [`workerRowHtml`](ref:hub/renderers/page/sidebar.js#workerRowHtml) and
+  [`floorPlateHtml`](ref:hub/renderers/page/sidebar.js#floorPlateHtml)), beside the parts every renderer shares: a
+  button pair, an open menu and the terminal's colours. One toggle draws every frame light or dark. Each frame draws
+  its theme here or makes it the tower's, the screen then following it; the head says both choices.
 - *Framed documents too.* A document the tower draws in a frame of its own writing (a markdown file shown or kept,
   a link page, Tower 3D's documents) links the design's tokens and the renderer's themes as this screen draws them
   ([`frameLook`](ref:hub/src/shared/design.ts#frameLook)), and is drawn again on `onThemes`. A shown html page is its
@@ -73,6 +81,14 @@ reached at best effort and may change in any release (`docs/extending.md`, "Writ
 [`themes`](ref:hub/extensions/themes/extension.json) extension offers Aqua and Flamingo, loaded only when picked.
 
 **Alternatives considered.**
+- *A preview in a box of the page*: a theme restyles `:root`, so only a document of its own shows it honestly.
+- *A static sample file*: a second copy of the sidebar's markup, which drifts from it; the sample calls the sidebar's
+  own row and plate. *Cloning the live sidebar*: empty on a tower with no workers, and a core view reaching into one
+  renderer's markup.
+- *The picker in the settings popover*: no room for a frame per theme; the dialog is found from the palette.
+- *The viewer's choice only, or the config's only*: the config keeps "what the user can do, agents can do" and one
+  look for every screen; the viewer's lets a phone and a desk differ. A screen that chose stays on its choice when an
+  agent changes the tower's, and the dialog says both.
 - *Load themes from the board only, in `/tower.js`*: live, but every load draws unthemed until the board arrives,
   and a terminal opened before the theme loads flashes in the stock colours.
 - *Inject only, reload on a change*: simpler, but a config edit the tower already reads live would need a reload.

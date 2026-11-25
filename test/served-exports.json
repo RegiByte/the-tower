@@ -1585,6 +1585,12 @@
           "since": "2.0",
           "stability": "provisional"
         },
+        "ThemeApi": {
+          "since": "2.36"
+        },
+        "ThemePick": {
+          "since": "2.36"
+        },
         "Tower": {
           "since": "2.0"
         }

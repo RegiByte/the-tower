@@ -8,5 +8,7 @@ export type {
   /** @provisional */ ShelfSelf,
   /** @provisional */ StreamMsg,
   /** @provisional */ TerminalMsg,
+  ThemeApi,
+  ThemePick,
   Tower,
 } from '../shared/shelf-page.ts'
