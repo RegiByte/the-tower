@@ -72,10 +72,15 @@ terminal that is a block of the ink colour.
 - **Character as tokens**, for a theme to set ([`roles`](ref:hub/src/shared/design.ts#roles),
   [`character`](ref:hub/src/shared/design.ts#character)): colour roles that name a palette token (`--primary` and
   `--on-primary` for the one emphasized action, `--hover` for what is under the pointer), corners per kind of surface
-  (`--radius-card`, `--radius-control`), a card's resting elevation (`--shadow-card`), and type in three roles at one
-  `--display-weight`: headings and signs (`--heading-case`, `--heading-tracking`), names (callsigns,
-  `--name-tracking`) and labels (`.eyebrow`, menu group labels, the heads of lists: the display face, small,
-  `--label-case`, `--label-tracking`), one label style wherever a label is drawn; the frame's elevation (the sidebar's
+  (`--radius-card`, `--radius-control`, `--radius-primary`) and a button's padding (`--button-pad`), a worker card's
+  own surface (`--card-surface`, `--card-hover`) and elevation (`--shadow-card` at rest, `--shadow-lift` under the
+  pointer, apart from `--shadow-head` for the heads of views), and type in three roles, each with its weight:
+  headings and signs (`--heading` colour, `--display-weight`, `--heading-case`, `--heading-tracking`), names
+  (callsigns, `--name-weight`, `--name-tracking`) and labels (`.eyebrow`, menu group labels, the heads of lists, chips
+  and pills: small, `--label-weight`, `--label-case`, `--label-tracking`), one label style wherever a label is drawn,
+  with the brand at `--brand-weight` and body text at `--body-tracking` and `--body-leading`; a floor sign's character
+  (the emitted `--p-plate-mix`, `--p-plate-edge-mix` and `--p-plate-text-mix`, its inset `--sign-bar` and its number's
+  `--sign-badge`); the frame's elevation (the sidebar's
   `--side-surface` and `--side-rule`, the main pane's `--main-surface`, `--main-inset`, `--main-radius` and
   `--main-shadow`, so a theme can float the main pane over one ground, as Arc and Lobby do); and a worker card's status
   edge (`--status-edge`, and `--status-ring-mix`, a percent of the status colour in its other sides, since a colour
