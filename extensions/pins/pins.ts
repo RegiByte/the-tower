@@ -9,7 +9,7 @@ export const PINS = 'pins'
 /** What a `p` fact holds. */
 export type Pinned = { session: string; project: string; note?: string }
 
-/** The pins standing, by session: each with when it was pinned. */
+/** The pins standing, by session: each with when it was first pinned, which a new note leaves as it was. */
 export type PinsState = Record<string, Pinned & { at: number }>
 
 /** A pin as the board and the list read carry it: the worker's callsign beside it. */
@@ -21,7 +21,7 @@ export const step = (state: PinsState, [at, code, fact]: StreamFact): PinsState 
   switch (code) {
     case 'p': {
       const pinned = fact as Pinned
-      return { ...state, [pinned.session]: { ...pinned, at } }
+      return { ...state, [pinned.session]: { ...pinned, at: state[pinned.session]?.at ?? at } }
     }
     case 'u': {
       const { [(fact as { session: string }).session]: _, ...rest } = state

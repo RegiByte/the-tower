@@ -51,7 +51,8 @@ page offers it from the start. A pin has to be listed once its worker went home,
 - **The store** is the extension's system stream `pins`: `p` a worker pinned (`session`, the `project` it ran on,
   `note`), `u` one unpinned ([`step`](ref:hub/extensions/pins/pins.ts#step)). The floor is part of the pin fact,
   since the board holds only live cards and a board fold has no other way to find an archived worker's floor. A
-  second `p` of the same session replaces the first.
+  second `p` of the same session replaces its note and keeps the first pin's time, so the section's order and ages
+  say when it was pinned.
 - **Verbs** `pin {session?, note?}` and `unpin {session?}`, system-scoped, take the calling worker's session when
   none is named ([`server.ts`](ref:hub/extensions/pins/server.ts)). `pin` refuses a session no log holds, `unpin` one
   that isn't pinned, each naming where to look. A worker types `tower x pins pin --note '<why>'`.

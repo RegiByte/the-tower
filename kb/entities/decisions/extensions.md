@@ -418,5 +418,5 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   the second puts every extension's text in every session.
 
 **Impact.** The core holds the mechanism and what extensions stand on; drafts, policies, quota, reviews, autotidy,
-floors and guides are bundled extensions, and `examples/extensions/` holds folders to copy. Every addition to the manifest or ctx
+floors, guides and pins are bundled extensions, and `examples/extensions/` holds folders to copy. Every addition to the manifest or ctx
 is an API minor, recorded by `x-since` and `CTX_SINCE`. No host change.
