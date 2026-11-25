@@ -87,7 +87,7 @@ behavior ([[renderer-is-disposable]]):
   (a variation selector, a ZWJ sequence, a skin tone) is one character. Under xterm's default Unicode 6 widths most
   emoji take one cell, and Claude's differential redraws after an emoji land a column off. The bridge's headless
   screens follow the same rule ([[log-reductions]]), so a snapshot draws as the live stream does.
-- `tips.ts`: the one tooltip every renderer shows for any `data-tip`, and the placement it shares with popovers
+- `tips.ts`: the one tooltip every renderer shows for any `data-tip`, the placement it shares with popovers, and their closing on a press inside a frame (`closePopoversOnFramePress`), which light dismiss never sees
   ([[viewer-prefs]]).
 - `capabilities.ts`: what the tower lets a user do, as data: [`CAPABILITIES`](ref:hub/src/shared/capabilities.ts#CAPABILITIES),
   one line each, some naming a keymap command (typed by `CommandId`) or a floor verb that tries it, and patterns,

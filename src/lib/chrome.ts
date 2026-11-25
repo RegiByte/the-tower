@@ -1,10 +1,11 @@
-/** The library's `/lib/chrome.js`: toasts, tooltips and the confirm dialog. */
+/** The library's `/lib/chrome.js`: toasts, tooltips, the confirm dialog and popovers closed by a press in a frame. */
 export {
   ask,
   asking,
   /** @provisional */ closeOnBackdrop,
 } from '../shared/ask.ts'
 export {
+  closePopoversOnFramePress,
   placeOnOpen,
   watchTips,
 } from '../shared/tips.ts'
