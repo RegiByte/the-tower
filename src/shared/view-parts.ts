@@ -8,6 +8,15 @@ import { keysHint, keyshortcuts, type Keys } from './keymap.ts'
  */
 
 /**
+ * How a view fits the pane holding it, declared on the view's element: the pane lends how far its content sits from its
+ * edges as `--pane-pad` (unlent, as in a dialog, `var(--sp-xl)`), and from it come `--fit-hair`, a border that vanishes
+ * when flush, `--fit-inner`, a corner never rounder than the gap, and `--fit-outer`, a corner that takes the pane's
+ * radius where it meets the pane.
+ */
+export const PANE_FIT = `--fit-pad: var(--pane-pad, var(--sp-xl)); --fit-hair: min(1px, var(--fit-pad)); --fit-inner: min(var(--radius-card), var(--fit-pad));
+  --fit-outer: max(var(--fit-inner), calc(var(--main-radius) - var(--fit-pad)));`
+
+/**
  * `css` in the cascade layer every view's style shares, over the renderer's own sheet and under themes: what a view
  * writes in its `<style>` when it doesn't use `viewCss`.
  */
@@ -38,8 +47,7 @@ ${css}
  * (`viewLayer`).
  */
 export const viewCss = (id: string, rules: string) => viewLayer(`:where([data-view="${id}"]) {
-  --fit-pad: var(--pane-pad, var(--sp-xl)); --fit-hair: min(1px, var(--fit-pad)); --fit-inner: min(var(--radius-card), var(--fit-pad));
-  --fit-outer: max(var(--fit-inner), calc(var(--main-radius) - var(--fit-pad)));
+  ${PANE_FIT}
   gap: min(var(--sp-m), var(--fit-pad));
   & .shelf-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-s) var(--sp-l); padding: var(--sp-m) var(--sp-xl); background: var(--panel);
     border: 1px solid var(--line); border-width: var(--fit-hair) var(--fit-hair) 1px; border-radius: var(--fit-outer) var(--fit-outer) var(--fit-inner) var(--fit-inner); box-shadow: var(--shadow-head); white-space: nowrap; }
