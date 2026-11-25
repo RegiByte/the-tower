@@ -1315,10 +1315,11 @@ them, the panel that fills it, draws its border `--fit-hair` wide and its corner
 the pane's top (a head, or the body when there is none) takes `--fit-outer` on its top corners. There they vanish,
 square off and take the pane's radius; elsewhere they are today's 1px and `--radius-card`. `viewCss` declares them,
 and a view that writes its rules whole declares `PANE_FIT` on its element (since 2.41). What sits inside the body (a
-card, a field, a tile) keeps its own look. A view never imports another view; it keeps its state in `ctx.state`; it wires its own presses; and it calls verbs only on a press inside
-it. A view whose module doesn't load, lacks its export, throws or hasn't mounted in 10 s is one line where it would
-draw, and the page goes on. A view that keeps something in the viewer's record (a dismissal) sets it with
-`tower.store.set`, and every renderer that keeps that record hears it through `tower.store.on`.
+card, a field, a tile) keeps its own look. A view never imports another view; it keeps its state in `ctx.state`; it
+wires its own presses; and it calls verbs only on a press inside it. A view whose module doesn't load, lacks its export,
+throws or hasn't mounted in 10 s is one line where it would draw, and the page goes on. A view that keeps something in
+the viewer's record (a dismissal) sets it with `tower.store.set`, and every renderer that keeps that record hears it
+through `tower.store.on`.
 
 **The core's views** are modules too, served at `/x/tower/<name>.js`: `tower/skyline` on the board,
 `tower/archive` on a floor, `tower/collection` on a collection, `tower/tray` on one at `row` and
