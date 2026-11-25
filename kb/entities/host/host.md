@@ -4,7 +4,7 @@
   "name": "Host",
   "summary": "Owns every session's PTY and is the single writer of every session log, so sessions outlive any renderer.",
   "in": "tower",
-  "reviewed": "2026-11-17"
+  "reviewed": "2026-11-25"
 }
 ---
 The [[host-daemon]] starts sessions, relays keystrokes and resizes, and appends every fact about a session
