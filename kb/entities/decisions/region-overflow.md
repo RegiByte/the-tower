@@ -40,7 +40,8 @@
     "hub/test/ranking.test.ts",
     "hub/src/bridge/extensions.ts#resolve",
     "hub/src/shared/views.ts#placedEntries",
-    "hub/src/renderers.ts#regionProblems"
+    "hub/src/renderers.ts#regionProblems",
+    "hub/src/renderers.ts#entryProblems"
   ]
 }
 ---
@@ -124,7 +125,9 @@ one renderer ([[renderer-is-disposable]]). And the tower stores only intent, fac
   in place, the rest behind a More… entry, which also pins any entry; with no budget, or under `wrap`, every entry
   is. The budget is counted, not measured: an entry row is short, and a row narrower than its entries wraps them. A
   `views` budget on a region that mounts its views is refused by the checks, as a pin of one would be
-  ([`regionProblems`](ref:hub/src/renderers.ts#regionProblems)).
+  ([`regionProblems`](ref:hub/src/renderers.ts#regionProblems)), and a pin or an `order` entry naming a view the region
+  never offers (not on its subject, not at its scale, or not asking for an opt-in region) is warned of, with the
+  reason, since the region would silently draw nothing for it ([`entryProblems`](ref:hub/src/renderers.ts#entryProblems)).
 - *On screen, or in the menu only.* A region a renderer gives a `label` offers the viewer one more choice, per
   region: its buttons on screen (the default), or in the menu only (`onScreen: false`, the highest layer's, so the
   config can set it for the user). Off screen, the lines and actions budgets are 0 ([`drawnEntry`](ref:hub/src/shared/regions.ts#drawnEntry)),

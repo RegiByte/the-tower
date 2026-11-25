@@ -8,6 +8,7 @@ import { BUILT_IN_RENDERERS, ConfigError, type Config, type ContributedRenderer,
 import { capabilityOf, type Manifest } from './shared/extensions.ts'
 import { CORE_VIEWS } from './shared/views.ts'
 import type { OfferedTheme } from './bridge/extensions.ts'
+import { onKind } from './shared/subjects.ts'
 import { MENU_LINE_IDS } from './shared/subject-menu.ts'
 import { addsLinesOn, BUDGETS, HOLDS, KIT_MEMBERS, OVERFLOWS, overflowOf, REGION_ID, SCALES, type Declared, type Hold, type Layout, type LayoutEntry, type LayoutProblem, type Overflow, type Region, type RendererRegions } from './shared/regions.ts'
 
@@ -121,13 +122,19 @@ export const LayoutSchema: z.ZodType<Layout> = z.record(
 
 /**
  * What a renderer's layout is checked against of the extensions that would start: the regions they declare, the ids a
- * pin can name, and every view's id, the core's among them (@since 2.32).
+ * pin can name, and every view's id, the core's among them (@since 2.32), with what says where it is offered.
  */
-export type LayoutReach = { regions: Region[]; offered: string[]; views: string[] }
+export type LayoutReach = { regions: Region[]; offered: string[]; views: ReachedView[] }
+
+/** A view as a layout's checks read it: where it is offered. */
+export type ReachedView = { id: string; on: readonly string[]; scales: readonly string[]; optsInto?: readonly string[] }
 
 /** What `manifests`, those of the extensions that would start, give a layout's checks: their regions, their verbs', commands' and lines' ids, and the views' ids with the core's. */
 export const layoutReachOf = (manifests: Manifest[]): LayoutReach => ({
-  views: [...CORE_VIEWS.map((v) => v.id), ...manifests.flatMap((m) => Object.keys(m.views ?? {}).map((name) => `${capabilityOf(m)}/${name}`))],
+  views: [
+    ...CORE_VIEWS.map(({ id, on, scales, optsInto }) => ({ id, on, scales, optsInto })),
+    ...manifests.flatMap((m) => Object.entries(m.views ?? {}).map(([name, { on, scales, optsInto }]) => ({ id: `${capabilityOf(m)}/${name}`, on, scales, optsInto }))),
+  ],
   regions: manifests.flatMap((m) => Object.entries(m.regions ?? {}).map(([id, { layout: _, ...region }]) => ({ id, ...region }))),
   offered: manifests.flatMap((m) => {
     const cap = capabilityOf(m)
@@ -163,7 +170,11 @@ export const layoutProblems = (renderer: string, configLayout: Layout, declared:
     const at = `renderers.${renderer}.layout.${id}`
     const region = regions.find((r) => r.id === id)
     if (!region) return [{ level: 'warn', key: at, problem: `neither ${renderer} nor any extension that would start declares region ${id}` }]
-    return [...regionProblems(renderer, at, region, entry, declared.layout[id], region.opens === undefined ? reach.offered : reach.views), ...foldProblems(renderer, at, region, entry, reach.views)]
+    return [
+      ...regionProblems(renderer, at, region, entry, declared.layout[id], region.opens === undefined ? reach.offered : reach.views.map((v) => v.id)),
+      ...foldProblems(renderer, at, region, entry, reach.views.map((v) => v.id)),
+      ...(region.opens === undefined ? [] : entryProblems(renderer, at, region, entry, reach.views)),
+    ]
   })
 }
 
@@ -179,6 +190,29 @@ const foldProblems = (renderer: string, at: string, region: Region, entry: Layou
       ? [{ level: 'fail' as const, key: `${at}.folded`, problem: `${!region.holds.includes('views') ? `${region.id} holds no views` : `${renderer} draws ${region.id}'s views ${region.arity === 'tabs' ? 'as tabs' : 'one at a time'}`}: only a region of arity all folds them` }]
       : entry.folded.flatMap((id, n): LayoutProblem[] => (views.includes(id) ? [] : [{ level: 'warn', key: `${at}.folded[${n}]`, problem: `no view "${id}" in the core or an extension that would start` }]))),
 ]
+
+/** Why `region` offers no entry for `view`, when it doesn't: not on its subject, not at its scale, or not asking for an opt-in region. */
+const whyNoEntry = (region: Region, view: ReachedView): string | undefined =>
+  !onKind(view.on, region.subject)
+    ? `${view.id} is not on ${region.subject}`
+    : region.scale && !view.scales.includes(region.scale)
+      ? `${view.id} draws at no ${region.scale} scale`
+      : region.optIn && !view.optsInto?.includes(region.id)
+        ? `${view.id} doesn't ask for ${region.id}: its view needs "optsInto": ["${region.id}"]`
+        : undefined
+
+/**
+ * The problems of the views a region that opens its views elsewhere is told to order or pin: a view nobody declares,
+ * or one the region never offers, which it then never draws.
+ */
+const entryProblems = (renderer: string, at: string, region: Region, entry: LayoutEntry, views: readonly ReachedView[]): LayoutProblem[] =>
+  (['order', 'pinned'] as const).flatMap((key) =>
+    (entry[key] ?? []).flatMap((id, n): LayoutProblem[] => {
+      const view = views.find((v) => v.id === id)
+      const why = view ? whyNoEntry(region, view) : `no view "${id}" in the core or an extension that would start`
+      return why ? [{ level: 'warn', key: `${at}.${key}[${n}]`, problem: `${why}, so ${renderer}'s ${region.id} draws no entry for it` }] : []
+    }),
+  )
 
 /** The lines of its subject's own menu a region can pin: one holding commands, beside a subject whose menu has them. */
 const ownLines = (region: Region): readonly string[] => (region.holds.includes('commands') ? (MENU_LINE_IDS[region.subject] ?? []) : [])
@@ -224,7 +258,7 @@ const regionProblems = (renderer: string, at: string, region: Region, entry: Lay
             offered.includes(id) || ownLines(region).includes(id)
               ? []
               : region.opens !== undefined
-                ? [warn(`pinned[${n}]`, `no view "${id}" in the core or an extension that would start`)]
+                ? []
                 : [warn(`pinned[${n}]`, `no extension that would start offers "${id}"${offered.length ? `: they offer ${offered.join(', ')}` : ''}${ownLines(region).length ? `, and ${region.subject}'s menu offers ${ownLines(region).join(', ')}` : ''}`)],
           )),
     ...(entry.unpinned === undefined
