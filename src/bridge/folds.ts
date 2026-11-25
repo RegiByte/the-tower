@@ -7,7 +7,7 @@
  * costs that extension's part on that subject, and its dependents' there: a problem, never a failed board.
  */
 import { z } from 'zod'
-import { ADDS, BADGE_TONES, qualifiedOf, WhenShape, WordsShape, type Action, type Added, type Adds, type BoardAsk, type ExtensionProblem, type Fold, type FoldCtx, type Part } from '../shared/extensions.ts'
+import { ADDS, BADGE_TONES, IconShape, qualifiedOf, WhenShape, WordsShape, type Action, type Added, type Adds, type BoardAsk, type ExtensionProblem, type Fold, type FoldCtx, type Part } from '../shared/extensions.ts'
 import {
   boardSubject,
   cardSubject,
@@ -67,7 +67,7 @@ const ActionShape = z.union([
 const PartShape = z.strictObject({
   x: z.unknown().optional(),
   actions: z.array(ActionShape).optional(),
-  badges: z.array(z.strictObject({ label: z.string().min(1), tone: z.enum(BADGE_TONES).optional(), hint: z.string().optional(), href: z.string().optional() })).optional(),
+  badges: z.array(z.strictObject({ label: z.string().min(1), tone: z.enum(BADGE_TONES).optional(), hint: z.string().optional(), href: z.string().optional(), icon: IconShape.optional() })).optional(),
   tidy: z
     .array(z.strictObject({ key: z.string().min(1), label: z.string().min(1), hint: z.string().optional(), does: z.string().min(1).optional(), kind: z.strictObject({ one: z.string().min(1), many: z.string().min(1) }).optional(), checkout: z.string().min(1).optional() }))
     .optional(),

@@ -133,13 +133,18 @@ export const commandUrl = (cap: string, module: string) => `/x/${cap}/${module}`
 /** A command's glyph: one of the core's icons by name (`icons.ts`), or an SVG its extension serves at `href`. @since 1.130 */
 export type Glyph = { t: 'core'; name: keyof typeof ICON } | { t: 'svg'; href: string }
 
+/** The glyph `icon` names for the extension `cap`: one of the core's icons by name, else an SVG it serves. */
+const glyphFor = (cap: string, icon: string): Glyph => (SVG_PATH.test(icon) ? { t: 'svg', href: commandUrl(cap, icon) } : { t: 'core', name: icon as keyof typeof ICON })
+
 /** The glyph an action's words name: a command's, while its extension runs; none for a verb, or a command that names none. */
 export const glyphOf = (board: Board, action: Added<Action>): Glyph | undefined => {
   if (!isCommand(action)) return undefined
   const icon = commandOf(board, action)?.words.icon
-  if (!icon) return undefined
-  return SVG_PATH.test(icon) ? { t: 'svg', href: commandUrl(action.cap, icon) } : { t: 'core', name: icon as keyof typeof ICON }
+  return icon ? glyphFor(action.cap, icon) : undefined
 }
+
+/** The glyph a badge names, drawn with it in its ink; none when it names none. @since 2.36 */
+export const badgeGlyphOf = (badge: Added<Badge>): Glyph | undefined => (badge.icon ? glyphFor(badge.cap, badge.icon) : undefined)
 
 /** Calls a verb an extension offers, with its call: no subject needed, the call holds what it acts on. */
 export const runVerb = (action: VerbAction): Promise<unknown> => towerOf().call(action.verb as never, action.call as never)

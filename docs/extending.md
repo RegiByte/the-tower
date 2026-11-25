@@ -1059,7 +1059,7 @@ folds in dependency order (card, conversations, showings, items, collections, sh
 board), on floors where it is on, seeing
 only the parts of what it `requires` or `wants`. Its part lands at `subject.x.<cap>` (a card, a floor, the board, or
 an item of a collection it declares), checked by its schema; its actions (`{verb: '<cap>/<verb>', call}`, the verb
-qualified, or `{command, args?}`, the command bare: its own, `"command": "speak"`), badges (`{label, tone?, hint?, href?}`), tidy entries, lines and marks at `board.adds[<subject key>]`, each tagged
+qualified, or `{command, args?}`, the command bare: its own, `"command": "speak"`), badges (`{label, tone?, hint?, href?, icon?}`, `icon` a glyph drawn before the label in its ink, named as a command's `words.icon` is: `badgeGlyphOf(badge)` in `/lib/layout.js`), tidy entries, lines and marks at `board.adds[<subject key>]`, each tagged
 with its `cap`; a mark (`marksOf(board, card)` in `/lib/layout.js`) is `{repo, path, line, to?, label, tone?,
 hint?, display?}` on lines the card's worker changed, `repo` named as its Changes name it (the main checkout's folder),
 and the Changes draw it on those lines, saying its `hint` (the reviews extension marks the lines each note of the

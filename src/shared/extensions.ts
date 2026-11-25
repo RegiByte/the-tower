@@ -245,8 +245,11 @@ export type CommandAction = { command: string; args?: unknown; words?: Words }
 
 export type Action = VerbAction | CommandAction
 
-/** A word shown beside a subject: `href` a page it links to. */
-export type Badge = { label: string; tone?: BadgeTone; hint?: string; href?: string }
+/**
+ * A word shown beside a subject: `href` a page it links to. `icon`: a glyph drawn with it in its ink, one of the core's
+ * icons by name or an SVG of its extension's client folder, as a command's `words.icon` is (since 2.36).
+ */
+export type Badge = { label: string; tone?: BadgeTone; hint?: string; href?: string; icon?: string }
 
 /**
  * A mark on lines a worker changed, drawn beside them wherever its Changes are: `repo` named as the Changes name it
@@ -744,11 +747,12 @@ const SubjectKind = z.string().regex(/^(card|floor|board|conversation|shown|coll
 const Words = z.strictObject({ label: since(z.string()), hint: since(z.string().optional()), destructive: since(z.literal(true).optional()) })
 /** A name in words as a manifest or a fold's action gives them. */
 export const WordsShape = Words
-const Icon = z.union([
+/** A glyph as a command's words or a badge name it: one of the core's icons, or an SVG of the extension's client folder. */
+export const IconShape = z.union([
   z.enum(Object.keys(ICON) as [keyof typeof ICON, ...(keyof typeof ICON)[]]).describe("One of the core's icons, by name: ICON of /lib/view.js."),
   z.string().regex(SVG_PATH, 'a core icon name, or a path ending .svg below the client folder').describe('An SVG of its client folder, below it: drawn as a mask in the ink of the control it marks.'),
 ])
-const CommandWordsShape = Words.extend({ icon: since(Icon.optional().describe('Its glyph, where a renderer draws the command as an icon alone, its label and hint the tip.')) })
+const CommandWordsShape = Words.extend({ icon: since(IconShape.optional().describe('Its glyph, where a renderer draws the command as an icon alone, its label and hint the tip.')) })
 const Word = z.string().regex(/^[a-z][a-z0-9.-]{0,47}$/, 'a lowercase word of letters, digits, dots and dashes, at most 48 long')
 const Chords = z.array(
   z.string().superRefine((chord, ctx) => {
