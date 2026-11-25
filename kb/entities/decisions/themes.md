@@ -68,8 +68,10 @@ touches, the same for the user's config and for an extension that ships a look.
   whose `sample()` draws its parts on sample data with its own functions (the page's sidebar row and floor plate,
   [`workerRowHtml`](ref:hub/renderers/page/sidebar.js#workerRowHtml) and
   [`floorPlateHtml`](ref:hub/renderers/page/sidebar.js#floorPlateHtml)), beside the parts every renderer shares: a
-  button pair, an open menu and the terminal's colours. One toggle draws every frame light or dark. Each frame draws
-  its theme here or makes it the tower's, the screen then following it; the head says both choices.
+  button pair, an open menu and the terminal's colours. One toggle draws every frame light or dark. A theme's card
+  is its frame: its name, the parts drawn inert and its two buttons are all in the theme, the buttons heard through the
+  frame's document (it is the page's origin). Each frame draws its theme here or makes it the tower's, the screen then
+  following it; the head says both choices.
 - *Framed documents too.* A document the tower draws in a frame of its own writing (a markdown file shown or kept,
   a link page, Tower 3D's documents) links the design's tokens and the renderer's themes as this screen draws them
   ([`frameLook`](ref:hub/src/shared/design.ts#frameLook)), and is drawn again on `onThemes`. A shown html page is its

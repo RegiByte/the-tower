@@ -19,18 +19,17 @@ const ID = 'tower/themes'
 const STYLE = viewCss(
   ID,
   `& .themes { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--sp-l); align-content: start; scrollbar-width: thin; }
-  & .theme { display: flex; flex-direction: column; gap: var(--sp-s); padding: var(--sp-m); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-card); }
+  & .theme { display: block; width: 100%; height: 560px; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--bg); }
   & .theme[data-drawn] { border-color: var(--accent); }
-  & .theme h3 { display: flex; align-items: baseline; gap: var(--sp-s); margin: 0; font: var(--display-weight) var(--fs-m)/1.3 var(--display); }
-  & .theme h3 .marks { color: var(--muted); font: var(--fs-xs)/1.3 var(--ui); }
-  & .theme iframe { width: 100%; height: 480px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--bg); }
-  & .theme .acts { display: flex; gap: var(--sp-s); justify-content: flex-end; }
   & .now { color: var(--muted); }`,
 )
 
 /** The frame's own layout around the parts it draws; their looks are the page's and the theme's. */
-const FRAME_CSS = `body { display: block; margin: 0; min-height: 100vh; height: auto; background: var(--bg); color: var(--ink); font: var(--fs-m)/1.4 var(--ui); overflow: hidden; }
-.preview { display: grid; gap: 14px; padding: 12px; }
+const FRAME_CSS = `body { display: flex; flex-direction: column; margin: 0; height: 100vh; background: var(--bg); color: var(--ink); font: var(--fs-m)/1.4 var(--ui); overflow: hidden; }
+.theme-head { flex: none; display: flex; align-items: baseline; gap: 8px; margin: 0; padding: 12px 12px 0; color: var(--heading); font: var(--display-weight) var(--fs-m)/1.3 var(--display); }
+.theme-head .marks { color: var(--muted); font: var(--fs-xs)/1.3 var(--ui); }
+.theme-acts { flex: none; display: flex; gap: 6px; justify-content: flex-end; padding: 0 12px 12px; }
+.preview { flex: 1; min-height: 0; overflow: hidden; display: grid; align-content: start; gap: 14px; padding: 12px; }
 .preview .side { position: static; width: auto; height: auto; min-height: 0; overflow: visible; border-radius: var(--radius-card); }
 .preview .side .floors { overflow: visible; padding: 8px; }
 .preview .buttons { display: flex; gap: 6px; }
@@ -83,9 +82,13 @@ export const mount: Mount = async (host, { tower, board: first, kit }) => {
     pick === undefined ? "the tower's" : (choices().find((c) => c.pick === pick)?.title ?? `${pick}, which no extension offers now`)
 
   /** A frame's document: the page's parts with `pick` and the config's tweak sheets, in the dialog's scheme. */
-  const frameDoc = (pick: ThemePick, sample: Sample) =>
-    `<!doctype html><html ${tower.prefs.attributes().replace(/^data-scheme="[^"]*"/, `data-scheme="${scheme}"`)}><meta charset="utf-8">${pageSheets()}<link rel="stylesheet" href="${esc(tower.theme.sheet(pick))}"><style>${FRAME_CSS}</style>
-    <body class="${esc(sample.bodyClass)}"><div class="preview">${sample.html}<div class="buttons"><button>Cancel</button><button class="primary">Save</button></div><div class="menu-at"><tower-menu id="sample-menu" modal="false" data-owned="children"></tower-menu></div>${TERM_HTML}</div>${MENU_SCRIPT}`
+  const frameDoc = ({ pick, title }: Choice, sample: Sample) => {
+    const value = esc(JSON.stringify(pick))
+    return `<!doctype html><html ${tower.prefs.attributes().replace(/^data-scheme="[^"]*"/, `data-scheme="${scheme}"`)}><meta charset="utf-8">${pageSheets()}<link rel="stylesheet" href="${esc(tower.theme.sheet(pick))}"><style>${FRAME_CSS}</style>
+    <body class="${esc(sample.bodyClass)}"><h3 class="theme-head">${esc(title)}<span class="marks"></span></h3>
+    <div class="preview" inert>${sample.html}<div class="buttons"><button>Cancel</button><button class="primary">Save</button></div><div class="menu-at"><tower-menu id="sample-menu" modal="false" data-owned="children"></tower-menu></div>${TERM_HTML}</div>
+    <div class="theme-acts"><button data-use="${value}">Use here</button><button data-make="${value}">Make it the tower's</button></div>${MENU_SCRIPT}`
+  }
 
   const headHtml = () => {
     const { screen, tower: towers } = tower.theme.get()
@@ -94,34 +97,40 @@ export const mount: Mount = async (host, { tower, board: first, kit }) => {
     return { now: `this screen: ${esc(titleOf(screen))} · the tower's: ${esc(titleOf(towers))}`, actions: follow + toggle }
   }
 
-  const cardHtml = ({ pick, title }: Choice) => {
-    const value = esc(JSON.stringify(pick))
-    return `<section class="theme" data-pick="${value}"><h3>${esc(title)}<span class="marks"></span></h3>
-      <iframe inert tabindex="-1" title="${esc(title)}, previewed"></iframe>
-      <div class="acts"><button data-use="${value}">Use here</button><button data-make="${value}">Make it the tower's</button></div></section>`
-  }
+  /**
+   * A theme's card is its frame: its name, the parts it draws (inert) and its two buttons, all in the theme. The frame
+   * is this page's origin, so its buttons' presses are heard here.
+   */
+  const cardHtml = ({ pick, title }: Choice) => `<iframe class="theme" data-pick="${esc(JSON.stringify(pick))}" title="${esc(title)}"></iframe>`
 
   /** The frames again, from scratch: a new list, a new scheme, or tweak sheets that changed under them. */
   const frames = () => {
     const list = $('.themes')
-    list.innerHTML = choices().map(cardHtml).join('')
+    const all = choices()
+    list.innerHTML = all.map(cardHtml).join('')
     const sample = sampleOf()
-    for (const section of list.querySelectorAll<HTMLElement>('[data-pick]')) section.querySelector('iframe')!.srcdoc = frameDoc(JSON.parse(section.dataset.pick!), sample)
+    list.querySelectorAll<HTMLIFrameElement>('iframe.theme').forEach((frame, i) => {
+      frame.addEventListener('load', () => (frame.contentDocument!.addEventListener('click', clicked), marks()))
+      frame.srcdoc = frameDoc(all[i], sample)
+    })
     marks()
   }
 
-  /** The marks and buttons as the choices stand, the frames left as they are. */
+  /** The marks and buttons as the choices stand, the frames left as they are; a frame still loading is marked as it loads. */
   const marks = () => {
     const { now, actions } = headHtml()
     paintOnce($('.now'), now)
     paintOnce($('.shelf-head .actions'), actions)
     const { screen, tower: towers, drawn } = tower.theme.get()
-    for (const section of host.querySelectorAll<HTMLElement>('[data-pick]')) {
-      const pick = JSON.parse(section.dataset.pick!) as ThemePick
-      section.toggleAttribute('data-drawn', drawn === pick)
-      section.querySelector('.marks')!.textContent = [screen !== undefined && screen === pick && 'this screen', towers === pick && "the tower's"].filter(Boolean).join(' · ')
-      section.querySelector<HTMLButtonElement>('[data-use]')!.disabled = drawn === pick
-      section.querySelector<HTMLButtonElement>('[data-make]')!.disabled = towers === pick
+    for (const frame of host.querySelectorAll<HTMLIFrameElement>('iframe.theme')) {
+      const pick = JSON.parse(frame.dataset.pick!) as ThemePick
+      frame.toggleAttribute('data-drawn', drawn === pick)
+      const doc = frame.contentDocument
+      const use = doc?.querySelector<HTMLButtonElement>('[data-use]')
+      if (!doc || !use) continue
+      doc.querySelector('.marks')!.textContent = [screen !== undefined && screen === pick && 'this screen', towers === pick && "the tower's"].filter(Boolean).join(' · ')
+      use.disabled = drawn === pick
+      doc.querySelector<HTMLButtonElement>('[data-make]')!.disabled = towers === pick
     }
   }
 
@@ -132,7 +141,7 @@ export const mount: Mount = async (host, { tower, board: first, kit }) => {
         kit.toast(err.code === 'changed' || err.code === 'exists' ? "The config's theme changed meanwhile: look again and pick once more" : `The config kept its theme: ${err.message}`),
     )
 
-  host.addEventListener('click', (e) => {
+  function clicked(e: Event) {
     const target = e.target as Element
     if (target.closest('[data-scheme-toggle]')) return ((scheme = scheme === 'dark' ? 'light' : 'dark'), frames())
     if (target.closest('[data-follow]')) return tower.theme.follow()
@@ -140,7 +149,8 @@ export const mount: Mount = async (host, { tower, board: first, kit }) => {
     if (use !== undefined) return tower.theme.use(JSON.parse(use))
     const make = target.closest<HTMLElement>('[data-make]')?.dataset.make
     if (make !== undefined) return void makeTowers(JSON.parse(make))
-  })
+  }
+  host.addEventListener('click', clicked)
 
   /**
    * What the frames are drawn from: the choices and the config's tweak sheets, every frame's last; the renderer's theme
