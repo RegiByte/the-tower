@@ -157,6 +157,7 @@
   --side-surface: transparent;
   --side-rule: transparent;
   --main-surface: var(--panel);
+  --dock-surface: transparent;
   --main-inset: 8px;
   --main-radius: 14px;
   --status-edge: 1.5px;
