@@ -1582,17 +1582,27 @@ addEventListener('blur', () => setTimeout(() => {
 document.addEventListener('visibilitychange', () => page.dispatch({ type: 'visible', visible: document.visibilityState === 'visible' }))
 
 /**
- * The main pane is marked `focus-in` while focus is in it, a frame of its own included: focus inside a frame leaves
- * the frame as the page's active element, which `:focus-within` doesn't take as focus within the pane in every engine.
- * A press on what takes no focus (a brief's text) leaves focus on the body, so there the last press says where the
- * viewer is. Focus settles after `focusout` and the window's `blur`, so it is read once they are done.
+ * Whether the viewer's last press landed in the main pane: a press on what takes no focus (a brief's text) leaves
+ * focus on the body, so there the press says where the viewer is. A press anywhere else clears it.
  */
-let pressedInMain = false
-const markMainFocus = () => setTimeout(() => {
+let lastPressInMain = false
+
+/**
+ * Whether the viewer is in the main pane: the page's window has focus, and its active element is in the pane, a frame
+ * of the pane's included (focus inside a frame leaves the frame as the page's active element, which `:focus-within`
+ * doesn't take as focus within the pane in every engine), or is the body after a press in the pane.
+ */
+const inMain = () => {
   const at = document.activeElement
-  $('main').classList.toggle('focus-in', at === document.body ? pressedInMain : $('main').contains(at))
-})
-document.addEventListener('pointerdown', (e) => (pressedInMain = $('main').contains(/** @type {Node} */ (e.target)), markMainFocus()), true)
+  return document.hasFocus() && (at === document.body ? lastPressInMain : $('main').contains(at))
+}
+
+/** The main pane is marked `focus-in` while the viewer is in it, read once focus settles after its events. */
+const markMainFocus = () => setTimeout(() => $('main').classList.toggle('focus-in', inMain()))
+document.addEventListener('pointerdown', (e) => {
+  lastPressInMain = $('main').contains(/** @type {Node} */ (e.target))
+  markMainFocus()
+}, true)
 for (const type of ['focusin', 'focusout']) document.addEventListener(type, markMainFocus)
 for (const type of ['focus', 'blur']) addEventListener(type, markMainFocus)
 
