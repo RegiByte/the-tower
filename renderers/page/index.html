@@ -324,7 +324,7 @@ dialog.palette[open] { display: flex; flex-direction: column; max-height: min(56
   margin: var(--main-inset); border-radius: var(--main-radius); background: var(--main-surface); box-shadow: var(--main-shadow); }
 .main::after { --glow: var(--main-glow); --glow-mix: var(--main-glow-mix); content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
   box-shadow: 0 0 var(--glow) calc(var(--glow) / -4) color-mix(in oklab, var(--accent) var(--glow-mix), transparent); transition: box-shadow .15s ease-out; }
-.main:focus-within::after { --glow: var(--main-glow-active); --glow-mix: var(--main-glow-active-mix); }
+.main.focus-in::after { --glow: var(--main-glow-active); --glow-mix: var(--main-glow-active-mix); }
 .untested, .layout-problems { color: var(--muted); font-size: var(--fs-s); text-decoration: underline dotted; cursor: help; white-space: nowrap; }
 .side-notes .layout-problems { display: block; white-space: normal; }
 
