@@ -333,7 +333,7 @@ a palette in both schemes and in more contrast, rounder corners, and headings in
 
 **A screen's own theme.** The config's `theme` is the tower's. A viewer can draw another on their own screen from the
 palette's **Open Theme** (the `tower/themes` dialog), which previews every offered theme and the renderer's own look
-on real parts, in either scheme, and makes one the tower's too. `tower.theme` (since 2.37) is the same for any page:
+on real parts, in either scheme, and makes one the tower's too. `tower.theme` (since 2.39) is the same for any page:
 `get()` says `{ screen, tower, drawn }`, `use(id)` draws one here (`null` the renderer's own look), `follow()` the
 tower's again, `pick(id)` writes the config's `theme` through the config verbs, and `sheet(id)` is the stylesheet a
 frame links to preview one, `/renderers/<name>/themes.css?theme=<id>`, with the config's tweak sheets still over it.

@@ -1586,10 +1586,10 @@
           "stability": "provisional"
         },
         "ThemeApi": {
-          "since": "2.36"
+          "since": "2.39"
         },
         "ThemePick": {
-          "since": "2.36"
+          "since": "2.39"
         },
         "Tower": {
           "since": "2.0"
@@ -1603,7 +1603,7 @@
           "since": "2.0"
         },
         "frameLook": {
-          "since": "2.36"
+          "since": "2.39"
         },
         "mixOklab": {
           "since": "2.0",
@@ -1630,7 +1630,7 @@
       },
       "types": {
         "FrameLook": {
-          "since": "2.36"
+          "since": "2.39"
         },
         "Scheme": {
           "since": "2.0",

@@ -369,7 +369,7 @@ export type Viewers = { active?: string; last?: Record<string, string>; selected
 
 /**
  * A theme an extension offers a renderer, as the board shows it: `picked` on the one the config's
- * `renderers.<name>.theme` names (@since 2.37).
+ * `renderers.<name>.theme` names (@since 2.39).
  */
 export type BoardTheme = { id: string; title: string; extension: string; picked?: true }
 

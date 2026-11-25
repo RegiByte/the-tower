@@ -294,7 +294,7 @@ export type Tower = {
   onScheme(fn: (scheme: Scheme) => void): () => void
   /** Called once a change of this renderer's themes has loaded, to read again what the page computes from the tokens. @since 2.30 */
   onThemes(fn: () => void): () => void
-  /** This renderer's theme: the screen's choice over the tower's, set live. @since 2.37 */
+  /** This renderer's theme: the screen's choice over the tower's, set live. @since 2.39 */
   theme: ThemeApi
 }
 
@@ -304,7 +304,7 @@ export type Tower = {
  */
 export type ThemePick = string | null
 
-/** `tower.theme`: which base theme this renderer draws, the viewer's choice on this screen over the config's. @since 2.37 */
+/** `tower.theme`: which base theme this renderer draws, the viewer's choice on this screen over the config's. @since 2.39 */
 export type ThemeApi = {
   /**
    * `screen`, this screen's choice, `undefined` while it follows the tower's; `tower`, the config's
