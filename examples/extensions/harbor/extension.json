@@ -3,6 +3,6 @@
   "version": "1.1",
   "title": "Harbor",
   "description": "A theme for the tower page: a cool palette in both schemes and more contrast, rounder corners, and headings in sentence case. Offers harbor/harbor: set renderers.page.theme to it.",
-  "requires": { "tower": "2.32" },
+  "requires": { "tower": "2.34" },
   "themes": { "page": { "harbor": { "title": "Harbor", "file": "harbor.css" } } }
 }
