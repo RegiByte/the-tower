@@ -108,6 +108,7 @@ test('an unreadable checkpoint is a miss, said once', () => {
 test('the fold hash covers every module the fold imports to run, statically or dynamically, and changes with any of them', () => {
   const covered = [...sourcesOf(path.join(import.meta.dirname, '../src/checkpoints.ts')).keys()].map((f) => path.relative(path.join(import.meta.dirname, '..'), f))
   for (const module of ['src/tail.ts', 'src/bridge/facts.ts', 'src/bridge/status.ts', 'src/bridge/conversation.ts', 'src/bridge/blocked.ts']) assert.ok(covered.includes(module), module)
+  for (const module of ['src/shared/api.ts', 'src/bridge/board.ts']) assert.ok(!covered.includes(module), module)
 
   const dir = freshCache()
   mkdirSync(path.join(dir, 'lib'))
@@ -117,7 +118,7 @@ test('the fold hash covers every module the fold imports to run, statically or d
   )
   writeFileSync(
     path.join(dir, 'lib', 'step.ts'),
-    "export type { Kind } from '../kind.ts'\nimport type { Shape } from '../shape.ts'\nimport { type Mixed, mixed } from '../mixed.ts'\nexport const step = mixed\n",
+    "export type { Kind } from '../kind.ts'\nexport const first = 1\nimport type { Shape } from '../shape.ts'\nimport { type Mixed, mixed } from '../mixed.ts'\nexport const step = mixed\n",
   )
   writeFileSync(path.join(dir, 'kind.ts'), 'export type Kind = string\n')
   writeFileSync(path.join(dir, 'shape.ts'), 'export type Shape = string\n')
