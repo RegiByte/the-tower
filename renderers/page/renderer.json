@@ -34,6 +34,7 @@
   "layout": {
     "board.sections": { "order": ["tower/waiting"] },
     "board.nav": { "order": ["tower/stats"], "views": 4 },
+    "board.sign": { "hidden": ["guides/open"] },
     "floor.section": { "hidden": ["policies/policies"] },
     "floor.trays": { "order": ["drafts/tray", "reviews/tray", "policies/tray"] },
     "card.head": { "lines": 1 },
