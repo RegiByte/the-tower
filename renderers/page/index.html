@@ -163,6 +163,11 @@ body:has(.crew-group.dragged) .tower-tip { visibility: hidden; }
 .sess { position: relative; padding: var(--sp-m) var(--sp-l); border-radius: var(--radius-card); background: var(--card-surface);
   border: 1px solid color-mix(in oklab, var(--c) var(--status-ring-mix), var(--line)); border-left: var(--status-edge) solid var(--c); box-shadow: var(--shadow-card); cursor: pointer; transition: border-color .15s ease-out, box-shadow .15s ease-out; }
 .sess:hover { background: var(--card-hover); box-shadow: var(--shadow-lift); }
+/* A card's glow, drawn by a box of its own so it adds to whatever shadow the card has: outside the card only. */
+.sess::after { --glow: var(--card-glow); --glow-mix: var(--card-glow-mix); content: ''; position: absolute; inset: -1px; inset-inline-start: calc(-1 * var(--status-edge));
+  border-radius: inherit; pointer-events: none; box-shadow: 0 0 var(--glow) calc(var(--glow) / -4) color-mix(in oklab, var(--c) var(--glow-mix), transparent); transition: box-shadow .15s ease-out; }
+.sess:hover::after { --glow: var(--card-glow-hover); --glow-mix: var(--card-glow-hover-mix); }
+.sess.sel::after { --glow: var(--card-glow-active); --glow-mix: var(--card-glow-active-mix); }
 .sess.waits.needs { border-color: var(--c); background: color-mix(in oklab, var(--c) 8%, var(--card-surface)); }
 /* Waits that flash (`waits: 'flash'` in tower.prefs): what waits on the viewer, and isn't dismissed, is marked `calls`:
    its outline flashes in its attention's colour and its lamp blinks with it, at a need's pace, as does the lamp of
@@ -317,6 +322,9 @@ dialog.palette[open] { display: flex; flex-direction: column; max-height: min(56
 
 .main { position: relative; display: flex; flex-direction: column; gap: var(--sp-m); min-width: 0; min-height: 0; padding: var(--sp-xl) var(--sp-xl) 0;
   margin: var(--main-inset); border-radius: var(--main-radius); background: var(--main-surface); box-shadow: var(--main-shadow); }
+.main::after { --glow: var(--main-glow); --glow-mix: var(--main-glow-mix); content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  box-shadow: 0 0 var(--glow) calc(var(--glow) / -4) color-mix(in oklab, var(--accent) var(--glow-mix), transparent); transition: box-shadow .15s ease-out; }
+.main:focus-within::after { --glow: var(--main-glow-active); --glow-mix: var(--main-glow-active-mix); }
 .untested, .layout-problems { color: var(--muted); font-size: var(--fs-s); text-decoration: underline dotted; cursor: help; white-space: nowrap; }
 .side-notes .layout-problems { display: block; white-space: normal; }
 
