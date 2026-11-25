@@ -239,6 +239,7 @@ export const CORE_VIEWS: readonly View[] = [
   served(core('tower/archive', ['floor'], ['pane'], { label: 'Archive', hint: "the floor's past workers" }), ['display', 'toast']),
   { ...served(core('tower/waiting', ['board'], ['list'], { label: 'Waiting on you', hint: 'who waits on you and what asks, oldest first: the list N walks' }), ['display', 'go']), tab: 'tab' },
   served(core('tower/extensions', ['board'], ['pane'], { label: 'Extensions', hint: 'every extension the tower found: its state, what it declares and its problems' }), ['display']),
+  served(core('tower/stats', ['board', 'floor'], ['pane'], { label: 'Stats', hint: 'spend, work and waits, from the logs' }), ['display']),
   served(core('tower/collection', ['collection'], ['pane'], { label: 'Collection', hint: "a collection's items" }), ['display']),
   served(core('tower/tray', ['collection'], ['row'], { label: 'Tray', hint: "a collection's count, unfolding to its newest items" }), ['display']),
   { ...served(core('tower/shelf', ['shelf'], ['pane'], { label: 'Shelf', hint: 'a shelf entry' }), ['region', 'bus', 'display', 'go', 'toast']), shows: ['section'], regions: ['section.acts', 'passage.acts'] },
