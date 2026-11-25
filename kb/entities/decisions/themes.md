@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-23",
-  "reviewed": "2026-11-23",
+  "reviewed": "2026-11-25",
   "refs": ["hub/src/renderers.ts#themesOf", "hub/src/renderers.ts#themeSheet", "hub/src/renderers.ts#themeUrls", "hub/src/renderers.ts#themeFile", "hub/src/bridge/extensions.ts#contributedThemes", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/http.ts#preloaded", "hub/src/tower/http.ts#withThemes", "hub/test/server.test.ts", "hub/src/tower/http.ts#themesCss", "hub/src/tower/http.ts#themeServed", "hub/src/tower/publisher.ts", "hub/src/bridge/board.ts#Board", "hub/src/tower/tower.js", "hub/renderers/page/page.js#recolourTerminals", "hub/renderers/tower3d/src/term.ts", "hub/src/config-check.ts#themeProblems", "hub/examples/extensions/harbor/harbor.css"],
   "links": [
     { "to": "cascade-layers", "verb": "loads into", "carries": "each theme in a layer of its own inside theme" },

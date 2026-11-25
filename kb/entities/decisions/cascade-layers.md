@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-23",
-  "reviewed": "2026-11-23",
+  "reviewed": "2026-11-25",
   "refs": ["hub/src/shared/design.ts#designCss", "hub/src/shared/view-parts.ts#viewLayer", "hub/src/shared/view-parts.ts#componentsLayer", "hub/src/shared/view-parts.ts#rendererLayer", "hub/src/shared/view-parts.ts#viewCss", "hub/src/lib-ui/look.css", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/page/calls.js#watchCalls", "hub/src/shared/tips.ts#watchTips", "hub/src/shared/ask.ts", "hub/renderers/tower3d/index.html", "hub/renderers/week/index.html"],
   "links": [
     { "to": "themes", "verb": "orders", "carries": "each renderer's themes in the theme layer, last" },
