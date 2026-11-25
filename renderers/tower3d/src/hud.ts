@@ -2,7 +2,7 @@ import { heldWhy } from './acts.ts'
 import { briefCss } from '/lib/brief.js'
 import { markdownCss } from '/lib/markdown.js'
 import { changesSection, faceInstalled, keepingTyped, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '/lib/settings.js'
-import { placeOnOpen, watchTips, toastsCss, ask } from '/lib/chrome.js'
+import { closePopoversOnFramePress, placeOnOpen, watchTips, toastsCss, ask } from '/lib/chrome.js'
 import { componentsLayer, ICON, morphPanel, panelsCss, itemsCss } from '/lib/view.js'
 import { sawAll, seenOf } from '/lib/viewer.js'
 import { isFresh as isNewAction, offeredIds } from '/lib/layout.js'
@@ -54,6 +54,7 @@ export function startHud(started: HudDeps) {
   document.head.append(Object.assign(document.createElement('style'), { textContent: componentsLayer(panelsCss + briefCss + markdownCss + settingsCss + toastsCss + itemsCss) }))
 
   watchTips(document)
+  closePopoversOnFramePress(window)
 
   /** Why a daemon verb is held back now, for the panels' buttons. */
   const held = (verb: DaemonVerb) => heldWhy(boardNow()!, port.state().attending.lost, verb)

@@ -5,7 +5,7 @@
  * leaves it, Esc, a press, a scroll or a redraw that removes it. While a control in the element has its popup open (a
  * combobox's list, a menu button's menu) its tip hides and doesn't show. It fades in and out, at once under reduced motion. A
  * renderer calls `watchTips(document)` once; what it draws later needs only the attribute. `placeBeside` stands any popover by
- * the element that opened it the same way.
+ * the element that opened it the same way, and `closePopoversOnFramePress` closes popovers on a press in a frame.
  */
 import { reduced } from './design.ts'
 
@@ -48,6 +48,19 @@ export function placeBeside(el: HTMLElement, anchor: Element) {
 export function placeOnOpen(el: HTMLElement, anchor: () => Element) {
   el.dataset.placeable = ''
   el.addEventListener('toggle', (e) => ((e as ToggleEvent).newState === 'open' ? placeBeside(el, anchor()) : delete el.dataset.placed))
+}
+
+/**
+ * Closes `win`'s open popovers on a press inside one of its frames, as light dismiss does on a press anywhere else:
+ * a press in a frame never reaches the page, but focus moving into the frame blurs the window, even in WebKit, which
+ * runs no listener in a frame that can't run scripts. A popover holding the focused frame stays open.
+ */
+export function closePopoversOnFramePress(win: Window) {
+  const doc = win.document
+  win.addEventListener('blur', () => setTimeout(() => {
+    if (doc.activeElement?.tagName !== 'IFRAME') return
+    for (let open; (open = doc.querySelector<HTMLElement>(':popover-open:not([popover=manual], :has(:focus))'));) open.hidePopover()
+  }))
 }
 
 /**

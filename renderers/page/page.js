@@ -3,7 +3,7 @@ import { boardSubject, callOf, can, cardSubject, noLongerOffered, offeredCall, p
 import { briefCss } from '/lib/brief.js'
 import { CAPABILITIES } from '/lib/capabilities.js'
 import { addedTidyOf, ATTENTION_MEANS, ATTENTION_NAME, attentionOrder, boardErrorTitle, untestedHtml, discardAsk, discardedLine, DISMISS_TITLE, heededAsks, heededWaits, heldActions, HOST_ATTENTION, HOST_MEANS, HOST_NAME, hostState, isAsk, keptLine, killShellAsk, letGoAsk, letGoneLine, loudest, neighboursIn, nextAttended, ON_DUTY_MEANS, reapAsk, resumeAllAsk, resumeStranded, sendHomeAsk, shownKey, SOUNDS, strandedOf, tidiedLine, tidyAllAsk, verbLabel, WAITING_MEANS, WAITING_NAME, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME } from '/lib/cards.js'
-import { ask, asking, toastsCss, watchTips } from '/lib/chrome.js'
+import { ask, asking, closePopoversOnFramePress, toastsCss, watchTips } from '/lib/chrome.js'
 import { addedCommandOf, commandOf, COMMANDS, DEFAULT_KEYS, frameCommandOf, isAddedId, MOVE_COMMAND, PANES, panesOf } from '/lib/keys.js'
 import { actionId, actionWords, addedActions, busOf, declaredLayout, displayed, offeredIn, drawnEntry, isOnScreen, exemptionsOf, fill, headRanked, isCommand, isFresh, layoutKey, layoutOf, lineId, offeredIds, openable, overflowOf, rankedActions, rankedBadges, rankedLines, runCommandWith, usableConfigLayout, viewOn, viewsOf } from '/lib/layout.js'
 import { loop, timers } from '/lib/machine.js'
@@ -65,6 +65,7 @@ import { gapBeside, isCut, lineWidth, roomOf } from './fit.js'
 
 document.head.append(Object.assign(document.createElement('style'), { textContent: componentsLayer(panelsCss + settingsCss + itemsCss + briefCss + markdownCss + toastsCss) }))
 watchTips(document)
+closePopoversOnFramePress(window)
 
 /** The board drawn until the first arrives: one with nothing on it. */
 const BLANK = /** @type {Board} */ (/** @type {unknown} */ ({ user: { name: 'user' }, keys: DEFAULT_KEYS, floors: [], waiting: [], asks: [], adds: {}, limits: [{ rateLimits: [] }], extensions: [], viewers: {}, hostUp: false, hostOutdated: false, runtimes: {}, shells: [], termsUp: false, jobs: [], jobsUp: false }))
@@ -1573,12 +1574,6 @@ const LEAVE = {
 addEventListener('focus', () => (page.dispatch({ type: 'focus', focused: true }), placedRegions.forEach(readNext)))
 // The window blurs as focus moves into one of the page's own frames, where the document still has it once focus settles.
 addEventListener('blur', () => setTimeout(() => page.dispatch({ type: 'focus', focused: document.hasFocus() })))
-// A press inside a frame never reaches the page, so the browser's light dismiss misses it: focus landing in a frame
-// closes every open popover that light dismiss would have, those holding the frame kept.
-addEventListener('blur', () => setTimeout(() => {
-  if (document.activeElement?.tagName !== 'IFRAME') return
-  for (let open; (open = document.querySelector(':popover-open:not([popover=manual], :has(:focus))'));) /** @type {HTMLElement} */ (open).hidePopover()
-}))
 document.addEventListener('visibilitychange', () => page.dispatch({ type: 'visible', visible: document.visibilityState === 'visible' }))
 
 /** The viewer's record and their layout as `tower.store` keeps them now: another renderer or window of theirs may have changed them. */

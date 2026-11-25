@@ -531,7 +531,7 @@ joins as a minor the day something uses it.
 | `/lib/attend.js` | browser | renderers | what a viewer is told about waits |
 | `/lib/settings.js` | browser | renderers | the settings popover |
 | `/lib/palette.js` | browser | renderers | the command palette |
-| `/lib/chrome.js` | browser | renderers | toasts and tooltips |
+| `/lib/chrome.js` | browser | renderers | toasts, tooltips, the confirm dialog and popovers closed by a press in a frame |
 | `/lib/viewer.js` | browser | renderers | what a viewer keeps, and their appearance |
 | `/lib/capabilities.js` | generic | renderers | what the tower can teach, as tips |
 | `/lib/client.js` | browser | renderers | window.tower's types, the /tower.js client |
