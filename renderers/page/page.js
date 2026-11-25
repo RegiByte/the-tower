@@ -1584,9 +1584,15 @@ document.addEventListener('visibilitychange', () => page.dispatch({ type: 'visib
 /**
  * The main pane is marked `focus-in` while focus is in it, a frame of its own included: focus inside a frame leaves
  * the frame as the page's active element, which `:focus-within` doesn't take as focus within the pane in every engine.
- * Focus settles after `focusout` and the window's `blur`, so it is read once they are done.
+ * A press on what takes no focus (a brief's text) leaves focus on the body, so there the last press says where the
+ * viewer is. Focus settles after `focusout` and the window's `blur`, so it is read once they are done.
  */
-const markMainFocus = () => setTimeout(() => $('main').classList.toggle('focus-in', $('main').contains(document.activeElement)))
+let pressedInMain = false
+const markMainFocus = () => setTimeout(() => {
+  const at = document.activeElement
+  $('main').classList.toggle('focus-in', at === document.body ? pressedInMain : $('main').contains(at))
+})
+document.addEventListener('pointerdown', (e) => (pressedInMain = $('main').contains(/** @type {Node} */ (e.target)), markMainFocus()), true)
 for (const type of ['focusin', 'focusout']) document.addEventListener(type, markMainFocus)
 for (const type of ['focus', 'blur']) addEventListener(type, markMainFocus)
 
