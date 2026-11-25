@@ -1573,6 +1573,12 @@ const LEAVE = {
 addEventListener('focus', () => (page.dispatch({ type: 'focus', focused: true }), placedRegions.forEach(readNext)))
 // The window blurs as focus moves into one of the page's own frames, where the document still has it once focus settles.
 addEventListener('blur', () => setTimeout(() => page.dispatch({ type: 'focus', focused: document.hasFocus() })))
+// A press inside a frame never reaches the page, so the browser's light dismiss misses it: focus landing in a frame
+// closes every open popover that light dismiss would have, those holding the frame kept.
+addEventListener('blur', () => setTimeout(() => {
+  if (document.activeElement?.tagName !== 'IFRAME') return
+  for (let open; (open = document.querySelector(':popover-open:not([popover=manual], :has(:focus))'));) /** @type {HTMLElement} */ (open).hidePopover()
+}))
 document.addEventListener('visibilitychange', () => page.dispatch({ type: 'visible', visible: document.visibilityState === 'visible' }))
 
 /** The viewer's record and their layout as `tower.store` keeps them now: another renderer or window of theirs may have changed them. */
