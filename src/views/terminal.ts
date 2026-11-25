@@ -11,7 +11,7 @@ import { type Mount, viewLayer } from '/lib/view.js'
 const ID = 'tower/terminal'
 
 const CSS = `:where([data-view="${ID}"]) {
-  position: absolute; inset: 0; padding: var(--sp-l);
+  position: absolute; inset: 0; padding: var(--sp-l); background: var(--enamel);
   & .term { width: 100%; height: 100%; }
   & .mode { position: absolute; top: 8px; right: 12px; z-index: 1; padding: var(--sp-2xs) var(--sp-m); border-radius: var(--radius-pill); background: var(--panel); color: var(--muted); font-size: var(--fs-s);
     box-shadow: var(--shadow); pointer-events: none; }
