@@ -357,6 +357,17 @@ export const themesOf = (config: Config, offered: Record<string, OfferedTheme[]>
     }),
   )
 
+/**
+ * A renderer's themes with `theme` in place of the one its config picks: that offered theme's stylesheet, none for
+ * `null` (the renderer's own look), then the config's `renderers.<name>.themes` as ever. What a viewer's choice of theme
+ * loads, and a preview of one. `undefined` when no accepted extension offers `theme` to the renderer.
+ */
+export const themesPicking = (config: Config, offered: Record<string, OfferedTheme[]>, renderer: string, theme: string | null): string[] | undefined => {
+  const base = theme === null ? [] : (offered[renderer] ?? []).filter((t) => t.id === theme).map((t) => t.file)
+  if (theme !== null && !base.length) return undefined
+  return [...base, ...tweaks(renderer, config.renderers?.[renderer]?.themes)]
+}
+
 /** The stylesheet of the offered theme `theme` names, none when it names none or one nothing offers. */
 const activeTheme = (renderer: string, theme: unknown, offered: OfferedTheme[]): string[] => {
   if (theme === undefined) return []
@@ -375,6 +386,16 @@ const tweaks = (renderer: string, themes: unknown): string[] => {
 /** Where theme `n` of `renderer` is served: its own name below a path of its own. */
 export const themeUrl = (renderer: string, n: number, file: string): string =>
   `/renderers/${encodeURIComponent(renderer)}/themes/${n}/${encodeURIComponent(path.basename(file))}`
+
+/**
+ * The URLs of a renderer's themes picking `theme` (`themesPicking`), in order: each carries the pick in its query, so
+ * the route serving it resolves the same list.
+ */
+export const pickedThemeUrls = (renderer: string, files: string[], theme: string | null): string[] =>
+  files.map((file, n) => `${themeUrl(renderer, n, file)}?${themeQuery(theme)}`)
+
+/** The query naming a pick of theme: `theme=<id>`, empty for the renderer's own look. */
+export const themeQuery = (theme: string | null): string => new URLSearchParams({ theme: theme ?? '' }).toString()
 
 /** The URLs of each renderer's themes, in order: what the board carries, so a page follows a change of them live. */
 export const themeUrls = (themes: Themes): Themes =>

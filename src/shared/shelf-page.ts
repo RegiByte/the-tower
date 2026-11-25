@@ -294,4 +294,34 @@ export type Tower = {
   onScheme(fn: (scheme: Scheme) => void): () => void
   /** Called once a change of this renderer's themes has loaded, to read again what the page computes from the tokens. @since 2.30 */
   onThemes(fn: () => void): () => void
+  /** This renderer's theme: the screen's choice over the tower's, set live. @since 2.37 */
+  theme: ThemeApi
+}
+
+/**
+ * A theme as a choice names it: the id of one an extension offers the renderer (`board.offeredThemes`), or `null` for
+ * the renderer's own look.
+ */
+export type ThemePick = string | null
+
+/** `tower.theme`: which base theme this renderer draws, the viewer's choice on this screen over the config's. @since 2.37 */
+export type ThemeApi = {
+  /**
+   * `screen`, this screen's choice, `undefined` while it follows the tower's; `tower`, the config's
+   * `renderers.<name>.theme` as the board shows it picked; `drawn`, the one the page draws: the screen's while an
+   * extension offers it, else the tower's.
+   */
+  get(): { screen: ThemePick | undefined; tower: ThemePick; drawn: ThemePick }
+  /** Draw `theme` on this screen, live, whatever the tower's: kept per renderer in `tower.store`. The config's tweak sheets stay on top. */
+  use(theme: ThemePick): void
+  /** Drop this screen's choice: draw the tower's again. */
+  follow(): void
+  /**
+   * Make `theme` the tower's, the config's `renderers.<name>.theme` (`null` removes it), through `config/add`,
+   * `config/set` or `config/remove` with the value as read: rejects with `changed` (or `exists`) when the config moved
+   * in between, so read the board again.
+   */
+  pick(theme: ThemePick): Promise<void>
+  /** The stylesheet this renderer's pages load for `theme` with the config's tweak sheets over it: what a frame links. */
+  sheet(theme: ThemePick): string
 }

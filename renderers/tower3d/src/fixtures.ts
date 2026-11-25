@@ -149,6 +149,7 @@ export function fixtureTower({ fixture, clients }: { fixture: Fixture; clients: 
     scheme: live.scheme,
     onScheme: live.onScheme,
     onThemes: live.onThemes,
+    theme: live.theme,
     renderer: live.renderer,
     prefs: live.prefs,
     stats: live.stats,

@@ -153,7 +153,7 @@
               "$ref": "#/definitions/BoardTheme"
             }
           },
-          "description": "The themes the accepted extensions offer each renderer, by name: `id` (`<provides>/<name>`) is what the config's `renderers.<name>.theme` takes, `title` what a picker calls it, `extension` the id of the extension offering it."
+          "description": "The themes the accepted extensions offer each renderer, by name: `id` (`<provides>/<name>`) is what the config's `renderers.<name>.theme` takes, `title` what a picker calls it, `extension` the id of the extension offering it, `picked` set on the one the config names, none when it names none: the tower's theme."
         },
         "adds": {
           "type": "object",
@@ -3536,6 +3536,10 @@
         },
         "extension": {
           "type": "string"
+        },
+        "picked": {
+          "type": "boolean",
+          "const": true
         }
       },
       "required": [
@@ -3544,7 +3548,7 @@
         "extension"
       ],
       "additionalProperties": false,
-      "description": "A theme an extension offers a renderer, as the board shows it."
+      "description": "A theme an extension offers a renderer, as the board shows it: `picked` on the one the config's `renderers.<name>.theme` names (@since 2.37)."
     },
     "Adds": {
       "type": "object",
