@@ -440,7 +440,7 @@ dialog.palette[open] { display: flex; flex-direction: column; max-height: min(56
 #s-mode:empty, #s-mode.owner { display: none; }
 .view-failed { margin: auto; padding: var(--sp-m); color: var(--broken-text); font-size: var(--fs-s); }
 
-.dock { position: relative; flex: none; margin: 0 calc(-1 * var(--sp-xl)); background: var(--panel); border-top: 1px solid var(--line); }
+.dock { position: relative; flex: none; margin: 0 calc(-1 * var(--sp-xl)); background: var(--dock-surface); border-top: 1px solid var(--line); border-radius: 0 0 var(--main-radius) var(--main-radius); }
 .shell-pane { display: none; position: relative; height: var(--shell-h, 38vh); padding: var(--sp-m) var(--sp-l); margin: 0 var(--sp-xl) var(--sp-xl); background: var(--enamel); border-radius: var(--radius-card);
   box-shadow: inset 0 3px 0 var(--p, var(--deco)); }
 .main.shell-open .shell-pane { display: block; }
