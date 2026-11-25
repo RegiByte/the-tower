@@ -721,9 +721,9 @@ renderer at once, each defaulting to an existing token or a fixed value, alike i
 | `--card-glow`, `--card-glow-mix` | a worker card's glow at rest: its blur, and how much of the card's status colour it is, a percent (a glow is a blur and a percent, not a colour, for the reason the status ring is) (since 2.38) | `0px`, `0%` |
 | `--card-glow-hover`, `--card-glow-hover-mix`, `--card-glow-active`, `--card-glow-active-mix` | the same under the pointer, and on the selected worker's card: emphasis on what is active (since 2.38) | the resting glow |
 | `--main-glow`, `--main-glow-mix`, `--main-glow-active`, `--main-glow-active-mix` | the main pane's glow, in the accent, at rest and while focus is in it (since 2.38) | `0px`, `0%`, then the resting glow |
-| `--tree-line`, `--tree-radius` | a `.tree`'s lines (a crew hung from its head): their colour, and the rounding of each elbow | `color-mix(in oklab, var(--line-strong) 75%, transparent)`, `7px` |
+| `--tree-line`, `--tree-radius` | a `.tree`'s lines (a crew hung from its head): their colour, and the rounding of each elbow (since 2.40) | `color-mix(in oklab, var(--line-strong) 75%, transparent)`, `7px` |
 
-`.tree` draws a list hung from the row above it, as the page draws a crew under its head: a trunk, and a rounded elbow
+`.tree` (since 2.40) draws a list hung from the row above it, as the page draws a crew under its head: a trunk, and a rounded elbow
 into each item. It takes its geometry from the renderer, which sets it on the list: `--tree-indent` (the trunk's place,
 in from the list's edge), `--tree-x` (from the trunk to the items) and `--tree-gap` (between items); and on each item
 `--tree-y` (where its elbow turns in, from its top), with `--tree-edge` and `--tree-rim` for an item with borders (its
