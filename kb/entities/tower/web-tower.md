@@ -11,7 +11,9 @@
 Built to learn from and throw away ([[renderer-is-disposable]]): it draws the board the [[tower-server]] serves and
 drives the system through `/tower.js`; no capability lives in it. It is `index.html` and the modules beside it, served as
 written and checked by `npm run typecheck` through JSDoc ([`tsconfig.page.json`](ref:hub/tsconfig.page.json)); CI
-boots it in headless Chrome over a tower alone ([`page-boot.ts`](ref:hub/scripts/page-boot.ts)).
+boots it in headless Chrome over a tower alone ([`page-boot.ts`](ref:hub/scripts/page-boot.ts)). It targets current WebKit
+(Safari 26 and later, which Tower.app's web view is) and Chrome, so its CSS may use what both have shipped, such as anchor
+positioning, with no fallback for older engines.
 
 `page.js` composes them: its machine ([`pageHandlers`](ref:hub/renderers/page/page.js#pageHandlers)) with the
 executors, the draw, and the clicks, keys and board wired to them. Each pane is a module exporting a factory that
