@@ -1,7 +1,7 @@
 /**
  * The pins extension: a worker pinned as a conversation worth coming back to, with a note on why. Pins live in the
  * extension's system stream, so the board fold lists every pin, the workers sent home included; a worker's card offers
- * Pin or Unpin and says it is pinned.
+ * Pin to sidebar or Unpin from sidebar and says it is pinned.
  */
 import type { Board, Card } from '/lib/board.js'
 import { apiError, type ApiError, isApiError, type CallCtx, type FoldCtx, type Part, type Start } from '/lib/extension.js'

@@ -17,11 +17,11 @@ is pinned.
 | ![The Pinned section with three workers](shots/section-light.png) | ![The Pinned section with three workers](shots/section-dark.png) |
 
 **A worker's card** says `pinned`, its note on hover, on its row in the sidebar and in its header. The header and the
-worker's ⋯ menu offer Pin, or Unpin once it is pinned.
+worker's ⋯ menu offer Pin to sidebar, or Unpin from sidebar once it is pinned, and so does the palette.
 
 | Light | Dark |
 | --- | --- |
-| ![A pinned worker's header, with Unpin](shots/head-light.png) | ![A pinned worker's header, with Unpin](shots/head-dark.png) |
+| ![A pinned worker's header, with Unpin from sidebar](shots/head-light.png) | ![A pinned worker's header, with Unpin from sidebar](shots/head-dark.png) |
 
 ### The CLI
 
@@ -53,8 +53,8 @@ the user pins one.
 A pin lives in the extension's system stream `pins`, one fact per pin (`p`: the session, the floor it ran on, the
 note) and per unpin (`u`), written only by its verbs. The stream's `reduce` keeps the pins standing. A board fold puts
 them at `board.x.pins.pins`, callsigns resolved for archived workers too, which the section view `pins/section`
-draws. A card fold adds the badge and the Pin or Unpin action. Since nothing lives in the worker's own log, a pin
-outlives the worker's card on the board.
+draws. A card fold adds the badge and the Pin to sidebar or Unpin from sidebar action. Since nothing lives in the
+worker's own log, a pin outlives the worker's card on the board.
 
 ## Make it yours
 
