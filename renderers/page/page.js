@@ -1576,6 +1576,15 @@ addEventListener('focus', () => (page.dispatch({ type: 'focus', focused: true })
 addEventListener('blur', () => setTimeout(() => page.dispatch({ type: 'focus', focused: document.hasFocus() })))
 document.addEventListener('visibilitychange', () => page.dispatch({ type: 'visible', visible: document.visibilityState === 'visible' }))
 
+/**
+ * The main pane is marked `focus-in` while focus is in it, a frame of its own included: focus inside a frame leaves
+ * the frame as the page's active element, which `:focus-within` doesn't take as focus within the pane in every engine.
+ * Focus settles after `focusout` and the window's `blur`, so it is read once they are done.
+ */
+const markMainFocus = () => setTimeout(() => $('main').classList.toggle('focus-in', $('main').contains(document.activeElement)))
+for (const type of ['focusin', 'focusout']) document.addEventListener(type, markMainFocus)
+for (const type of ['focus', 'blur']) addEventListener(type, markMainFocus)
+
 /** The viewer's record and their layout as `tower.store` keeps them now: another renderer or window of theirs may have changed them. */
 async function rereadViewer() {
   const [kept, laidOut] = await Promise.all([readViewer(tower.store.get), tower.store.get(LAYOUT_KEY)])
