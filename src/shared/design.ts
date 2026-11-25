@@ -216,6 +216,12 @@ export const roles = { primary: 'ink', onPrimary: 'panel', hover: 'panel2' } as 
  * `--p-plate-edge-mix` edges it and `--p-plate-text-mix` colours its name (the rest `heading`), from `projectMix`. An
  * inset bar `signBar` wide marks its leading edge, and its number sits on a badge `signBadge` high.
  *
+ * Emphasis is a glow on what is active: a worker card glows `cardGlow` wide in `cardGlowMix` of its status colour,
+ * `cardGlowHover` and its mix under the pointer, `cardGlowActive` and its mix when it is the selected worker; the main
+ * pane glows `mainGlow` wide in `mainGlowMix` of the accent, `mainGlowActive` and its mix while focus is in it. A glow
+ * is a blur and a percent, not a colour, for the reason the status ring is. Unset states take the resting glow, and
+ * the resting glows are none.
+ *
  * Elevation is how a renderer's frame stands on the wall: `sideSurface` fills the sidebar, `sideRule` divides it from
  * the main pane, and the main pane is `mainSurface`, set in by `mainInset` on every side, rounded `mainRadius`, raised
  * `mainShadow`. By default the sidebar is a panel ruled off a bare main pane; a transparent sidebar and a panel main
@@ -255,6 +261,16 @@ export const character = {
   bodyLeading: '1.45',
   signBar: '5px',
   signBadge: '22px',
+  cardGlow: '0px',
+  cardGlowMix: '0%',
+  cardGlowHover: 'var(--card-glow)',
+  cardGlowHoverMix: 'var(--card-glow-mix)',
+  cardGlowActive: 'var(--card-glow)',
+  cardGlowActiveMix: 'var(--card-glow-mix)',
+  mainGlow: '0px',
+  mainGlowMix: '0%',
+  mainGlowActive: 'var(--main-glow)',
+  mainGlowActiveMix: 'var(--main-glow-mix)',
 }
 
 /** Icon sizes, as `--icon-<step>`, in rem so they follow the text: `s` beside words, `m` alone in a control. */
