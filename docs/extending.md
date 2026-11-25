@@ -685,11 +685,20 @@ renderer at once, each defaulting to an existing token or a fixed value, alike i
 | `--hover` | the fill under the pointer: rows, menu and palette items | `var(--panel-2)` |
 | `--radius-card` | corners of cards, panels, popovers, dialogs, toasts and the terminal | `var(--radius)` |
 | `--radius-control` | corners of buttons, fields, tabs, segments and rows | `var(--radius)` |
-| `--shadow-card` | a worker's card at rest (`--shadow` raises it under the pointer, and raises the heads of views) | `none` |
-| `--display-weight` | the display face's weight, as a number (100 to 900, not a keyword): headings, signs, callsigns, labels; the brand, the greeting and a sign's number draw 100 heavier | `800` |
+| `--radius-primary` | corners of the one emphasized action, `button.primary` (since 2.37) | `var(--radius-control)` |
+| `--button-pad` | a button's padding where its place sets none of its own (since 2.37) | `var(--sp-xs) var(--sp-l)` |
+| `--card-surface`, `--card-hover` | a worker's card, at rest and under the pointer: a card apart from the sidebar it sits on (since 2.37) | `var(--panel)`, `var(--card-surface)` |
+| `--shadow-card` | a worker's card at rest | `none` |
+| `--shadow-lift`, `--shadow-head` | a worker's card under the pointer, and the heads of views (a worker's head, a shelf's, the greeting), apart (since 2.37) | `var(--shadow)` both |
+| `--heading` | the colour of headings, signs, the brand and the greeting (since 2.37) | `var(--ink)` |
+| `--display-weight` | the display face's weight, as a number (100 to 900, not a keyword): headings and signs; a sign's number draws 100 heavier | `800` |
+| `--name-weight`, `--label-weight`, `--brand-weight` | names, labels (chips and pills too) and the brand and the greeting, each a number (since 2.37) | `var(--display-weight)`, `var(--display-weight)`, `calc(var(--display-weight) + 100)` |
 | `--heading-case`, `--heading-tracking` | headings and signs | `uppercase`, `.06em` |
 | `--name-tracking` | names: callsigns wherever they are drawn | `.04em` |
 | `--label-case`, `--label-tracking` | labels: `.eyebrow`, menu group labels, the heads of lists | `uppercase`, `.08em` |
+| `--body-tracking`, `--body-leading` | the page's body text: its letter-spacing and its line height (since 2.37) | `normal`, `1.45` |
+| `--p-plate-mix`, `--p-plate-edge-mix`, `--p-plate-text-mix` | a floor sign: how much of its project's colour fills its plate and edges it (the rest panel), and colours its name (the rest `--heading`), each a percent; `0%` all three draws a quiet sign in the panel's colours | `16%`, `45%`, `45%` |
+| `--sign-bar`, `--sign-badge` | a floor sign's inset bar in its project's colour, its width (`0px` for none), and the height of the badge its number sits on (since 2.37) | `5px`, `22px` |
 | `--side-surface`, `--side-rule` | the sidebar's fill, and the rule between it and the main pane (since 2.34) | `var(--panel)`, `var(--line)` |
 | `--main-surface`, `--main-inset`, `--main-radius`, `--main-shadow` | the main pane's fill, its margin on every side, its corners and its elevation: a transparent sidebar and a panel main pane set in, rounded and raised float it over one ground (since 2.34) | `transparent`, `0px`, `0px`, `none` |
 | `--status-edge`, `--status-ring-mix` | a worker card's status: the stroke's width on its leading side, and how much of the status colour its other sides mix into the line, a percent; `100%` with a thin edge is a full status border (since 2.34) | `4px`, `0%` |
