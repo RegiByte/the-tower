@@ -209,7 +209,7 @@ export const roles = { primary: 'ink', onPrimary: 'panel', hover: 'panel2' } as 
  * the heads of views (a worker's head, a shelf's, the greeting). Type comes in three roles, all in the display face:
  * headings and signs, in `heading`'s colour at `displayWeight`, in `headingCase`, tracked `headingTracking`; names
  * (callsigns) at `nameWeight`, tracked `nameTracking`; and labels (eyebrows, group heads, chips and pills, these in the
- * body face) at `labelWeight`, small, in `labelCase`, tracked `labelTracking`. The brand and the greeting draw at
+ * body face, which draws `labelWeight` as the nearest weight it has) at `labelWeight`, small, in `labelCase`, tracked `labelTracking`. The brand and the greeting draw at
  * `brandWeight`. Body text is tracked `bodyTracking` with lines `bodyLeading` high.
  *
  * A floor sign is a plate of its project's colour on panel: `--p-plate-mix` of it fills the plate,
