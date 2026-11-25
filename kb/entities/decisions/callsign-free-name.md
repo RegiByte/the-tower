@@ -65,8 +65,9 @@ deriving it again from a list that can change can say it wrongly.
   depend on every earlier session, so a deleted log could rename later ones. Choosing the id keeps the name a function
   of the id alone.
 - *Only adding names to the list*: fewer repeats, never none.
-- *The `--name` in the header's argv alone*: it records the name only for a runtime that takes one; opencode's TUI
-  has no name to show, so its workers would lose a typed callsign. Logs from before the fact are still read this way.
+- *The `--name` in the header's argv alone*: it records the name only for a runtime that takes one; opencode takes
+  none (its TUI reads the callsign from `TOWER_CALLSIGN`, [[opencode]]), so its workers would lose a typed callsign.
+  Logs from before the fact are still read this way.
 - *Names lists versioned by the start time in the id*: a dated generation concept in the config and code for what the
   log already holds.
 
