@@ -224,7 +224,8 @@ export const roles = { primary: 'ink', onPrimary: 'panel', hover: 'panel2' } as 
  *
  * Elevation is how a renderer's frame stands on the wall: `sideSurface` fills the sidebar, `sideRule` divides it from
  * the main pane, and the main pane is `mainSurface`, set in by `mainInset` on every side, rounded `mainRadius`, raised
- * `mainShadow`. By default the sidebar is a panel ruled off a bare main pane; a transparent sidebar and a panel main
+ * `mainShadow`; its foot (the shells' strip and their pane) is `dockSurface`, rounded as the pane is. By default the
+ * sidebar is a panel ruled off a bare main pane; a transparent sidebar and a panel main
  * pane, inset, rounded and raised, float the main pane over one ground. A worker card's status is a stroke
  * `statusEdge` wide on its leading side, its other sides the line with `statusRingMix` of the status colour mixed in:
  * `100%` with a thin edge draws a full status border.
@@ -245,6 +246,7 @@ export const character = {
   mainInset: '0px',
   mainRadius: '0px',
   mainShadow: 'none',
+  dockSurface: 'var(--panel)',
   statusEdge: '4px',
   statusRingMix: '0%',
   radiusPrimary: 'var(--radius-control)',
