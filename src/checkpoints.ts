@@ -14,8 +14,12 @@ import { afterBreak, factEvents, logSize, readEvents, readHeader } from './tail.
 
 export type Checkpoint = { fold: string; header: SessionHeader; offset: number; facts: Facts }
 
-/** An import or export statement's relative module, at the start of a line, its braces spanning lines; or a dynamic import's. */
-const RELATIVE_IMPORT = /^\s*(?:import|export)\b(?:[^;'"]*?\bfrom)?\s*['"](\.\.?\/[^'"]+)['"]|\bimport\(\s*['"](\.\.?\/[^'"]+)['"]\s*\)/gm
+/**
+ * An import or export statement's relative module, at the start of a line, its braces spanning lines; or a dynamic
+ * import's. A type-only statement (`import type`, `export type … from`) is erased before the code runs, so it can't
+ * change a fold.
+ */
+const RELATIVE_IMPORT = /^\s*(?:import|export)\b(?!\s+type\s+(?!from\b))(?:[^;'"]*?\bfrom)?\s*['"](\.\.?\/[^'"]+)['"]|\bimport\(\s*['"](\.\.?\/[^'"]+)['"]\s*\)/gm
 
 /** The paths of `file` and of every module it imports by a relative path, transitively, each with its source. */
 export const sourcesOf = (file: string): Map<string, string> => {

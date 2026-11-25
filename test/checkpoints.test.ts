@@ -105,7 +105,7 @@ test('an unreadable checkpoint is a miss, said once', () => {
   }
 })
 
-test('the fold hash covers every module the fold imports, statically or dynamically, and changes with any of them', () => {
+test('the fold hash covers every module the fold imports to run, statically or dynamically, and changes with any of them', () => {
   const covered = [...sourcesOf(path.join(import.meta.dirname, '../src/checkpoints.ts')).keys()].map((f) => path.relative(path.join(import.meta.dirname, '..'), f))
   for (const module of ['src/tail.ts', 'src/bridge/facts.ts', 'src/bridge/status.ts', 'src/bridge/conversation.ts', 'src/bridge/blocked.ts']) assert.ok(covered.includes(module), module)
 
@@ -115,15 +115,22 @@ test('the fold hash covers every module the fold imports, statically or dynamica
     path.join(dir, 'main.ts'),
     "/** Like `import { gone } from './gone.ts'`. */\nimport {\n  step,\n} from './lib/step.ts'\nexport const path = './unrelated.ts'\nconst later = () => import('./later.ts')\n",
   )
-  writeFileSync(path.join(dir, 'lib', 'step.ts'), "export type { Kind } from '../kind.ts'\nexport const step = 1\n")
+  writeFileSync(
+    path.join(dir, 'lib', 'step.ts'),
+    "export type { Kind } from '../kind.ts'\nimport type { Shape } from '../shape.ts'\nimport { type Mixed, mixed } from '../mixed.ts'\nexport const step = mixed\n",
+  )
   writeFileSync(path.join(dir, 'kind.ts'), 'export type Kind = string\n')
+  writeFileSync(path.join(dir, 'shape.ts'), 'export type Shape = string\n')
+  writeFileSync(path.join(dir, 'mixed.ts'), 'export type Mixed = string\nexport const mixed = 1\n')
   writeFileSync(path.join(dir, 'later.ts'), 'export const later = 1\n')
   writeFileSync(path.join(dir, 'unrelated.ts'), 'export const other = 1\n')
-  assert.deepEqual([...sourcesOf(path.join(dir, 'main.ts')).keys()].map((f) => path.relative(dir, f)).sort(), ['kind.ts', 'later.ts', 'lib/step.ts', 'main.ts'])
+  assert.deepEqual([...sourcesOf(path.join(dir, 'main.ts')).keys()].map((f) => path.relative(dir, f)).sort(), ['later.ts', 'lib/step.ts', 'main.ts', 'mixed.ts'])
   const before = sourceHash(path.join(dir, 'main.ts'))
   writeFileSync(path.join(dir, 'unrelated.ts'), 'export const other = 2\n')
-  assert.equal(sourceHash(path.join(dir, 'main.ts')), before)
   writeFileSync(path.join(dir, 'kind.ts'), 'export type Kind = number\n')
+  writeFileSync(path.join(dir, 'shape.ts'), 'export type Shape = number\n')
+  assert.equal(sourceHash(path.join(dir, 'main.ts')), before)
+  writeFileSync(path.join(dir, 'mixed.ts'), 'export type Mixed = string\nexport const mixed = 2\n')
   assert.notEqual(sourceHash(path.join(dir, 'main.ts')), before)
   rmSync(dir, { recursive: true })
 })
