@@ -94,7 +94,7 @@ coordinator handing out work, or a conversation that just says hi. The model is 
 - *The one way to end a worker.* Hires left running have no hirer to report to, so the chain is the unit: the
   renderers show Send home and no Kill. Ending a lead and leaving its hires running is the API's `kill` (`tower kill`).
 - *Drawn.* The tower page hangs each crew in the sidebar from its head as a tree (design.css's `.tree`, which the archive
-  view draws its crews with too): a trunk from under the head's lamp, a rounded elbow into each member at its name,
+  view draws its crews with too): a trunk from under the head's lamp (a nested crew's from just inside its head's edge, so a level costs little width), a rounded elbow into each member at its name,
   dashed for one gone home, the trunk stopping at the last; members gone home fold into one line under
   their hirer that unfolds them, the unfolded hirers kept per viewer in `tower.store`. On a floor of two crews or more,
   each head's row shows a grip in its lamp's place while the pointer is on it (always where nothing hovers): dragged, it moves the whole crew, a line showing where it lands and
