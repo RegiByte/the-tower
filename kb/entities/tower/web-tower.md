@@ -26,8 +26,8 @@ their extensions'.
 
 **The sidebar.** Between the limits and the Floors row, `board.sections` draws every `list` view on the board as a
 section that folds to its heading and tally, Waiting first ([[sidebar-regions]]). The row under them is
-`board.nav`: Floors, the way home to the skyline, then an entry per view on the board the main pane draws, Stats first,
-each opening it there and marked while it is open ([`paintNav`](ref:hub/renderers/page/page.js#paintNav), [[sidebar-nav]]). Each project directory links the web page of its origin remote (`GET /origins`). Each floor lists
+`board.nav`: Floors, the way home to the skyline, then an entry per view that asks for the row, Stats and the Learning
+center by default, four in place after any pins and the rest behind More…, each opening it there and marked while it is open ([`paintNav`](ref:hub/renderers/page/page.js#paintNav), [[sidebar-nav]]). Each project directory links the web page of its origin remote (`GET /origins`). Each floor lists
 its workers by crew ([[crews]]), each row with its lamp, callsign, status word
 ([`statusWord`](ref:hub/src/shared/status-words.ts#statusWord)), time in state, and what extensions add, drawn in the
 form the layout picks for `card.row` ([[region-overflow]], [`drawCount`](ref:hub/renderers/page/added.js#drawCount));
