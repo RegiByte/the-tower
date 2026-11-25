@@ -222,7 +222,7 @@ body:has(.crew-group.dragged) .tower-tip { visibility: hidden; }
 /* A crew hangs from its head's lamp, 9px wide at the card's padding; each elbow turns in at a row's middle: a card's
    name row, a control's height. A crew within a crew hangs just inside its head's edge, so each level costs the
    sidebar little width; an elbow is no narrower than its rounding. */
-.crew { --tree-gap: var(--sp-s); --tree-x: var(--sp-m); --tree-indent: calc(var(--status-edge) + var(--sp-l) + 4px); }
+.crew { --tree-gap: var(--sp-s); --tree-x: var(--sp-m); --tree-indent: round(var(--status-edge) + var(--sp-l) + 4px, 1px); }
 .crew .crew { --tree-indent: var(--sp-s); }
 .crew > .sess { --tree-edge: var(--status-edge); --tree-rim: 1px; --tree-y: calc(1px + var(--sp-m) + var(--control) / 2); }
 .crew > .sess.gone { --tree-style: dashed; --tree-branch: repeating-linear-gradient(to right, var(--tree-line) 0 3px, transparent 3px 5px); }
