@@ -173,7 +173,7 @@
   :where(tower-menu, tower-combobox) :is([data-slot="menu-group-label"], [data-slot="combobox-group-label"]) {
     padding: var(--ui-spacing) calc(var(--ui-spacing) * 1.5) calc(var(--ui-spacing) / 2);
     color: var(--ui-muted-foreground);
-    font: var(--display-weight) 0.85em / 1.4 var(--display);
+    font: var(--label-weight) 0.85em / 1.4 var(--display);
     letter-spacing: var(--label-tracking);
     text-transform: var(--label-case);
   }
@@ -326,6 +326,7 @@
     margin: 0;
     padding: var(--sp-l) calc(var(--control) + 2 * var(--sp-l)) var(--sp-l) var(--sp-xl);
     border-bottom: 1px solid var(--ui-border);
+    color: var(--heading);
     font: var(--display-weight) var(--fs-l) / 1.2 var(--display);
     text-transform: var(--heading-case);
     letter-spacing: var(--heading-tracking);

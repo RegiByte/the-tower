@@ -40,9 +40,9 @@ ${css}
 export const viewCss = (id: string, rules: string) => viewLayer(`:where([data-view="${id}"]) {
   gap: var(--sp-m);
   & .shelf-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-s) var(--sp-l); padding: var(--sp-m) var(--sp-xl); background: var(--panel); border: 1px solid var(--line);
-    border-radius: var(--radius-card); box-shadow: var(--shadow); white-space: nowrap; }
+    border-radius: var(--radius-card); box-shadow: var(--shadow-head); white-space: nowrap; }
   & .shelf-head .label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; font: var(--display-weight) var(--fs-xl)/1 var(--display); text-transform: var(--heading-case); letter-spacing: var(--heading-tracking);
-    color: color-mix(in oklab, var(--p, var(--ink)) var(--p-text-mix), var(--ink)); }
+    color: color-mix(in oklab, var(--p, var(--heading)) var(--p-text-mix), var(--heading)); }
   & .shelf-head .dim { color: var(--faint); font-size: var(--fs-s); overflow: hidden; text-overflow: ellipsis; }
   & .shelf-head .tag { flex: none; padding: var(--sp-2xs) var(--sp-m); border: none; border-radius: var(--radius-control); background: var(--panel-2); color: var(--ink); font: var(--fs-s)/1.3 var(--mono); cursor: copy; }
   & .shelf-head .actions { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: var(--sp-s) var(--sp-l); font-size: var(--fs-m); }

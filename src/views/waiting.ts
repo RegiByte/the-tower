@@ -24,7 +24,7 @@ const STYLE = viewCss(
   & .wait[aria-current] { box-shadow: inset 2px 0 0 var(--accent); }
   & .go { flex: 1; min-width: 0; display: grid; gap: var(--sp-2xs); padding: var(--sp-xs) var(--sp-s); border: 0; background: none; color: var(--ink); text-align: left; cursor: pointer; }
   & .line { display: flex; align-items: center; gap: var(--sp-s); min-width: 0; font-size: var(--fs-s); white-space: nowrap; }
-  & .call { font: var(--display-weight) var(--fs-s)/1 var(--display); letter-spacing: var(--name-tracking); overflow: hidden; text-overflow: ellipsis; }
+  & .call { font: var(--name-weight) var(--fs-s)/1 var(--display); letter-spacing: var(--name-tracking); overflow: hidden; text-overflow: ellipsis; }
   & .floor { flex: none; color: color-mix(in oklab, var(--p, var(--ink)) var(--p-text-mix), var(--ink)); font-size: var(--fs-xs); }
   & .why { color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
   & .age { margin-left: auto; flex: none; color: var(--faint); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }

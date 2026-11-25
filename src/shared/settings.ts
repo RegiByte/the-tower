@@ -315,7 +315,7 @@ export const settingsCss = `
 .settings-pop { position: fixed; inset: auto; margin: 0; padding: 0; white-space: normal; text-align: left; width: min(18.75rem, calc(100vw - 16px)); height: auto; max-height: calc(100vh - 16px); overflow: auto;
   border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--panel); color: var(--ink); box-shadow: var(--shadow-pop); }
 .settings { font: var(--fs-m)/1.45 var(--ui); }
-.settings h2 { margin: 0; padding: var(--sp-l) var(--sp-xl) var(--sp-m); font: var(--display-weight) var(--fs-m)/1 var(--display); letter-spacing: var(--label-tracking); text-transform: var(--label-case); }
+.settings h2 { margin: 0; padding: var(--sp-l) var(--sp-xl) var(--sp-m); font: var(--label-weight) var(--fs-m)/1 var(--display); letter-spacing: var(--label-tracking); text-transform: var(--label-case); }
 .settings section { display: grid; gap: var(--sp-m); padding: var(--sp-l) var(--sp-xl); border-top: 1px solid var(--line); }
 .settings h3 { display: flex; align-items: baseline; gap: var(--sp-m); margin: 0; }
 .settings h3 small { font: 400 var(--fs-xs)/1 var(--ui); letter-spacing: 0; text-transform: none; color: var(--faint); }

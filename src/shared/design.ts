@@ -203,11 +203,18 @@ export const roles = { primary: 'ink', onPrimary: 'panel', hover: 'panel2' } as 
 
 /**
  * Character: the shape and type every renderer draws its parts in, for a theme to set. `radiusCard` rounds cards,
- * panels, popovers and dialogs, `radiusControl` buttons, fields, tabs and rows; `shadowCard` is a card's resting
- * elevation (`--shadow` raises one under the pointer). Type comes in three roles, all in the display face at
- * `displayWeight`: headings and signs, in `headingCase`, tracked `headingTracking`; names (callsigns), tracked
- * `nameTracking`; and labels (eyebrows, group heads), small, in `labelCase`, tracked `labelTracking`. The display
- * face's two largest sizes (the brand, the greeting) draw a hundred heavier.
+ * panels, popovers and dialogs, `radiusControl` buttons, fields, tabs and rows, `radiusPrimary` the one emphasized
+ * action; `buttonPad` pads a button its place doesn't pad otherwise. A worker card is `cardSurface`, `cardHover` under
+ * the pointer; `shadowCard` is a card's resting elevation, `shadowLift` raises one under the pointer and `shadowHead`
+ * the heads of views (a worker's head, a shelf's, the greeting). Type comes in three roles, all in the display face:
+ * headings and signs, in `heading`'s colour at `displayWeight`, in `headingCase`, tracked `headingTracking`; names
+ * (callsigns) at `nameWeight`, tracked `nameTracking`; and labels (eyebrows, group heads, chips and pills, these in the
+ * body face) at `labelWeight`, small, in `labelCase`, tracked `labelTracking`. The brand and the greeting draw at
+ * `brandWeight`. Body text is tracked `bodyTracking` with lines `bodyLeading` high.
+ *
+ * A floor sign is a plate of its project's colour on panel: `--p-plate-mix` of it fills the plate,
+ * `--p-plate-edge-mix` edges it and `--p-plate-text-mix` colours its name (the rest `heading`), from `projectMix`. An
+ * inset bar `signBar` wide marks its leading edge, and its number sits on a badge `signBadge` high.
  *
  * Elevation is how a renderer's frame stands on the wall: `sideSurface` fills the sidebar, `sideRule` divides it from
  * the main pane, and the main pane is `mainSurface`, set in by `mainInset` on every side, rounded `mainRadius`, raised
@@ -234,6 +241,20 @@ export const character = {
   mainShadow: 'none',
   statusEdge: '4px',
   statusRingMix: '0%',
+  radiusPrimary: 'var(--radius-control)',
+  buttonPad: 'var(--sp-xs) var(--sp-l)',
+  cardSurface: 'var(--panel)',
+  cardHover: 'var(--card-surface)',
+  shadowLift: 'var(--shadow)',
+  shadowHead: 'var(--shadow)',
+  heading: 'var(--ink)',
+  nameWeight: 'var(--display-weight)',
+  labelWeight: 'var(--display-weight)',
+  brandWeight: 'calc(var(--display-weight) + 100)',
+  bodyTracking: 'normal',
+  bodyLeading: '1.45',
+  signBar: '5px',
+  signBadge: '22px',
 }
 
 /** Icon sizes, as `--icon-<step>`, in rem so they follow the text: `s` beside words, `m` alone in a control. */
@@ -370,7 +391,7 @@ const variables = (tokens: Record<string, string>) => Object.entries(tokens).map
 export const documentCss = `html { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 body { margin: 0; background: var(--panel); color: var(--ink); font: var(--fs-xl)/1.65 var(--ui); -webkit-font-smoothing: antialiased; }
 article { max-width: 860px; margin: 0 auto; padding: var(--sp-3xl) 36px 80px; }
-h1, h2, h3 { font-family: var(--display); font-weight: var(--display-weight); line-height: 1.2; margin: 1.6em 0 .6em; } h1 { font-size: 1.8em; } h3 { font-size: 1.1em; }
+h1, h2, h3 { color: var(--heading); font-family: var(--display); font-weight: var(--display-weight); line-height: 1.2; margin: 1.6em 0 .6em; } h1 { font-size: 1.8em; } h3 { font-size: 1.1em; }
 h2 { font-size: 1.3em; border-bottom: 1px solid var(--line); padding-bottom: .3em; }
 a { color: var(--accent); } li { margin: .2em 0; } article img { max-width: 100%; height: auto; } hr { border: 0; border-top: 1px solid var(--line); margin: 2em 0; }
 code { font: .86em var(--mono); background: var(--panel-2); padding: .1em .35em; border-radius: var(--radius); }
@@ -400,7 +421,7 @@ const COMPONENTS = `
 .icon-btn:hover { color: var(--ink); border-color: var(--line); background: var(--panel); }
 .icon-btn small { padding-inline: var(--sp-xs); font-size: var(--fs-xs); }
 .glyph { display: inline-block; background: currentColor; mask: var(--glyph) center / contain no-repeat; }
-.eyebrow { font: var(--display-weight) var(--fs-xs)/1 var(--display); letter-spacing: var(--label-tracking); text-transform: var(--label-case); color: var(--muted); }
+.eyebrow { font: var(--label-weight) var(--fs-xs)/1 var(--display); letter-spacing: var(--label-tracking); text-transform: var(--label-case); color: var(--muted); }
 .needs { --c: var(--needs); --on: var(--on-needs); --c-text: var(--needs-text); } .ready { --c: var(--ready); --on: var(--on-ready); --c-text: var(--ready-text); }
 .working { --c: var(--working); --on: var(--on-working); --c-text: var(--working-text); }
 .quiet { --c: var(--quiet); --on: var(--on-quiet); --c-text: var(--muted); } .offered { --c: var(--offered); --on: var(--on-offered); --c-text: var(--offered); } .broken { --c: var(--broken); --on: var(--on-broken); --c-text: var(--broken-text); }
@@ -409,10 +430,10 @@ const COMPONENTS = `
 @keyframes blink { 50% { opacity: .25; } }
 .watching .lamp, .lamp.watching { animation: breathe 2.8s ease-in-out infinite; }
 @keyframes breathe { 50% { opacity: .35; } }
-.pill { display: inline-flex; align-items: center; gap: var(--sp-s); padding: var(--sp-2xs) var(--sp-l) var(--sp-2xs) var(--sp-m); border-radius: var(--radius-pill); font-size: var(--fs-s); font-weight: 700;
+.pill { display: inline-flex; align-items: center; gap: var(--sp-s); padding: var(--sp-2xs) var(--sp-l) var(--sp-2xs) var(--sp-m); border-radius: var(--radius-pill); font-size: var(--fs-s); font-weight: var(--label-weight);
   white-space: nowrap; background: var(--c); color: var(--on); }
 .pill .lamp { background: var(--on); }
-.chip { display: inline-flex; align-items: center; gap: var(--sp-s); padding: var(--sp-2xs) var(--sp-m); border-radius: var(--radius-pill); font-size: var(--fs-s); font-weight: 700;
+.chip { display: inline-flex; align-items: center; gap: var(--sp-s); padding: var(--sp-2xs) var(--sp-m); border-radius: var(--radius-pill); font-size: var(--fs-s); font-weight: var(--label-weight);
   background: var(--panel-2); color: var(--ink); white-space: nowrap; }
 .chip b { font-variant-numeric: tabular-nums; }
 .chip.some { background: var(--c); color: var(--on); }
@@ -433,8 +454,8 @@ ${reduced("button[aria-busy='true']::after, .icon-btn[aria-busy='true']::after",
 .meter s { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--ink); box-shadow: 0 0 0 1px var(--panel); }
 .sign { --pp: var(--p, var(--deco)); display: flex; align-items: center; gap: var(--sp-m); padding: var(--sp-s) var(--sp-s) var(--sp-s) var(--sp-l); border-radius: var(--radius-card);
   background: color-mix(in oklab, var(--pp) var(--p-plate-mix), var(--panel)); border: 1px solid color-mix(in oklab, var(--pp) var(--p-plate-edge-mix), var(--panel));
-  color: color-mix(in oklab, var(--pp) var(--p-plate-text-mix), var(--ink)); box-shadow: inset 5px 0 0 var(--pp); }
-.sign .num { display: grid; place-items: center; min-width: 26px; min-height: 22px; padding: 0 var(--sp-xs); border-radius: var(--radius-s); background: var(--pp);
+  color: color-mix(in oklab, var(--pp) var(--p-plate-text-mix), var(--heading)); box-shadow: inset var(--sign-bar) 0 0 var(--pp); }
+.sign .num { display: grid; place-items: center; min-width: calc(var(--sign-badge) + 4px); min-height: var(--sign-badge); padding: 0 var(--sp-xs); border-radius: var(--radius-s); background: var(--pp);
   color: var(--enamel); font: var(--fs-l)/1 var(--display); font-weight: calc(var(--display-weight) + 100); font-variant-numeric: tabular-nums; }
 .sign .name { font: var(--display-weight) var(--fs-l)/1 var(--display); text-transform: var(--heading-case); letter-spacing: var(--heading-tracking); white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; }
@@ -442,7 +463,7 @@ ${reduced("button[aria-busy='true']::after, .icon-btn[aria-busy='true']::after",
   min-height: min(680px, calc(100vh - 48px)); height: auto; max-height: calc(100vh - 48px); overflow: hidden; color: var(--ink); font: var(--fs-l)/1.45 var(--ui); }
 .spawn-form header { display: flex; align-items: center; gap: var(--sp-xl); padding: var(--sp-xl) var(--sp-2xl); border-bottom: 1px solid var(--line); }
 .spawn-form header .sign { flex: none; }
-.spawn-form h2 { margin: 0; font: var(--display-weight) var(--fs-xl)/1 var(--display); text-transform: var(--heading-case); letter-spacing: var(--heading-tracking); }
+.spawn-form h2 { margin: 0; color: var(--heading); font: var(--display-weight) var(--fs-xl)/1 var(--display); text-transform: var(--heading-case); letter-spacing: var(--heading-tracking); }
 .spawn-form .draft { margin-left: auto; color: var(--muted); font-size: var(--fs-s); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .spawn-form .draft b { color: var(--ink); }
 .spawn-form .cols { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); min-height: 0; }
