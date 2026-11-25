@@ -99,7 +99,9 @@ export const mount: Mount = async (host, { tower, board: first, kit }) => {
 
   /**
    * A theme's card is its frame: its name, the parts it draws (inert) and its two buttons, all in the theme. The frame
-   * is this page's origin, so its buttons' presses are heard here.
+   * is this page's origin, so its buttons' presses are heard here, and an Escape pressed in it is passed on from the
+   * frame's element, so the dialog holding it closes as it does with focus anywhere else in it. The sample's menu takes
+   * every Escape to stay open, so the frame passes Escape on whether or not it was taken.
    */
   const cardHtml = ({ pick, title }: Choice) => `<iframe class="theme" data-pick="${esc(JSON.stringify(pick))}" title="${esc(title)}"></iframe>`
 
@@ -110,7 +112,12 @@ export const mount: Mount = async (host, { tower, board: first, kit }) => {
     list.innerHTML = all.map(cardHtml).join('')
     const sample = sampleOf()
     list.querySelectorAll<HTMLIFrameElement>('iframe.theme').forEach((frame, i) => {
-      frame.addEventListener('load', () => (frame.contentDocument!.addEventListener('click', clicked), marks()))
+      frame.addEventListener('load', () => {
+        const doc = frame.contentDocument!
+        doc.addEventListener('click', clicked)
+        doc.addEventListener('keydown', (k) => k.key === 'Escape' && frame.dispatchEvent(new KeyboardEvent('keydown', { key: k.key, code: k.code, bubbles: true, cancelable: true, composed: true })))
+        marks()
+      })
       frame.srcdoc = frameDoc(all[i], sample)
     })
     marks()
