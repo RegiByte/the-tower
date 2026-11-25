@@ -16,7 +16,7 @@ is pinned.
 | --- | --- |
 | ![The Pinned section with three workers](shots/section-light.png) | ![The Pinned section with three workers](shots/section-dark.png) |
 
-**A worker's card** says `pinned`, its note on hover, on its row in the sidebar and in its header. The header and the
+**A worker's card** says `pinned` beside a pin, its note on hover, on its row in the sidebar and in its header. The header and the
 worker's ⋯ menu offer Pin to sidebar, or Unpin from sidebar once it is pinned, and so does the palette.
 
 | Light | Dark |
