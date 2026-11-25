@@ -223,7 +223,11 @@ body:has(.crew-group.dragged) .tower-tip { visibility: hidden; }
 .crew > .sess.gone { --tree-style: dashed; --tree-branch: repeating-linear-gradient(to right, var(--tree-line) 0 3px, transparent 3px 5px); }
 .crew > .away { --tree-edge: 4px; --tree-rim: 1px; --tree-y: calc(var(--control) / 2); }
 .crew > .gone-home { --tree-edge: 1px; --tree-rim: 1px; --tree-y: calc(var(--control) / 2); }
-.sess.gone { opacity: .55; }
+/* A worker gone home is dimmed, its face, border, glow and contents, but not the box itself: the lines of the crew's
+   tree it carries run on past it at full strength. */
+.sess.gone:not(:hover, .sel) { background: color-mix(in oklab, var(--card-surface) 55%, transparent); box-shadow: none;
+  border-color: color-mix(in oklab, color-mix(in oklab, var(--c) var(--status-ring-mix), var(--line)) 55%, transparent); border-left-color: color-mix(in oklab, var(--c) 55%, transparent); }
+.sess.gone:not(:hover, .sel) > tower-menu-area > *, .sess.gone:not(:hover, .sel)::after { opacity: .55; }
 .gone-home { justify-self: start; display: inline-flex; align-items: center; gap: var(--sp-xs); min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); background: none; border-color: transparent; }
 .gone-home:hover { color: var(--ink); }
 .away { justify-self: start; display: inline-flex; align-items: center; gap: var(--sp-s); max-width: 100%; min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); background: none; border: 1px dashed var(--line); border-left: 4px solid var(--p, var(--line)); }
@@ -232,7 +236,6 @@ body:has(.crew-group.dragged) .tower-tip { visibility: hidden; }
 .away .on { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .away .st { flex: none; font-weight: 700; }
 .away:is(.needs, .broken, .working, .ready) .st { color: var(--c-text); }
-.sess.gone:hover, .sess.gone.sel { opacity: 1; }
 .sess .act button { min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-s); }
 .unresumable { color: var(--faint); font-size: var(--fs-s); white-space: nowrap; }
 .empty { color: var(--faint); font-style: italic; font-size: var(--fs-s); padding: var(--sp-2xs) var(--sp-m); }
