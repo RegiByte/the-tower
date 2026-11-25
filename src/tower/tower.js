@@ -60,8 +60,8 @@
  *                                                   tower.js: `<html ${tower.prefs.attributes()}>`
  *   tower.scheme() / tower.onScheme((scheme) => …)   the colour scheme drawn, 'light' or 'dark', the system's when the viewer
  *                                                   chose none; returns unsubscribe
- *   tower.onThemes(() => …)                         called once a change of this renderer's themes (the stylesheets the config's
- *                                                   `renderers.<name>.themes` and extensions' `themes` add after its own) has
+ *   tower.onThemes(() => …)                         called once a change of this renderer's themes (the offered theme the config's
+ *                                                   `renderers.<name>.theme` picks and its `themes`, loaded after its own) has
  *                                                   loaded: read again what the page computes from the tokens, such as a
  *                                                   terminal's colours; returns unsubscribe. A page loads with its themes.
  *   tower.remember(value) / await tower.recall()    a value kept for this page in the viewer's browser (null if none)

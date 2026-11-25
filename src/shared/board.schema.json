@@ -143,7 +143,17 @@
               "type": "string"
             }
           },
-          "description": "Each renderer's themes, by name, as the URLs its pages import them from in order: the accepted extensions', then the config's `renderers.<name>.themes`. A page follows a change of them live."
+          "description": "Each renderer's themes, by name, as the URLs its pages import them from in order: the offered theme the config's `renderers.<name>.theme` names, then the config's `renderers.<name>.themes`. A page follows a change of them live."
+        },
+        "offeredThemes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/BoardTheme"
+            }
+          },
+          "description": "The themes the accepted extensions offer each renderer, by name: `id` (`<provides>/<name>`) is what the config's `renderers.<name>.theme` takes, `title` what a picker calls it, `extension` the id of the extension offering it."
         },
         "adds": {
           "type": "object",
@@ -257,6 +267,7 @@
         "extensions",
         "viewers",
         "themes",
+        "offeredThemes",
         "adds",
         "asks",
         "today",
@@ -3498,6 +3509,27 @@
       },
       "additionalProperties": false,
       "description": "The renderer pages reading the board (`Board.viewers`): `active`, the viewer the user acted on last; `last`, by renderer, the viewer of it the user acted on last, for what one renderer's page alone does (@since 1.129); `selected`, by viewer, the session id of the worker it has selected, absent for a viewer with none (@since 1.172)."
+    },
+    "BoardTheme": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "extension": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "extension"
+      ],
+      "additionalProperties": false,
+      "description": "A theme an extension offers a renderer, as the board shows it."
     },
     "Adds": {
       "type": "object",

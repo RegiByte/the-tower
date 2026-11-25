@@ -263,22 +263,38 @@ with that tip in place of one that vanishes. It answers `resume`, `carry-on` and
 ### Write a theme
 
 A theme is a stylesheet the tower loads into a renderer's pages after the renderer's own sheet and its views' styles.
-It restyles a renderer without copying it, so taking a release never touches it. Name it in the config, by the
-absolute path of its file:
+It restyles a renderer without copying it, so taking a release never touches it.
+
+An extension offers themes, by renderer and name, each a path inside the extension with the title a picker shows
+(since 2.34):
 
 ```json
-{ "renderers": { "page": { "themes": ["/Users/you/code/my-theme/theme.css"] } } }
+{ "id": "my-theme", "version": "1.0", "title": "My theme", "requires": { "tower": "2.34" },
+  "themes": { "page": { "dusk": { "title": "Dusk", "file": "dusk.css" } } } }
 ```
 
-or ship it in an extension, by renderer, as a path inside the extension (since 2.30):
+An offered theme loads nothing until the config picks it: `renderers.<name>.theme` takes one theme's id,
+`<provides>/<name>` (the extension's capability, its id unless it sets `provides`, then the theme's name). Leave it
+unset for the renderer's own look. The board lists what is offered (`board.offeredThemes`, by renderer), so a picker
+reads the choices from it.
 
 ```json
-{ "id": "my-theme", "version": "1.0", "title": "My theme", "requires": { "tower": "2.30" },
-  "themes": { "page": ["theme.css"] } }
+{ "renderers": { "page": { "theme": "my-theme/dusk" } } }
 ```
 
-[`examples/extensions/harbor/`](../examples/extensions/harbor/) is one, loaded either way: a palette in both schemes
-and in more contrast, rounder corners, and headings in sentence case.
+The config can also load stylesheets of its own, by the absolute path of each file, after the active theme: a tweak
+over it, or a whole theme kept outside any extension.
+
+```json
+{ "renderers": { "page": { "theme": "my-theme/dusk", "themes": ["/Users/you/code/my-tweaks.css"] } } }
+```
+
+From 2.30 to 2.33 a manifest's `themes` was a list of files per renderer, all loaded while the extension was accepted.
+Since 2.34 a manifest names each theme and the config picks one: an author moves its list into named entries and tells
+its users to set `renderers.<name>.theme`. A manifest still in the list form is refused, saying what to write instead.
+
+[`examples/extensions/harbor/`](../examples/extensions/harbor/) is one, offered as `harbor/harbor` or loaded by path:
+a palette in both schemes and in more contrast, rounder corners, and headings in sentence case.
 
 - **Set tokens.** The palette (`--panel`, `--ink`, `--accent`…), the scales, and the character tokens
   ([Character](#beside-the-library)) are what a theme is for: every renderer, view and element reads them, the
@@ -293,14 +309,14 @@ and in more contrast, rounder corners, and headings in sentence case.
   outweighs the tower's, whatever its selector weighs: a plain `.bar-info .call` beats the view's own rule.
 - **What the tower hides stays hidden,** and so does what it sets `!important` (reduced motion, a tucked control):
   a theme can't show an element the tower marks `hidden`.
-- **The order.** Each theme is imported into a cascade layer of its own, the accepted extensions' first in their
-  order, then the config's, so a later theme outweighs an earlier one. A theme names no layer: the tower wraps it,
+- **The order.** Each theme is imported into a cascade layer of its own, the active one first, then the config's
+  in their order, so a later theme outweighs an earlier one. A theme names no layer: the tower wraps it,
   and the layers' names are not part of the API.
 - **One file.** The tower serves a theme's stylesheet alone, at its own origin only: nothing beside it, so a theme
   kept among other files shows none of them. A face or a picture it needs goes in as a `data:` URL, or is a face the
   viewer has installed.
-- **Live.** A page loads with its themes, and follows a change of them (the config's list, an extension accepted or
-  turned off) as the board says it: `tower.onThemes` tells it when the new ones have loaded. An edit to a theme's
+- **Live.** A page loads with its themes, and follows a change of them (the config's `theme` or list, the active theme's
+  extension accepted or turned off) as the board says it: `tower.onThemes` tells it when the new ones have loaded. An edit to a theme's
   file shows on the next load.
 
 Every renderer the tower serves at `/r/<name>/` takes its themes, a renderer of your own included: the tower links
@@ -1693,7 +1709,7 @@ surfaces take the same data from a manifest, so an extension ships them with not
 | `renderers: { <name>: { root, entry?, settings? } }` | `renderers` | At `/r/<name>/` while the extension is accepted, after the built-ins. The name is `<provides>` or `<provides>.<name>`; a built-in's name refuses the extension. `root` is inside the extension. The config's `renderers.<name>` sets fields over it. |
 | `shelf: [{ label, renderer \| item \| url \| link }]` | `projects.<p>.shelf` | On every floor where the extension is on, after the config's entries. A page is a renderer of its own or an item it contributes, so no entry names a path. |
 | `items: { <collection>: "<folder>" }` | the files of `collections/<p>/<c>/` | In the collection on every floor where the extension is on, read in place ([Collections](#collections)). |
-| `themes: { <renderer>: ["<file>"] }` | `renderers.<name>.themes` | In that renderer's pages while the extension is accepted, before the config's themes ([Write a theme](#write-a-theme)). Since 2.30. |
+| `themes: { <renderer>: { <name>: { title, file } } }` | `renderers.<name>.theme` | Offered to that renderer as `<provides>/<name>` while the extension is accepted, loaded only while the config's `theme` names it, before the config's `themes` ([Write a theme](#write-a-theme)). Since 2.30; offered by name since 2.34. |
 
 Each contributed thing carries `from`, the capability it came from: a renderer in `GET /renderers`, a shelf entry
 and an item on the board. The extension's folder is read when the tower resolves its extensions, so an edit there

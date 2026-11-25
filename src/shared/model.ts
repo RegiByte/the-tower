@@ -430,7 +430,7 @@ export const USER_KEYS = keysOf<UserConfig>()(['name'])
 export const EDITOR_KEYS = keysOf<EditorConfig>()(['window', 'open', 'goto'])
 export const RUNTIME_KEYS = keysOf<RuntimeConfig>()(['argv', 'plugins'])
 export const PROJECT_RUNTIME_KEYS = keysOf<ProjectRuntimeConfig>()(['plugins', 'command'])
-export const RENDERER_KEYS = keysOf<RendererConfig>()(['root', 'entry', 'settings', 'layout', 'themes'])
+export const RENDERER_KEYS = keysOf<RendererConfig>()(['root', 'entry', 'settings', 'layout', 'theme', 'themes'])
 export const EXTENSION_KEYS = keysOf<ExtensionConfig>()(['path', 'off', 'settings', 'guidance'])
 export const FLOOR_EXTENSION_KEYS = keysOf<FloorExtensionConfig>()(['settings'])
 export const CAPABILITY_KEYS = keysOf<CapabilityConfig>()(['off'])
@@ -441,10 +441,11 @@ export const CAPABILITY_KEYS = keysOf<CapabilityConfig>()(['off'])
  */
 /**
  * A renderer the config declares or overrides; `layout`, the default arrangement of its views, over its own
- * (`renderer.json`); `themes`, the absolute paths of the stylesheets its pages load after their own, after the accepted
- * extensions' themes (`themesOf` in src/renderers.ts).
+ * (`renderer.json`); `theme`, the id (`<provides>/<name>`) of the theme an accepted extension offers that its pages
+ * load after their own; `themes`, the absolute paths of stylesheets its pages load after that one (`themesOf` in
+ * src/renderers.ts).
  */
-export type RendererConfig = { root?: string; entry?: string; settings?: Record<string, unknown>; layout?: Layout; themes?: string[] }
+export type RendererConfig = { root?: string; entry?: string; settings?: Record<string, unknown>; layout?: Layout; theme?: string; themes?: string[] }
 
 /** The renderers the core declares, by name: no extension contributes one of these names. */
 export const BUILT_IN_RENDERERS = ['page', 'week', 'tower3d'] as const

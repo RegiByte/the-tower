@@ -367,6 +367,9 @@ export type Wait = { id: string; key: string; reason: WaitReason; since: number;
  */
 export type Viewers = { active?: string; last?: Record<string, string>; selected?: Record<string, string> }
 
+/** A theme an extension offers a renderer, as the board shows it. */
+export type BoardTheme = { id: string; title: string; extension: string }
+
 /** One `argv` command's account limits, an entry of `board.limits`. @since 1.152 */
 export type CommandLimits = {
   /** The `argv` command; absent in single-command mode. */
@@ -415,10 +418,17 @@ export type Board = {
    */
   viewers: Viewers
   /**
-   * Each renderer's themes, by name, as the URLs its pages import them from in order: the accepted extensions', then the
-   * config's `renderers.<name>.themes`. A page follows a change of them live. @since 2.30
+   * Each renderer's themes, by name, as the URLs its pages import them from in order: the offered theme the config's
+   * `renderers.<name>.theme` names, then the config's `renderers.<name>.themes`. A page follows a change of them live.
+   * @since 2.30; since 2.34 an extension's theme is in it only while the config names it.
    */
   themes: Record<string, string[]>
+  /**
+   * The themes the accepted extensions offer each renderer, by name: `id` (`<provides>/<name>`) is what the config's
+   * `renderers.<name>.theme` takes, `title` what a picker calls it, `extension` the id of the extension offering it.
+   * @since 2.34
+   */
+  offeredThemes: Record<string, BoardTheme[]>
   /**
    * What extensions' folds added to each subject, and the core's badge on a floor where a stage of its hooks has no
    * answer (cap `tower`, since 1.107), by its key (`card:<id>`, `floor:<project>`, `board`,
@@ -896,6 +906,8 @@ export type SystemView = {
   keeps: string[]
   /** Each renderer's themes, as the URLs its pages import them from. */
   themes: Record<string, string[]>
+  /** The themes the accepted extensions offer each renderer. */
+  offeredThemes: Record<string, BoardTheme[]>
   /** The renderer pages reading the board, as the tower last heard from them. */
   viewers: Viewers
   now: number
@@ -931,7 +943,7 @@ export const board = (view: SystemView): Board => boardOf(view, allCards(view))
 
 /** The board of `view` from its cards (`allCards`), built once by a caller that reads them too. */
 export const boardOf = (view: SystemView, cards: Card[]): Board => {
-  const { config, sessions, host, shells, items, repos, firstReads, logFiles, readings, streams, stores, paths, keeps, themes, viewers, now } = view
+  const { config, sessions, host, shells, items, repos, firstReads, logFiles, readings, streams, stores, paths, keeps, themes, offeredThemes, viewers, now } = view
   const { keys, extensions } = keysOf(config, view.extensions, keeps, now)
   const continued = continuations(sessions, chainsOf(sessions))
   const kept = onBoard(bucketStart(now, 'day'))
@@ -946,6 +958,7 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
     config: paths.config,
     viewers,
     themes,
+    offeredThemes,
     collections: collectionsOf(towerCollections(stores), TOWER_WIDE, paths.collections, items, keptBy, (c) => contributedTo(config, TOWER_WIDE, c, stores)),
     floors: Object.entries(config.projects).map(([id, { shelf: _shelf, collections: _, worktrees: __, hiring: ___, brief: ____, extensions: _____, capabilities: ______, runtimes: _______, ...project }]) => {
       const git = floorGit(config, id, project, repos, occupants, mainInUse(cards, id), stores)

@@ -390,11 +390,16 @@ export const contributedRenderers = (accepted: Iterable<Pick<Accepted, 'dir' | '
     ),
   )
 
-/** The themes the accepted extensions contribute, by renderer, in the extensions' order: each an absolute file inside its extension. */
-export const contributedThemes = (accepted: Iterable<Pick<Accepted, 'dir' | 'manifest'>>): Record<string, string[]> => {
-  const themes: Record<string, string[]> = {}
-  for (const { dir, manifest } of accepted) for (const [renderer, files] of Object.entries(manifest.themes ?? {})) themes[renderer] = [...(themes[renderer] ?? []), ...files.map((file) => path.join(dir, file))]
-  return themes
+/** A theme an accepted extension offers a renderer: `id` is `<provides>/<name>`, `file` its stylesheet inside the extension. */
+export type OfferedTheme = { id: string; title: string; file: string; extension: string }
+
+/** The themes the accepted extensions offer, by renderer, in the extensions' order. None loads until the config names it. */
+export const offeredThemes = (accepted: Iterable<Pick<Accepted, 'id' | 'dir' | 'manifest' | 'provides'>>): Record<string, OfferedTheme[]> => {
+  const offered: Record<string, OfferedTheme[]> = {}
+  for (const { id, dir, manifest, provides } of accepted)
+    for (const [renderer, themes] of Object.entries(manifest.themes ?? {}))
+      offered[renderer] = [...(offered[renderer] ?? []), ...Object.entries(themes).map(([name, { title, file }]) => ({ id: `${provides}/${name}`, title, file: path.join(dir, file), extension: id }))]
+  return offered
 }
 
 /** Each items folder the manifest names that isn't a folder inside the extension. */
@@ -763,11 +768,22 @@ const targetProblems = (manifest: Manifest, provides: string): LoadProblem[] =>
     return [error('invalid', `${target} is ${cap}'s: declare requires.${cap} or wants.${cap} to ${lane === 'around' ? 'wrap' : 'answer'} it`, at)]
   })
 
-/** A manifest that still names `plugins`, which moved under its runtime in 2.0: refused with the key that replaced it. */
-const oldShapeProblems = (raw: unknown): LoadProblem[] =>
-  isObject(raw) && 'plugins' in raw
+/**
+ * A manifest in a shape the tower no longer takes, refused with what to write instead: `plugins`, which moved under its
+ * runtime in 2.0, and `themes` as a list of files per renderer, which became themes by name in 2.34.
+ */
+const oldShapeProblems = (raw: unknown): LoadProblem[] => [
+  ...(isObject(raw) && 'plugins' in raw
     ? [error('invalid', 'plugins.claude moved to runtimes.claude.plugins in 2.0: write "runtimes": { "claude": { "plugins": "<its folder>" } } and remove plugins', 'plugins')]
-    : []
+    : []),
+  ...(isObject(raw) && isObject(raw.themes)
+    ? Object.entries(raw.themes)
+        .filter(([, themes]) => Array.isArray(themes))
+        .map(([renderer]) =>
+          error('invalid', `themes is now { <renderer>: { <name>: { title, file } } }: a list of files was the 2.30 form. Write "${renderer}": { "<name>": { "title": "<what a picker calls it>", "file": "<its stylesheet>" } }, and users pick it with renderers.${renderer}.theme (docs/extending.md, "Write a theme")`, `themes.${renderer}`),
+        )
+    : []),
+]
 
 /** A view's regions are among the manifest's own, and a region holding views says the room it gives. */
 const viewProblems = (manifest: Manifest): LoadProblem[] => [
