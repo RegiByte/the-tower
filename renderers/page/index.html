@@ -79,6 +79,7 @@ dialog h2 { margin: 0 0 var(--sp-l); font: var(--display-weight) var(--fs-xl)/1 
 .section-body { max-height: 12.5rem; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .side-views { display: flex; align-items: flex-start; gap: var(--sp-xs); padding: var(--sp-m) var(--sp-xl); border-bottom: 1px solid var(--line); }
 .side-nav { display: flex; flex-wrap: wrap; gap: var(--sp-xs); min-width: 0; }
+.nav-entries { display: contents; }
 .side-views button { min-height: var(--control); padding: 0 var(--sp-m); border-color: transparent; background: none; color: var(--muted); }
 .side-views .board-sign { margin-left: auto; display: flex; gap: var(--sp-xs); }
 .side-views .board-sign:empty { display: none; }
@@ -488,7 +489,7 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, [data-view="tow
   <div class="tally" id="tally"></div>
   <div class="limits-bar" id="limits-bar"><button class="chip" id="limits-open" popovertarget="limits"></button><div class="settings-pop limits" id="limits" popover></div></div>
   <div class="side-sections" id="sections"></div>
-  <div class="side-views"><nav class="side-nav" id="nav" aria-label="the sidebar's entries"></nav><span class="board-sign" id="board-sign"></span></div>
+  <div class="side-views"><nav class="side-nav" id="nav" aria-label="the sidebar's entries"><span class="nav-entries" id="nav-entries"></span><button class="eyebrow" data-nav-more hidden>More…</button></nav><span class="board-sign" id="board-sign"></span></div>
   <nav class="floors" id="floors" aria-label="floors"></nav>
   <div class="side-extensions"><button class="extensions-open" id="extensions-open"></button><div class="settings-pop extensions-pop" id="extensions-pop" popover="manual" aria-label="extensions"></div></div>
   <div class="side-foot" id="side-foot"></div>

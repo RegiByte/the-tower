@@ -38,6 +38,7 @@ import { boardKit } from './board.js'
 import { onDuty, $, signHtml, sightAnchorOf, holdRow, announce, toast, notice, closableNotice, told } from './kit.js'
 import { DRAFTS, draftsOf, keepUnsent, titleOf } from './clients.js'
 import { palette } from './palette.js'
+import { menu } from './menu.js'
 import { asksHtml, badgeHtml, drawCount, regionActionHtml, tuckableBadgeHtml } from './added.js'
 import { gapBeside, isCut, lineWidth, roomOf } from './fit.js'
 
@@ -1434,18 +1435,44 @@ const paintSections = () => {
   morphPanel(root, sidebarSections.html())
   sidebarSections.place(root)
 }
-/** The sidebar's entries (`board.nav`): every view the region offers on the board, each opening in the main pane. */
+/** The sidebar's entries (`board.nav`): the views that ask for the row, each opening in the main pane. */
 const sidebarEntries = mainRegion.entries('board.nav', () => paintNav())
 
-/** Floors, the way home to the skyline, then the sidebar's entries, the one the main pane shows marked. */
+const NAV_OPEN = 'nav-open '
+const NAV_PIN = 'nav-pin '
+
+/** More…, the sidebar entries past the row's budget, and every entry to pin to the row. */
+const navMoreButton = /** @type {HTMLButtonElement} */ (document.querySelector('[data-nav-more]'))
+const navMore = menu(navMoreButton, {
+  run: (item) => (item.t === 'check' ? pinIn('board.nav', item.key.slice(NAV_PIN.length), !item.checked) : display('board', { view: item.key.slice(NAV_OPEN.length) })),
+})
+
+/**
+ * Floors, the way home to the skyline, then the sidebar's entries in place, the one the main pane shows marked, and
+ * More… while some are behind it or the viewer pins any: marked when the one shown is behind it.
+ */
 const paintNav = () => {
   const at = view()
   const home = isHome(at)
   const shown = at.t === 'view' && !home ? at.location.view : undefined
+  const { inPlace, tucked } = sidebarEntries.placed()
   morphPanel(
-    $('nav'),
-    `<button class="eyebrow" data-nav-home${home ? ' aria-current="page"' : ''} data-tip="every floor and who works on it">Floors</button>${sidebarEntries.html(shown)}`,
+    $('nav-entries'),
+    `<button class="eyebrow" data-nav-home${home ? ' aria-current="page"' : ''} data-tip="every floor and who works on it">Floors</button>${sidebarEntries.html(inPlace, shown)}`,
   )
+  const more = navMoreButton
+  more.hidden = !tucked.length && !page.state().layout?.['board.nav']?.pinned?.length
+  more.toggleAttribute('aria-current', tucked.some((v) => v.id === shown))
+  const pins = pinChecks('board.nav', [...inPlace, ...tucked].map((v) => ({ pin: v.id, label: v.words.label })))
+  navMore.draw({
+    header: '',
+    entries: [
+      ...tucked.map((v) => sidebarEntries.item(v, NAV_OPEN + v.id)),
+      ...(tucked.length ? [/** @type {const} */ ({ t: 'separator' })] : []),
+      { t: 'group', label: 'Pin to the row', entries: pins.map(({ pin, label, checked }) => ({ t: 'check', key: NAV_PIN + pin, label, checked })) },
+    ],
+  })
+  if (more.hidden) navMore.close()
 }
 
 // A section's view says its tally changed.

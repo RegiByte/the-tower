@@ -94,11 +94,16 @@ export function menu(control, on) {
    */
   const closeToControl = () => (control.focus({ preventScroll: true }), close())
 
-  /** The popover under the button, its right edge at the button's, as far down as the window lets it run. */
+  /**
+   * The popover under the button, toward the wider side: its right edge at the button's on the window's right half,
+   * its left edge at the button's on the left half; as far down as the window lets it run.
+   */
   function place() {
     const r = control.getBoundingClientRect()
+    const leftHalf = r.left + r.width / 2 < innerWidth / 2
     pop.style.top = `${Math.round(r.bottom + 4)}px`
-    pop.style.right = `${Math.round(Math.max(8, innerWidth - r.right))}px`
+    pop.style.left = leftHalf ? `${Math.round(Math.max(8, r.left))}px` : ''
+    pop.style.right = leftHalf ? '' : `${Math.round(Math.max(8, innerWidth - r.right))}px`
     pop.style.maxHeight = `${Math.max(160, Math.round(innerHeight - r.bottom - 12))}px`
   }
 
