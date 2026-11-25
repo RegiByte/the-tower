@@ -1502,7 +1502,7 @@
           "stability": "provisional"
         },
         "closePopoversOnFramePress": {
-          "since": "2.36"
+          "since": "2.37"
         },
         "noticer": {
           "since": "2.0",
