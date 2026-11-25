@@ -26,7 +26,7 @@
       "steps": [
         {
           "until": ".bar-top button.added",
-          "text": "Unpin"
+          "text": "Unpin from sidebar"
         }
       ],
       "crop": ".bar-top"

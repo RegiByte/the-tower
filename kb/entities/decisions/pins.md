@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Pins: a worker pinned as a conversation worth coming back to, a bundled extension over a system stream",
-  "summary": "The bundled pins extension pins a worker with a note on why, through its verbs (`pin`, `unpin`) and their CLI words. Pins live in its own system stream, so its board fold lists every pin, archived workers included, for its section view in the page's board.sections; a card fold adds a `pinned` badge and a Pin or Unpin action; a read lists pins across floors with their session ids.",
+  "summary": "The bundled pins extension pins a worker with a note on why, through its verbs (`pin`, `unpin`) and their CLI words. Pins live in its own system stream, so its board fold lists every pin, archived workers included, for its section view in the page's board.sections; a card fold adds a `pinned` badge and a Pin to sidebar or Unpin from sidebar action; a read lists pins across floors with their session ids.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-25",
@@ -59,8 +59,9 @@ page offers it from the start. A pin has to be listed once its worker went home,
 - **The read** `list` (CLI word `list`) answers every pin, newest first, with its callsign, floor, session and note
   ([`pinsOf`](ref:hub/extensions/pins/pins.ts#pinsOf)), and prints one line each.
 - **The board fold** puts the same list at `board.x.pins.pins`, callsigns resolved through `callsignOf`, so archived
-  workers keep their name. The **card fold** adds a `pinned` badge, the note as its hint, and the Pin or Unpin action,
-  which the page draws on the worker's row, its header and its ⋯ menu.
+  workers keep their name. The **card fold** adds a `pinned` badge, the note as its hint, and the Pin to
+  sidebar or Unpin from sidebar action, which the page draws on the worker's row, its header and its ⋯ menu, and the
+  palette lists. The labels name the sidebar so they don't read as the layout's own "Pin to the row".
 - **The section** `pins/section` ([`mount`](ref:hub/extensions/pins/client/section.ts#mount)) is a `list`-scale view
   on the board, drawn in the page's `board.sections` ([[sidebar-regions]]): one row per pin with the floor's chip,
   the note and the age. A row displays `card:<session>`, which the page finds in the archive once the worker went

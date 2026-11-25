@@ -61,7 +61,7 @@
           "said": { "type": "string" }
         }
       },
-      "words": { "label": "Pin", "hint": "keep this worker in the sidebar's Pinned, to come back to" },
+      "words": { "label": "Pin to sidebar", "hint": "keep this worker in the sidebar's Pinned, to come back to" },
       "cli": { "print": "said", "usage": "pin [--note '<why>'] [--session <id>]" }
     },
     "unpin": {
@@ -82,7 +82,7 @@
           "said": { "type": "string" }
         }
       },
-      "words": { "label": "Unpin", "hint": "take this worker out of the sidebar's Pinned" },
+      "words": { "label": "Unpin from sidebar", "hint": "take this worker out of the sidebar's Pinned" },
       "cli": { "print": "said", "usage": "unpin [--session <id>]" }
     }
   },

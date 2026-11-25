@@ -41,7 +41,7 @@ const floorHtml = (board: Board, project: string) => {
   return `<span class="floor"${floor?.color ? ` style="--p:${esc(floor.color)}"` : ''}>${esc(floor?.name ?? project)}</span>`
 }
 
-const UNPIN = 'Unpin'
+const UNPIN = 'Unpin from sidebar'
 
 export const mount: Mount = (host, { tower, board: first, kit }) => {
   let board = first
@@ -57,7 +57,7 @@ export const mount: Mount = (host, { tower, board: first, kit }) => {
     const current = here === `card:${p.session}` ? ' aria-current="true"' : ''
     return `<li class="pin" id="${esc(domId('pins', p.session))}"${current}><button class="go" data-card="${esc(p.session)}"${p.note ? ` data-tip="${esc(p.note)}"` : ''}>
       <span class="line"><span class="call">${esc(p.callsign)}</span>${floorHtml(board, p.project)}<span class="age" data-age-since="${p.at}">${esc(span(at - p.at))}</span></span>
-      ${p.note ? `<span class="note">${esc(p.note)}</span>` : ''}</button><button class="icon-btn" data-unpin="${esc(p.session)}" aria-label="${UNPIN} ${esc(p.callsign)}" data-tip="${UNPIN}">${ICON.close}</button></li>`
+      ${p.note ? `<span class="note">${esc(p.note)}</span>` : ''}</button><button class="icon-btn" data-unpin="${esc(p.session)}" aria-label="Unpin ${esc(p.callsign)} from sidebar" data-tip="${UNPIN}">${ICON.close}</button></li>`
   }
 
   const draw = () => {
