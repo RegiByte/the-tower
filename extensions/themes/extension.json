@@ -1,0 +1,13 @@
+{
+  "id": "themes",
+  "version": "1.0",
+  "title": "Themes",
+  "description": "Two looks for the tower page, offered and not loaded until picked: Aqua (themes/aqua), the horizon from a beach, and Flamingo (themes/flamingo), a coastal city in neon. Set renderers.page.theme to one.",
+  "requires": { "tower": "2.32" },
+  "themes": {
+    "page": {
+      "aqua": { "title": "Aqua", "file": "aqua.css" },
+      "flamingo": { "title": "Flamingo", "file": "flamingo.css" }
+    }
+  }
+}

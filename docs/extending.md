@@ -293,7 +293,8 @@ From 2.30 to 2.33 a manifest's `themes` was a list of files per renderer, all lo
 Since 2.34 a manifest names each theme and the config picks one: an author moves its list into named entries and tells
 its users to set `renderers.<name>.theme`. A manifest still in the list form is refused, saying what to write instead.
 
-[`examples/extensions/harbor/`](../examples/extensions/harbor/) is one, offered as `harbor/harbor` or loaded by path:
+The bundled [`themes`](../extensions/themes/README.md) extension offers two, `themes/aqua` and `themes/flamingo`.
+[`examples/extensions/harbor/`](../examples/extensions/harbor/) is one to start from, offered as `harbor/harbor` or loaded by path:
 a palette in both schemes and in more contrast, rounder corners, and headings in sentence case.
 
 - **Set tokens.** The palette (`--panel`, `--ink`, `--accent`…), the scales, and the character tokens

@@ -1,0 +1,203 @@
+/*
+ * Flamingo: a coastal city in neon. Night is a navy ground lit in hot pink, violet and pool cyan; light is magic
+ * hour, a lavender sky fading through pink to peach over cream cards.
+ * The bundled themes extension offers it as themes/flamingo: set renderers.page.theme to it. Tokens first, in both schemes
+ * and in more contrast; then the best-effort rules, which reach the page's own classes and may need a change when the
+ * page changes (docs/extending.md, "Write a theme").
+ */
+
+:root {
+  color-scheme: light;
+  --wall: #f4d9ea;
+  --flamingo-horizon-top: #dcc4f4;
+  --flamingo-horizon-bottom: #ffd3bd;
+  --panel: #fffaf6;
+  --panel-2: #fbeeea;
+  --sunk: #f2dfe4;
+  --line: #ecd0dc;
+  --line-strong: #8a6a8f;
+  --ink: #221838;
+  --muted: #4a3a62;
+  --faint: #5b4a73;
+  --deco: #b897c8;
+  --accent: #7426c4;
+  --offered: #7426c4;
+  --enamel: #160f2c;
+  --enamel-2: #261b45;
+  --term-fg: #fbe9f3;
+  --needs: #e0115f;
+  --needs-text: #b10a49;
+  --ready: #0fb59a;
+  --ready-text: #076a59;
+  --working: #ff7a2f;
+  --working-text: #9a3a05;
+  --quiet: #b3a5c8;
+  --broken: #8e2f5c;
+  --broken-text: #8e2f5c;
+  --on-needs: #ffffff;
+  --on-offered: #ffffff;
+  --on-ready: #160f2c;
+  --on-working: #160f2c;
+  --on-quiet: #160f2c;
+  --on-broken: #ffffff;
+  --flamingo-blush: #ff5fa2;
+  --flamingo-on-blush: #1d0f2e;
+  --shadow: 0 0 0 .5px #2218381a, 0 2px 4px -1px #22183812, 0 12px 28px -12px #7426c44d;
+  --shadow-pop: 0 0 0 .5px #22183826, 0 24px 64px -16px #4a1f6e66;
+  --shadow-card: 0 0 0 .5px #22183814, 0 1px 3px #22183814;
+  --backdrop: #22183840;
+  --main-shadow: 0 0 0 .5px #7426c42e, 0 14px 40px -14px #c2186b59;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-scheme='light']) {
+    color-scheme: dark;
+    --wall: #0a0918;
+    --flamingo-horizon-top: #09081a;
+    --flamingo-horizon-bottom: #2a0f36;
+    --panel: #151329;
+    --panel-2: #1e1b36;
+    --sunk: #0a0915;
+    --line: #2c2748;
+    --line-strong: #7a6fa6;
+    --ink: #fff0f8;
+    --muted: #d6bfe0;
+    --faint: #b1a0c8;
+    --deco: #5d5281;
+    --accent: #b98aff;
+    --offered: #b98aff;
+    --enamel: #07061a;
+    --enamel-2: #1a1734;
+    --term-fg: #fbe9f4;
+    --needs: #ff2e88;
+    --needs-text: #ff6aa8;
+    --ready: #1ff2d2;
+    --ready-text: #3cf5da;
+    --working: #ff9a3c;
+    --working-text: #ffb070;
+    --quiet: #8b85ad;
+    --broken: #c24c84;
+    --broken-text: #f29ac4;
+    --on-needs: #07061a;
+    --on-offered: #07061a;
+    --on-ready: #07061a;
+    --on-working: #07061a;
+    --on-quiet: #07061a;
+    --on-broken: #ffffff;
+    --flamingo-blush: #ff6eb4;
+    --flamingo-on-blush: #1a0b2a;
+    --shadow: 0 0 0 .5px #ffffff12, 0 6px 18px -8px #000000c0;
+    --shadow-pop: 0 0 0 .5px #ff2e8840, 0 24px 64px -16px #000000e0;
+    --shadow-card: 0 0 0 .5px #ffffff0f, 0 1px 3px #00000066;
+    --backdrop: #05051080;
+    --main-shadow: 0 0 0 1px #ff2e8833, 0 0 48px -10px #a646ff73, 0 0 120px -40px #ff2e8859;
+  }
+}
+
+:root[data-scheme='dark'] {
+  color-scheme: dark;
+  --wall: #0a0918;
+  --flamingo-horizon-top: #09081a;
+  --flamingo-horizon-bottom: #2a0f36;
+  --panel: #151329;
+  --panel-2: #1e1b36;
+  --sunk: #0a0915;
+  --line: #2c2748;
+  --line-strong: #7a6fa6;
+  --ink: #fff0f8;
+  --muted: #d6bfe0;
+  --faint: #b1a0c8;
+  --deco: #5d5281;
+  --accent: #b98aff;
+  --offered: #b98aff;
+  --enamel: #07061a;
+  --enamel-2: #1a1734;
+  --term-fg: #fbe9f4;
+  --needs: #ff2e88;
+  --needs-text: #ff6aa8;
+  --ready: #1ff2d2;
+  --ready-text: #3cf5da;
+  --working: #ff9a3c;
+  --working-text: #ffb070;
+  --quiet: #8b85ad;
+  --broken: #c24c84;
+  --broken-text: #f29ac4;
+  --on-needs: #07061a;
+  --on-offered: #07061a;
+  --on-ready: #07061a;
+  --on-working: #07061a;
+  --on-quiet: #07061a;
+  --on-broken: #ffffff;
+  --flamingo-blush: #ff6eb4;
+  --flamingo-on-blush: #1a0b2a;
+  --shadow: 0 0 0 .5px #ffffff12, 0 6px 18px -8px #000000c0;
+  --shadow-pop: 0 0 0 .5px #ff2e8840, 0 24px 64px -16px #000000e0;
+  --shadow-card: 0 0 0 .5px #ffffff0f, 0 1px 3px #00000066;
+  --backdrop: #05051080;
+  --main-shadow: 0 0 0 1px #ff2e8833, 0 0 48px -10px #a646ff73, 0 0 120px -40px #ff2e8859;
+}
+
+:root[data-contrast='more'] { --muted: #312548; --faint: #382b4f; --deco: #5b4a73; --line: #8a6a8f; }
+@media (prefers-contrast: more) { :root { --muted: #312548; --faint: #382b4f; --deco: #5b4a73; --line: #8a6a8f; } }
+@media (prefers-color-scheme: dark) { :root[data-contrast='more']:not([data-scheme='light']) { --muted: #eedcee; --faint: #dfcfe5; --deco: #b1a0c8; --line: #7a6fa6; } }
+:root[data-contrast='more'][data-scheme='dark'] { --muted: #eedcee; --faint: #dfcfe5; --deco: #b1a0c8; --line: #7a6fa6; }
+@media (prefers-contrast: more) and (prefers-color-scheme: dark) { :root:not([data-scheme='light']) { --muted: #eedcee; --faint: #dfcfe5; --deco: #b1a0c8; --line: #7a6fa6; } }
+@media (prefers-contrast: more) { :root[data-scheme='dark'] { --muted: #eedcee; --faint: #dfcfe5; --deco: #b1a0c8; --line: #7a6fa6; } }
+
+:root {
+  --display: 'Avenir Next Condensed', 'DIN Condensed', 'Avenir Next', system-ui, sans-serif;
+  --ui: 'Avenir Next', 'Avenir', system-ui, sans-serif;
+  --radius: 10px;
+  --radius-s: 5px;
+  --primary: var(--flamingo-blush);
+  --on-primary: var(--flamingo-on-blush);
+  --hover: color-mix(in oklab, var(--accent) 10%, var(--panel));
+  --radius-card: 16px;
+  --radius-control: 10px;
+  --display-weight: 700;
+  --heading-case: uppercase;
+  --heading-tracking: .05em;
+  --name-tracking: .03em;
+  --label-case: uppercase;
+  --label-tracking: .1em;
+  --side-surface: transparent;
+  --side-rule: transparent;
+  --main-surface: var(--panel);
+  --main-inset: 8px;
+  --main-radius: 18px;
+  --status-edge: 1.5px;
+  --status-ring-mix: 100%;
+  --ansi-black: #26224a;
+  --ansi-red: #ff3d86;
+  --ansi-green: #1ff2d2;
+  --ansi-yellow: #ffd27a;
+  --ansi-blue: #6f9bff;
+  --ansi-magenta: #d36bff;
+  --ansi-cyan: #3fe6ff;
+  --ansi-white: #eadcf2;
+  --ansi-bright-black: #7a6fa6;
+  --ansi-bright-red: #ff7aac;
+  --ansi-bright-green: #76f7e3;
+  --ansi-bright-yellow: #fff0b4;
+  --ansi-bright-blue: #a3c0ff;
+  --ansi-bright-magenta: #e9a8ff;
+  --ansi-bright-cyan: #8ef0ff;
+  --ansi-bright-white: #fff8fc;
+}
+
+/* Best effort, beyond tokens: the wall as the sky at dusk, the one emphasized action as a pill, and at night neon:
+   cards and lamps glow in their status colour. */
+body {
+  background: linear-gradient(165deg, var(--flamingo-horizon-top), var(--wall) 48%, var(--flamingo-horizon-bottom)) fixed;
+}
+
+button.primary {
+  border-radius: var(--radius-pill);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-scheme='light']) .sess { box-shadow: 0 0 22px -6px color-mix(in oklab, var(--c) 85%, transparent); }
+  :root:not([data-scheme='light']) .lamp { box-shadow: 0 0 8px 1px color-mix(in oklab, var(--c) 80%, transparent); }
+}
+:root[data-scheme='dark'] .sess { box-shadow: 0 0 22px -6px color-mix(in oklab, var(--c) 85%, transparent); }
+:root[data-scheme='dark'] .lamp { box-shadow: 0 0 8px 1px color-mix(in oklab, var(--c) 80%, transparent); }
