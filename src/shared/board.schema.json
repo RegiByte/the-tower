@@ -3548,7 +3548,7 @@
         "extension"
       ],
       "additionalProperties": false,
-      "description": "A theme an extension offers a renderer, as the board shows it: `picked` on the one the config's `renderers.<name>.theme` names (@since 2.37)."
+      "description": "A theme an extension offers a renderer, as the board shows it: `picked` on the one the config's `renderers.<name>.theme` names (@since 2.39)."
     },
     "Adds": {
       "type": "object",

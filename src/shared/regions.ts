@@ -152,7 +152,7 @@ export type RendererRegions = { name: string; regions: string[] }[]
 /**
  * What a renderer's `renderer.json` declares: its regions, its kit, the chords it keeps for itself, its default layout,
  * and `themeSample`, a module in its root exporting `sample()`: the html of its own parts a theme's preview draws, and
- * the class its body takes for them to draw (`{ html, bodyClass }`, @since 2.37).
+ * the class its body takes for them to draw (`{ html, bodyClass }`, @since 2.39).
  */
 export type Declared = { regions: Region[]; kit: KitMember[]; keeps: string[]; layout: Layout; themeSample?: string }
 
