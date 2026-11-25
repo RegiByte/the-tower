@@ -1,0 +1,185 @@
+/*
+ * Aqua: the horizon from a beach at noon. Foam-white cards over sea haze, deep-sea ink, turquoise for what you act on;
+ * at night, the same sea under the moon.
+ * The bundled themes extension offers it as themes/aqua: set renderers.page.theme to it. Tokens first, in both schemes
+ * and in more contrast; then the best-effort rules, which reach the page's own classes and may need a change when the
+ * page changes (docs/extending.md, "Write a theme").
+ */
+
+:root {
+  color-scheme: light;
+  --wall: #dcebee;
+  --aqua-horizon-top: #d5e8f1;
+  --aqua-horizon-bottom: #ece6d8;
+  --panel: #fbfdfc;
+  --panel-2: #eef5f4;
+  --sunk: #e1ecec;
+  --line: #d0e1e2;
+  --line-strong: #6f8c91;
+  --ink: #0d3442;
+  --muted: #30525e;
+  --faint: #4a6a74;
+  --deco: #9db5b9;
+  --accent: #00728a;
+  --offered: #00728a;
+  --enamel: #0b3240;
+  --enamel-2: #134554;
+  --term-fg: #dcf2ef;
+  --needs: #d23f35;
+  --needs-text: #b4322a;
+  --ready: #3cb497;
+  --ready-text: #1b6e5d;
+  --working: #f2aa3c;
+  --working-text: #875600;
+  --quiet: #a2b7bb;
+  --broken: #8c3b34;
+  --broken-text: #8c3b34;
+  --on-needs: #ffffff;
+  --on-offered: #ffffff;
+  --on-ready: #0b2b35;
+  --on-working: #0b2b35;
+  --on-quiet: #0b2b35;
+  --on-broken: #ffffff;
+  --shadow: 0 0 0 .5px #0d34421a, 0 2px 4px -1px #0d344212, 0 10px 24px -12px #0d344240;
+  --shadow-pop: 0 0 0 .5px #0d344226, 0 24px 64px -16px #0d344252;
+  --shadow-card: 0 0 0 .5px #0d344214, 0 1px 3px #0d344212;
+  --backdrop: #0d34422e;
+  --main-shadow: 0 0 0 .5px #0d34421f, 0 10px 32px -16px #0d344266;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-scheme='light']) {
+    color-scheme: dark;
+    --wall: #0a1b23;
+    --aqua-horizon-top: #071621;
+    --aqua-horizon-bottom: #121e1f;
+    --panel: #10252e;
+    --panel-2: #162f39;
+    --sunk: #0b1f28;
+    --line: #203b45;
+    --line-strong: #62818a;
+    --ink: #e4f2f0;
+    --muted: #a8c3c5;
+    --faint: #8eaaaf;
+    --deco: #4d6970;
+    --accent: #5ccdd8;
+    --offered: #5ccdd8;
+    --enamel: #06141a;
+    --enamel-2: #10252e;
+    --term-fg: #d6ecea;
+    --needs: #ff6f61;
+    --needs-text: #ff8b7f;
+    --ready: #4dcfae;
+    --ready-text: #5ad8b8;
+    --working: #ffbd55;
+    --working-text: #ffbd55;
+    --quiet: #7f979c;
+    --broken: #a84e49;
+    --broken-text: #f0968e;
+    --on-needs: #06141a;
+    --on-offered: #06141a;
+    --on-ready: #06141a;
+    --on-working: #06141a;
+    --on-quiet: #06141a;
+    --on-broken: #ffffff;
+    --shadow: 0 0 0 .5px #ffffff12, 0 6px 16px -8px #000000b3;
+    --shadow-pop: 0 0 0 .5px #ffffff1f, 0 24px 64px -16px #000000d9;
+    --shadow-card: 0 0 0 .5px #ffffff0f, 0 1px 3px #00000066;
+    --backdrop: #00000073;
+    --main-shadow: 0 0 0 .5px #ffffff14, 0 12px 36px -12px #000000cc;
+  }
+}
+
+:root[data-scheme='dark'] {
+  color-scheme: dark;
+  --wall: #0a1b23;
+  --aqua-horizon-top: #071621;
+  --aqua-horizon-bottom: #121e1f;
+  --panel: #10252e;
+  --panel-2: #162f39;
+  --sunk: #0b1f28;
+  --line: #203b45;
+  --line-strong: #62818a;
+  --ink: #e4f2f0;
+  --muted: #a8c3c5;
+  --faint: #8eaaaf;
+  --deco: #4d6970;
+  --accent: #5ccdd8;
+  --offered: #5ccdd8;
+  --enamel: #06141a;
+  --enamel-2: #10252e;
+  --term-fg: #d6ecea;
+  --needs: #ff6f61;
+  --needs-text: #ff8b7f;
+  --ready: #4dcfae;
+  --ready-text: #5ad8b8;
+  --working: #ffbd55;
+  --working-text: #ffbd55;
+  --quiet: #7f979c;
+  --broken: #a84e49;
+  --broken-text: #f0968e;
+  --on-needs: #06141a;
+  --on-offered: #06141a;
+  --on-ready: #06141a;
+  --on-working: #06141a;
+  --on-quiet: #06141a;
+  --on-broken: #ffffff;
+  --shadow: 0 0 0 .5px #ffffff12, 0 6px 16px -8px #000000b3;
+  --shadow-pop: 0 0 0 .5px #ffffff1f, 0 24px 64px -16px #000000d9;
+  --shadow-card: 0 0 0 .5px #ffffff0f, 0 1px 3px #00000066;
+  --backdrop: #00000073;
+  --main-shadow: 0 0 0 .5px #ffffff14, 0 12px 36px -12px #000000cc;
+}
+
+:root[data-contrast='more'] { --muted: #1c404d; --faint: #264956; --deco: #4a6a74; --line: #6f8c91; }
+@media (prefers-contrast: more) { :root { --muted: #1c404d; --faint: #264956; --deco: #4a6a74; --line: #6f8c91; } }
+@media (prefers-color-scheme: dark) { :root[data-contrast='more']:not([data-scheme='light']) { --muted: #ccdfdf; --faint: #c1d5d6; --deco: #8eaaaf; --line: #62818a; } }
+:root[data-contrast='more'][data-scheme='dark'] { --muted: #ccdfdf; --faint: #c1d5d6; --deco: #8eaaaf; --line: #62818a; }
+@media (prefers-contrast: more) and (prefers-color-scheme: dark) { :root:not([data-scheme='light']) { --muted: #ccdfdf; --faint: #c1d5d6; --deco: #8eaaaf; --line: #62818a; } }
+@media (prefers-contrast: more) { :root[data-scheme='dark'] { --muted: #ccdfdf; --faint: #c1d5d6; --deco: #8eaaaf; --line: #62818a; } }
+
+:root {
+  --display: 'Avenir Next', 'Avenir', system-ui, sans-serif;
+  --ui: -apple-system, BlinkMacSystemFont, system-ui, 'Atkinson Hyperlegible', sans-serif;
+  --radius: 8px;
+  --radius-s: 4px;
+  --primary: var(--accent);
+  --on-primary: var(--panel);
+  --hover: color-mix(in oklab, var(--accent) 9%, var(--panel));
+  --radius-card: 12px;
+  --radius-control: 8px;
+  --display-weight: 600;
+  --heading-case: none;
+  --heading-tracking: 0;
+  --name-tracking: .01em;
+  --label-case: none;
+  --label-tracking: .01em;
+  --side-surface: transparent;
+  --side-rule: transparent;
+  --main-surface: var(--panel);
+  --main-inset: 8px;
+  --main-radius: 14px;
+  --status-edge: 1.5px;
+  --status-ring-mix: 100%;
+  --ansi-black: #173b47;
+  --ansi-red: #f07a6e;
+  --ansi-green: #5fd3b4;
+  --ansi-yellow: #f6c46a;
+  --ansi-blue: #4fb6e0;
+  --ansi-magenta: #c49be0;
+  --ansi-cyan: #5fd6da;
+  --ansi-white: #cfe3e2;
+  --ansi-bright-black: #6f8c91;
+  --ansi-bright-red: #ff9a8f;
+  --ansi-bright-green: #86e3c9;
+  --ansi-bright-yellow: #fbd88f;
+  --ansi-bright-blue: #82cdee;
+  --ansi-bright-magenta: #d8b9ee;
+  --ansi-bright-cyan: #8ce6e8;
+  --ansi-bright-white: #f4fbfa;
+}
+
+/* Best effort, beyond tokens: the wall as the view from the sand, sky above the sea's haze above the beach. */
+body {
+  background: linear-gradient(var(--aqua-horizon-top), var(--wall) 55%, var(--aqua-horizon-bottom)) fixed;
+}

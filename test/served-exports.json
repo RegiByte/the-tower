@@ -476,6 +476,7 @@
       "bundled.policies",
       "bundled.quota",
       "bundled.reviews",
+      "bundled.themes",
       "hook.tower/discard.done",
       "hook.tower/discard.record",
       "hook.tower/spawn.gate",

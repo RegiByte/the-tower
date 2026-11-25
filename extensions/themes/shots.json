@@ -1,0 +1,47 @@
+{
+  "workers": 3,
+  "scenes": [
+    {
+      "name": "aqua",
+      "open": "#$WORKER_1",
+      "size": "1440x900",
+      "steps": [
+        {
+          "until": ".sess"
+        },
+        {
+          "eval": "(async () => { const h = { 'content-type': 'application/json' }; const key = ['renderers', 'page', 'theme']; const c = await (await fetch('/config')).json(); const was = c.renderers?.page?.theme; const r = was === undefined ? await fetch('/config/add', { method: 'POST', headers: h, body: JSON.stringify({ key, value: 'themes/aqua' }) }) : await fetch('/config/set', { method: 'POST', headers: h, body: JSON.stringify({ key, value: 'themes/aqua', was }) }); if (!r.ok) throw new Error(await r.text()) })()"
+        },
+        {
+          "until": "link[data-tower-themes*=\"aqua.css\"]"
+        },
+        {
+          "wait": 1500
+        }
+      ],
+      "crop": "body",
+      "pad": 0
+    },
+    {
+      "name": "flamingo",
+      "open": "#$WORKER_1",
+      "size": "1440x900",
+      "steps": [
+        {
+          "until": ".sess"
+        },
+        {
+          "eval": "(async () => { const h = { 'content-type': 'application/json' }; const key = ['renderers', 'page', 'theme']; const c = await (await fetch('/config')).json(); const was = c.renderers?.page?.theme; const r = was === undefined ? await fetch('/config/add', { method: 'POST', headers: h, body: JSON.stringify({ key, value: 'themes/flamingo' }) }) : await fetch('/config/set', { method: 'POST', headers: h, body: JSON.stringify({ key, value: 'themes/flamingo', was }) }); if (!r.ok) throw new Error(await r.text()) })()"
+        },
+        {
+          "until": "link[data-tower-themes*=\"flamingo.css\"]"
+        },
+        {
+          "wait": 1500
+        }
+      ],
+      "crop": "body",
+      "pad": 0
+    }
+  ]
+}

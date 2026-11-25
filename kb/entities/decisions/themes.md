@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-11-23",
   "reviewed": "2026-11-25",
-  "refs": ["hub/src/renderers.ts#themesOf", "hub/src/renderers.ts#themeSheet", "hub/src/renderers.ts#themeUrls", "hub/src/renderers.ts#themeFile", "hub/src/bridge/extensions.ts#offeredThemes", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/http.ts#preloaded", "hub/src/tower/http.ts#withThemes", "hub/test/server.test.ts", "hub/src/tower/http.ts#themesCss", "hub/src/tower/http.ts#themeServed", "hub/src/tower/publisher.ts", "hub/src/bridge/board.ts#Board", "hub/src/bridge/board.ts#BoardTheme", "hub/src/tower/tower.js", "hub/renderers/page/page.js#recolourTerminals", "hub/renderers/tower3d/src/term.ts", "hub/src/config-check.ts#themeProblems", "hub/examples/extensions/harbor/harbor.css"],
+  "refs": ["hub/src/renderers.ts#themesOf", "hub/src/renderers.ts#themeSheet", "hub/src/renderers.ts#themeUrls", "hub/src/renderers.ts#themeFile", "hub/src/bridge/extensions.ts#offeredThemes", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/http.ts#preloaded", "hub/src/tower/http.ts#withThemes", "hub/test/server.test.ts", "hub/src/tower/http.ts#themesCss", "hub/src/tower/http.ts#themeServed", "hub/src/tower/publisher.ts", "hub/src/bridge/board.ts#Board", "hub/src/bridge/board.ts#BoardTheme", "hub/src/tower/tower.js", "hub/renderers/page/page.js#recolourTerminals", "hub/renderers/tower3d/src/term.ts", "hub/src/config-check.ts#themeProblems", "hub/examples/extensions/harbor/harbor.css", "hub/extensions/themes/extension.json"],
   "links": [
     { "to": "cascade-layers", "verb": "loads into", "carries": "each theme in a layer of its own inside theme" },
     { "to": "design-system", "verb": "sets", "carries": "the palette and the character tokens" },
@@ -53,7 +53,8 @@ touches, the same for the user's config and for an extension that ships a look.
 
 Only tokens are promised to a theme. The page's classes and state classes and the elements' `data-slot` parts are
 reached at best effort and may change in any release (`docs/extending.md`, "Write a theme"). The example,
-[`harbor.css`](ref:hub/examples/extensions/harbor/harbor.css), is a theme and an extension at once.
+[`harbor.css`](ref:hub/examples/extensions/harbor/harbor.css), is a theme and an extension at once; the bundled
+[`themes`](ref:hub/extensions/themes/extension.json) extension offers Aqua and Flamingo, loaded only when picked.
 
 **Alternatives considered.**
 - *Load themes from the board only, in `/tower.js`*: live, but every load draws unthemed until the board arrives,
