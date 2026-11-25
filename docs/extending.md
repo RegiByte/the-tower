@@ -434,7 +434,7 @@ do. The tower makes a best effort to avoid majors.
 **View state** (marks, a remembered tab, a viewer's preference) goes in `tower.store`: `tower.store.set(key, value)`,
 `await tower.store.get(key)`. It lives in the viewer's browser under keys every page shares, the tower page
 included, so the files you mark viewed in one renderer are viewed in the next; `tower.store.on((key) => …)` hears each
-key the page sets, a page it relays included. `tower.remember` and `tower.recall`
+key the page sets, a page it relays included, and (API 2.32) each key another window of the viewer's sets. `tower.remember` and `tower.recall`
 keep one value for the page alone.
 
 **The viewer's appearance** is `tower.prefs`: the scheme, the text, heading and code faces (any face installed on the
