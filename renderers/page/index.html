@@ -185,7 +185,7 @@ body:has(.crew-group.dragged) .tower-tip { visibility: hidden; }
 :is(.sess.sel, .pane-tab.on, .tab.open, .tray.on, .side-views button[aria-current]) { color: var(--ink); border-color: var(--ink); box-shadow: var(--selected); }
 .floors .sess.sel { border-left-color: var(--c); }
 .sess .top { display: flex; align-items: center; gap: var(--sp-m); }
-.sess .call, .past .call { color: inherit; text-decoration: none; }
+.sess .call { color: inherit; text-decoration: none; }
 .sess .call { font: var(--name-weight) var(--fs-m)/1 var(--display); letter-spacing: var(--name-tracking); white-space: nowrap; }
 .sess .st { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-xs); font-weight: 700; color: var(--muted); white-space: nowrap; }
 .sess .ago { flex: none; font-size: var(--fs-xs); color: var(--faint); white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -243,16 +243,6 @@ body:has(.crew-group.dragged) .tower-tip { visibility: hidden; }
 .offer-row .acts { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2xs) var(--sp-s); min-width: 0; }
 .offer-row .acts:empty { display: none; }
 .offer-row .icon-btn { position: absolute; top: 0; right: 0; }
-.past { overflow: hidden; padding: var(--sp-xs) var(--sp-m); border-radius: var(--radius-control); font-size: var(--fs-s); color: var(--muted); cursor: pointer; }
-.past:hover { background: var(--hover); color: var(--ink); }
-.past.sel { background: var(--panel-2); color: var(--ink); }
-.past .head { display: flex; align-items: center; gap: var(--sp-m); }
-.past .call { font: var(--name-weight) var(--fs-s)/1 var(--display); letter-spacing: var(--name-tracking); color: var(--ink); }
-.past .when { color: var(--faint); white-space: nowrap; }
-.past .head .when { margin-left: auto; }
-.past .conv { display: flex; align-items: center; gap: var(--sp-s); padding-left: var(--sp-xl); }
-.past .what { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.past button:not(.icon-btn) { min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-s); }
 .said { color: var(--faint); }
 .side-foot { display: flex; align-items: center; gap: var(--sp-s); margin-top: auto; padding: var(--sp-s) var(--sp-xl); border-top: 1px solid var(--line); color: var(--faint); font-size: var(--fs-xs); }
 .side-extensions { margin-top: auto; padding: var(--sp-xs) var(--sp-xl) 0; border-top: 1px solid var(--line); }
