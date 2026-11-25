@@ -59,7 +59,7 @@ are the same view in every renderer; only where they sit, their state and a few 
   ([`reviewsHtml`](ref:hub/extensions/reviews/client/panel.ts#reviewsHtml) over `x.reviews`, [[review-threads]], whose
   view model [`threadViewOf`](ref:hub/extensions/reviews/client/panel.ts#threadViewOf) builds) and
   `/x/policies/panel.js` ([[policies]]). Each takes a view model and reads nothing global. The logic of rows, picks,
-  anchors and marks lives beside them as pure functions. The tower page draws Stats and, in the core `tower/changes`
+  anchors and marks lives beside them as pure functions. The tower page mounts Stats as the core `tower/stats` view and, in the core `tower/changes`
   view ([`mount`](ref:hub/src/views/changes.ts#mount)), Changes; Tower 3D draws Stats, mounts `tower/changes` and
   `reviews/thread` at its desk, and the reviews extension's `reviews/checkout-thread` view in its reader, on a
   checkout's `reviews.thread` subject ([`hosting.ts`](ref:hub/renderers/tower3d/src/hosting.ts)). The Changes panel

@@ -26,7 +26,6 @@
     "hub/src/shared/attend.ts#watching",
     "hub/renderers/page/view.js",
     "hub/renderers/page/page.js#pageHandlers",
-    "hub/renderers/page/stats.js#stats",
     "hub/renderers/tower3d/src/app.ts#appHandlers",
     "hub/test/reads.test.ts",
     "hub/src/shared/term-view.ts#termHandlers",
@@ -96,7 +95,7 @@ I/O at the edge ([[renderer-is-disposable]]: what a next renderer would need is 
   new-worker dialog ([`spawnHandlers`](ref:hub/src/shared/spawn.ts#spawnHandlers)), a hosted view's lifecycle
   ([`hostedHandlers`](ref:hub/src/shared/view-host.ts#hostedHandlers), [[ui-model]]) and a terminal's hold on its PTY's
   one size ([`termHandlers`](ref:hub/src/shared/term-view.ts#termHandlers)). A machine only one renderer
-  has (the tower page's main view and the [`stats`](ref:hub/renderers/page/stats.js#stats) its sidebar shows, Tower 3D's movement) lives beside that renderer, in the same shape.
+  has (the tower page's main view, Tower 3D's movement) lives beside that renderer, in the same shape.
 - *Tests.* Steps are pure functions, so a machine's bug is pinned by a unit test of its steps
   ([`reads.test.ts`](ref:hub/test/reads.test.ts)) where the behaviour is worth locking down.
 
