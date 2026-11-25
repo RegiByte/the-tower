@@ -12,7 +12,6 @@ import { settingsCss } from '/lib/settings.js'
 import { wireSpawn } from '/lib/spawn.js'
 import '/lib-ui/combobox.js'
 import '/lib-ui/dialog.js'
-import { STATS_ALL } from '/lib/stats.js'
 import { loadTerminalFont } from '/lib/terminal.js'
 import { pressOf, componentsLayer, copyTelling, fileButtonsHtml, fileCall, itemsCss, morphPanel, panelsCss, pressing, pressingAs } from '/lib/view.js'
 import { readViewer, seenMarker, seenOf, VIEWER_KEYS } from '/lib/viewer.js'
@@ -29,7 +28,6 @@ import { watchCalls } from './calls.js'
 import { shells } from './shells.js'
 import { tipStrip } from './tip.js'
 import { screen } from './screen.js'
-import { stats } from './stats.js'
 import { settingsPane } from './settings-pane.js'
 import { alerting } from './alerts.js'
 import { draft } from './draft.js'
@@ -44,7 +42,6 @@ import { asksHtml, badgeHtml, drawCount, regionActionHtml, tuckableBadgeHtml } f
 import { gapBeside, isCut, lineWidth, roomOf } from './fit.js'
 
 /**
- * @import { SideView } from './stats.js'
  * @import { AttendEffect, AttendEvent, Attending } from '/lib/attend.js'
  * @import { Attention, Board, Card, Floor, Subject, Wait } from '/lib/board.js'
  * @import { BriefMarkdown } from '/lib/brief.js'
@@ -57,7 +54,6 @@ import { gapBeside, isCut, lineWidth, roomOf } from './fit.js'
  * @import { Executors, Handlers, Loop, StateEffect, TimerEffect } from '/lib/machine.js'
  * @import { MenuLine, MenuPick, Opened, Openable, Pick, SubjectMenu } from '/lib/palette.js'
  * @import { SpawnEvent, Spawning } from '/lib/spawn.js'
- * @import { StatsRange } from '/lib/stats.js'
  * @import { Press, CommandKit, Placing } from '/lib/view.js'
  * @import { Viewer } from '/lib/viewer.js'
  * @import { AsideGroup, AsideLine, Beside, Pinning } from './subject-menus.js'
@@ -125,7 +121,7 @@ function render() {
   morphPanel(floors, floorsTopDown().map(floorHtml).join(''))
   floorTrays.place(floors)
   holdRow(floors, anchor)
-  drawSideView()
+  paintNav()
   morphPanel($('rail'), railHtml(waiting))
   extensionsFoot.paint()
   morphPanel($('side-foot'), board().config ? `<span>config</span><code data-tip="${esc(board().config)}"><bdi>${esc(board().config)}</bdi></code>${fileButtonsHtml(board().config)}` : '')
@@ -378,7 +374,8 @@ const { drawSettings } = settingsPane({
   section: (view, state) => (showIn('board.sections', view, state !== 'off'), state !== 'off' && foldIn('board.sections', view, state === 'folded')),
 })
 
-const { floorInView, drawSideView, sideView } = await stats({ view, findCard, floorsTopDown, board, viewer, lostAt })
+/** The floor in view: the selected worker's, the open shelf's, archive's or draft's, else the top floor. */
+const floorInView = () => floorOfView(view(), (id) => findCard(id)?.project) ?? floorsTopDown()[0]?.id
 
 const { showMode, termFont, applyTermFont, leaveTerminal } = screen({ board, refont: () => (mainRegion.refont(), refontShell()) })
 
@@ -1437,6 +1434,20 @@ const paintSections = () => {
   morphPanel(root, sidebarSections.html())
   sidebarSections.place(root)
 }
+/** The sidebar's entries (`board.nav`): every view the region offers on the board, each opening in the main pane. */
+const sidebarEntries = mainRegion.entries('board.nav', () => paintNav())
+
+/** Floors, the way home to the skyline, then the sidebar's entries, the one the main pane shows marked. */
+const paintNav = () => {
+  const at = view()
+  const home = isHome(at)
+  const shown = at.t === 'view' && !home ? at.location.view : undefined
+  morphPanel(
+    $('nav'),
+    `<button class="eyebrow" data-nav-home${home ? ' aria-current="page"' : ''} data-tip="every floor and who works on it">Floors</button>${sidebarEntries.html(shown)}`,
+  )
+}
+
 // A section's view says its tally changed.
 $('sections').addEventListener('tab', () => paintSections())
 
@@ -1539,11 +1550,9 @@ document.addEventListener('visibilitychange', () => page.dispatch({ type: 'visib
 
 /** The viewer's record and their layout as `tower.store` keeps them now: another renderer or window of theirs may have changed them. */
 async function rereadViewer() {
-  const was = viewer()
   const [kept, laidOut] = await Promise.all([readViewer(tower.store.get), tower.store.get(LAYOUT_KEY)])
   page.dispatch({ type: 'stored', viewer: kept })
   page.dispatch({ type: 'laid-out', layout: /** @type {Layout | undefined} */ (laidOut ?? undefined) })
-  if (viewer().statsRange !== was.statsRange) sideView.dispatch({ type: 'range', range: viewer().statsRange })
 }
 
 /** A wait's or an offer's key, dismissed for this viewer. @param {string} key */
@@ -1768,13 +1777,9 @@ document.addEventListener('click', async (e) => {
   const fold = target.closest('[data-fold-section]')
   if (fold) return foldIn('board.sections', /** @type {string} */ (fold.dataset.foldSection), fold.getAttribute('aria-expanded') === 'true')
   if (target.closest('[data-side]')) return toggleSide()
-  const sideTo = /** @type {SideView | undefined} */ (target.closest('[data-side-view]')?.dataset.sideView)
-  if (sideTo) return sideView.dispatch({ type: 'side', side: sideTo })
-  const scope = target.closest('[data-stats-scope]')?.dataset.statsScope
-  if (scope) return sideView.dispatch({ type: 'scope', all: scope === STATS_ALL })
-  const range = /** @type {StatsRange | undefined} */ (target.closest('[data-stats-range]')?.dataset.statsRange)
-  if (range) return (keepViewer('statsRange', range), sideView.dispatch({ type: 'range', range }))
-  if (target.closest('[data-stats-read]')) return sideView.dispatch({ type: 'retry' })
+  if (target.closest('[data-nav-home]')) return goHome()
+  const navTo = target.closest('[data-nav-view]')?.dataset.navView
+  if (navTo) return display('board', { view: navTo })
   if (target.closest('[data-keys]')) return showKeys()
   const added = target.closest('[data-added]')
   if (added) return runAddedAt(added, JSON.parse(/** @type {string} */ (added.dataset.added)))
@@ -2103,4 +2108,3 @@ addEventListener('hashchange', () => {
   if (page.state().looking) go(view())
 })
 setInterval(tick, 1000)
-sideView.dispatch({ type: 'side', side: sideView.state().side })

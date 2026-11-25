@@ -8,7 +8,7 @@ worker on your own floors.
 ### The tower page
 
 **Learning center** and **Take the tour** in the skyline's greeting (the page's `board.skyline` region), from the
-welcome on a new tower to every day after, beside Floors and Stats in the sidebar (`board.sign`), and in the palette.
+welcome on a new tower to every day after, at the end of the sidebar's entries row (`board.sign`), and in the palette.
 
 | Light | Dark |
 | --- | --- |

@@ -200,8 +200,9 @@ shell keeps running until you end it or it exits.
 
 ## Stats and The Week
 
-**Stats** in the sidebar reads the logs over any window: spend, tokens, turns, how long workers waited on you, how
-many ran at once, the weekly budget's pace, and what landed on each project's default branch. **The Week**
+**Stats**, an entry in the sidebar's row above the floors, opens in the main pane on every floor (a floor's own from
+its menu or the palette, "Open Stats") and reads the logs over any window: spend, tokens, turns, how long workers
+waited on you, how many ran at once, the weekly budget's pace, and what landed on each project's default branch. **The Week**
 (`/r/week/`) reads the budget week as a yearbook: totals, every worker by floor, the hours' rhythm, superlatives.
 
 > "How much did this floor spend this week, and on what?"

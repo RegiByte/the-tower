@@ -84,9 +84,10 @@ declares beside its fields; a renderer with no file declares nothing. The tower 
 
 - `regions`: each place it draws for one subject kind, named `<kind>.<place>` (`item.*` is every collection's items),
   with what it `holds` (`verbs`, `commands`, `badges`, `lines`, `marks`, `tidy`, `asks`, `views`), and for one that
-  holds views the room each gets (`scale`: `chip`, `row`, `cell`, `pane`) and whether it shows `one` or `tabs`, and
-  the forms it draws it in when it is full, its default first (`overflows`: [When a region is
-  full](#when-a-region-is-full)). Only `regions` is required. `tower extensions check` and the table under
+  holds views the room each gets (`scale`: `chip`, `row`, `cell`, `pane`, `dialog`, `list`) and whether it shows `one`,
+  `tabs` or `all`, the region its views open in when it draws them as entries (`opens`, on a region of arity `all`:
+  `board.nav` opens in `board.main`), and the forms it draws it in when it is full, its default first (`overflows`:
+  [When a region is full](#when-a-region-is-full)). Only `regions` is required. `tower extensions check` and the table under
   [Extensions](#extensions) are read from them.
 - `kit`: what it lends the views it hosts (`terminal`, `region`, `run`, `display`, `go`, `bus`, `toast`, `notice`, `confirm`, `href`,
   `showing`, `location`, `spawn`, `now`): a
@@ -1131,7 +1132,7 @@ config declares; this table says it for the ones that ship, generated from their
 | `item.*` | `item.head`, the item's view, the drafts editor for a draft, and the palette: badges, verbs, commands | not drawn | not drawn | not drawn |
 | `collection` | `floor.trays`, a floor's row of trays in the sidebar, one view for each of its collections: the id names where it sits, its subject is the collection: views | not drawn | not drawn | not drawn |
 | `shelf` | not drawn | not drawn | not drawn | not drawn |
-| `board` | `board.main`, the main pane (a worker, the skyline, a floor's archive, a collection, a shelf entry): views<br>`board.dialog`, over the page, modal: a view to read or act in while the page goes on behind it, opened by display with that view, closed by its close button, Escape or a press outside: views<br>`board.strip`, a strip at the top of the sidebar, its view mounted for as long as the page is open: what an extension keeps in sight, or plays, whatever the main pane shows: views<br>`board.sections`, the sidebar's sections, between the limits and the floors: every view offered, each under a heading with its tally, folded to it or open, in the layout's order: views<br>`board.sign`, beside the sidebar's Floors and Stats, and the palette: commands about no one floor, such as a new floor, each its icon alone, its label and hint the tip: commands<br>`board.skyline`, in the skyline's greeting, the welcome on a new tower included: commands about no one floor, each its icon and label: commands<br>`board.notes`, the notes at the top of the sidebar, for asks about no floor: asks | not drawn | not drawn | not drawn |
+| `board` | `board.main`, the main pane (a worker, the skyline, a floor's archive, a collection, a shelf entry): views<br>`board.dialog`, over the page, modal: a view to read or act in while the page goes on behind it, opened by display with that view, closed by its close button, Escape or a press outside: views<br>`board.strip`, a strip at the top of the sidebar, its view mounted for as long as the page is open: what an extension keeps in sight, or plays, whatever the main pane shows: views<br>`board.sections`, the sidebar's sections, between the limits and the floors: every view offered, each under a heading with its tally, folded to it or open, in the layout's order: views<br>`board.nav`, the sidebar's row above the floors: Floors first, then an entry per view on the board the main pane draws, each opening it there, marked while it is open: views<br>`board.sign`, at the end of the sidebar's entries row, and the palette: commands about no one floor, such as a new floor, each its icon alone, its label and hint the tip: commands<br>`board.skyline`, in the skyline's greeting, the welcome on a new tower included: commands about no one floor, each its icon and label: commands<br>`board.notes`, the notes at the top of the sidebar, for asks about no floor: asks | not drawn | not drawn | not drawn |
 <!-- /regions -->
 
 An extension's own kinds are drawn by none of them (`subjectAt` finds one, for a renderer of your own). A renderer
@@ -1393,6 +1394,17 @@ Settings → Sidebar; both go to their layer of the layout (`folded`, `hidden`),
 `list` view, and a renderer with no `list` region offers it nowhere (`sectionViews(placing, region)` in
 `/lib/layout.js` lists what a region of arity `all` draws, for a renderer of your own). A tower older than 2.32
 refuses the scale, so declare `requires.tower: "2.32"`. An extension's own regions are `one` or `tabs`.
+
+**The sidebar's entries.** Above the floors, the tower page draws `board.nav`, a region of arity `all` at `pane` scale
+that `opens` in `board.main`: Floors first, the way home to the skyline, then an entry for every view on the board the
+main pane draws, in the layout's `order`, less its `hidden`. A press displays the view in the main pane, and the entry
+is marked while the main pane shows it. A view of yours on `board` at `pane` is an entry with nothing more declared;
+its `tab` export, read on the board, is the entry's tally. `tower/stats` is the first; the page hides
+`tower/skyline` (Floors stands for it), `tower/extensions` (the foot has its own) and the bundled views reached
+elsewhere (New floor and Clones, the Learning center) there. Hiding an entry, in the
+config's or the viewer's `renderers.page.layout["board.nav"].hidden`, takes it off the row and leaves it in the
+palette's "Open <label>". The row wraps when full. A renderer of your own lists the entries with
+`sectionViews(placing, region)`, as for sections, and reads `opens` for where they go.
 
 **The bus.** What a view draws that the board never carries, and that a user can still point at, is a
 viewer subject: a prompt or an answer in the Brief (`said`), a section of a markdown document (`section`), lines
