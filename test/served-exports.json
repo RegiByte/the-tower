@@ -1870,6 +1870,10 @@
         "addedActions": {
           "since": "2.0"
         },
+        "badgeGlyphOf": {
+          "since": "2.33",
+          "stability": "provisional"
+        },
         "badgesOf": {
           "since": "2.0"
         },

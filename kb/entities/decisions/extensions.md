@@ -215,7 +215,9 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   [`rankedActions`](ref:hub/src/shared/adds.ts#rankedActions) (the core's, then `adds`, then the commands offered),
   `badgesOf`, `actionWords`, [`glyphOf`](ref:hub/src/shared/adds.ts#glyphOf) (a command's `words.icon`: a core icon,
   or an SVG of its client folder, a missing one refusing the extension as it loads,
-  [`iconProblems`](ref:hub/src/bridge/extensions.ts#iconProblems)), and
+  [`iconProblems`](ref:hub/src/bridge/extensions.ts#iconProblems)), [`badgeGlyphOf`](ref:hub/src/shared/adds.ts#badgeGlyphOf)
+  (a badge's `icon`, named the same way and drawn before its label in its ink; a fold's badge is checked by shape
+  alone, so an SVG it names that its extension doesn't serve draws no glyph), and
   [`runCommandWith`](ref:hub/src/shared/run-command.ts#runCommandWith), which imports the module and calls its export with
   `{tower, board, target, args}` and the kit the renderer lends (`target` the subject: its `value`, `key`, `kind`). Asks join the attention order beside the waits ([[attention-list]]); `tower whoami`
   prints a card's lines. Where the tower page draws each contribution is its own

@@ -1,5 +1,5 @@
 import { DISMISS_ASK_TITLE } from '/lib/cards.js'
-import { actionWords, badgesOf, glyphOf } from '/lib/layout.js'
+import { actionWords, badgeGlyphOf, badgesOf, glyphOf } from '/lib/layout.js'
 import { ICON } from '/lib/view.js'
 import { domId } from '/lib/morph.js'
 import { esc, plural, span } from '/lib/words.js'
@@ -12,10 +12,12 @@ import { esc, plural, span } from '/lib/words.js'
  * @import { Glyph } from '/lib/layout.js'
  */
 
-/** One badge with `more` among its attributes: a link when it has `href`. @param {Added<Badge>} b @param {string} more */
+/** One badge with `more` among its attributes: a link when it has `href`, its glyph before its label when it names one. @param {Added<Badge>} b @param {string} more */
 const badgeWith = (b, more) => {
+  const glyph = badgeGlyphOf(b)
   const attrs = `class="badge ${b.tone ?? 'quiet'}"${b.hint ? ` data-tip="${esc(b.hint)}"` : ''}${more}`
-  return b.href ? `<a ${attrs} href="${esc(b.href)}" target="_blank" rel="noreferrer">${esc(b.label)}</a>` : `<span ${attrs}>${esc(b.label)}</span>`
+  const face = `${glyph ? glyphHtml(glyph) : ''}${esc(b.label)}`
+  return b.href ? `<a ${attrs} href="${esc(b.href)}" target="_blank" rel="noreferrer">${face}</a>` : `<span ${attrs}>${face}</span>`
 }
 
 /** One badge: a link when it has `href`. @param {Added<Badge>} b */

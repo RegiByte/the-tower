@@ -14,7 +14,8 @@ import { highlightCss } from './highlight.ts'
  * subject's `.badges`.
  */
 export const panelsCss = `
-.badge { display: inline-flex; align-items: center; flex: none; max-width: 16em; padding: 0 var(--sp-xs); border: 1px solid var(--c); border-radius: var(--radius); color: var(--c-text, var(--ink)); font-size: var(--fs-xs); font-weight: 700; line-height: 1.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; }
+.badge { display: inline-flex; align-items: center; gap: var(--sp-2xs); flex: none; max-width: 16em; padding: 0 var(--sp-xs); border: 1px solid var(--c); border-radius: var(--radius); color: var(--c-text, var(--ink)); font-size: var(--fs-xs); font-weight: 700; line-height: 1.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; }
+.badge > .icon { width: 1.1em; height: 1.1em; }
 a.badge:hover { background: color-mix(in oklab, var(--c) 12%, transparent); }
 .badges { display: flex; flex-wrap: wrap; gap: var(--sp-2xs); margin-top: var(--sp-xs); }
 .tab-row { display: flex; align-items: center; }

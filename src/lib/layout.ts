@@ -3,6 +3,7 @@ export {
   actionId,
   actionWords,
   addedActions,
+  /** @provisional */ badgeGlyphOf,
   badgesOf,
   /** @provisional */ exemptionsOf,
   /** @provisional */ glyphOf,
