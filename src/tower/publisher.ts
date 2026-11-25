@@ -14,7 +14,7 @@ import { API_VERSION, apiError, type ApiError } from '../shared/api.ts'
 import type { BoardMsg } from '../shared/shelf-page.ts'
 import type { Config } from '../shared/model.ts'
 import { renderersOf, themesOf, themeUrls } from '../renderers.ts'
-import { contributedRenderers, contributedThemes } from '../bridge/extensions.ts'
+import { contributedRenderers, offeredThemes } from '../bridge/extensions.ts'
 import { frozen } from '../bridge/frozen.ts'
 import { errorOf } from './answers.ts'
 import { eventStream } from './encoding.ts'
@@ -130,29 +130,33 @@ export const publisher = defineResource({
     }
 
     const viewOf = (): SystemView => viewAt(readConfig())
-    const viewAt = (config: Config): SystemView => ({
-      config,
-      sessions: system.sessions().map(placedOn(config)),
-      host: system.live(),
-      processes: system.running(),
-      peers: system.peers(),
-      shells: system.shells(),
-      jobs: system.jobs(),
-      heldJobs: system.heldJobs(),
-      items: system.items(),
-      repos: system.repos(),
-      firstReads: system.firstReads(),
-      logFiles: system.logs(),
-      readings: extensions.readings(),
-      streams: system.streamMonths(),
-      extensions: extensions.registry().extensions,
-      stores: extensions.registry().stores,
-      paths,
-      keeps: keepsOf(config),
-      themes: themeUrls(themesOf(config, contributedThemes(extensions.accepted()))),
-      viewers: viewersNow(),
-      now: Date.now(),
-    })
+    const viewAt = (config: Config): SystemView => {
+      const offered = offeredThemes(extensions.accepted())
+      return {
+        config,
+        sessions: system.sessions().map(placedOn(config)),
+        host: system.live(),
+        processes: system.running(),
+        peers: system.peers(),
+        shells: system.shells(),
+        jobs: system.jobs(),
+        heldJobs: system.heldJobs(),
+        items: system.items(),
+        repos: system.repos(),
+        firstReads: system.firstReads(),
+        logFiles: system.logs(),
+        readings: extensions.readings(),
+        streams: system.streamMonths(),
+        extensions: extensions.registry().extensions,
+        stores: extensions.registry().stores,
+        paths,
+        keeps: keepsOf(config),
+        themes: themeUrls(themesOf(config, offered)),
+        offeredThemes: Object.fromEntries(Object.entries(offered).map(([name, themes]) => [name, themes.map(({ id, title, extension }) => ({ id, title, extension }))])),
+        viewers: viewersNow(),
+        now: Date.now(),
+      }
+    }
 
     /** Set while extensions fold: a fold reads the board it is handed, never builds one. */
     let folding = false

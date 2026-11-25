@@ -3,8 +3,9 @@
  * selector outweighs the tower's. The tower loads it after the renderer's own stylesheet, in a cascade layer of its
  * own, so nothing here names a layer and no selector has to outweigh the tower's.
  *
- * Load it with the config (renderers.page.themes, the absolute path of this file) or as an extension
- * (extensions.harbor.path, this folder): docs/extending.md, "Write a theme".
+ * Load it as an extension (extensions.harbor.path, this folder), which offers it as harbor/harbor, and pick it with
+ * renderers.page.theme; or with the config alone (renderers.page.themes, the absolute path of this file):
+ * docs/extending.md, "Write a theme".
  */
 
 /* The palette, per scheme: the scheme the viewer picked (data-scheme), else the system's. */

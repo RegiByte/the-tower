@@ -22,6 +22,7 @@ export const viewOf = (config: Config, over: Partial<SystemView> = {}): SystemVi
   paths: { config: '/config.json', collections: '/c' },
   keeps: [],
   themes: {},
+  offeredThemes: {},
   viewers: {},
   now: 0,
   ...over,

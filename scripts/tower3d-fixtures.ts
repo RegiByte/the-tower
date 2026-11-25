@@ -300,6 +300,7 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<CommandL
     extensions: [REVIEWS_ON_BOARD],
     viewers: {},
     themes: {},
+    offeredThemes: {},
     adds: Object.assign({}, ...threaded.map((t) => t.adds ?? {})),
     asks: [],
     today: extra.today ?? { since: now - 15 * 60 * MIN, spend: 0, agentHours: 0, waits: { n: 0, p50: 0 } },

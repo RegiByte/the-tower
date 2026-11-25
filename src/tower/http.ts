@@ -128,7 +128,7 @@ import { landingOf, WorktreeError } from '../worktrees.ts'
 import { errorOf, OK, type Answer } from './answers.ts'
 import { DispatchResource } from './dispatch.ts'
 import { collectionOn, contributedTo, floorShelf } from '../bridge/stores.ts'
-import { contributedRenderers, contributedThemes } from '../bridge/extensions.ts'
+import { contributedRenderers, offeredThemes } from '../bridge/extensions.ts'
 import type { ExtensionsResource } from './extensions.ts'
 import type { PublisherResource } from './publisher.ts'
 import { lastFrames, screenMirrors } from './screens.ts'
@@ -628,7 +628,7 @@ export const httpServer = defineResource({
       })
 
     /** Each renderer's themes as the config and the accepted extensions give them now. */
-    const themesNow = (config: Config): Themes => themesOf(config, contributedThemes(extensions.accepted()))
+    const themesNow = (config: Config): Themes => themesOf(config, offeredThemes(extensions.accepted()))
 
     /** `/renderers/<name>/themes.css`: the stylesheet importing the renderer's themes, empty when it has none. */
     const themesCss = (req: http.IncomingMessage, res: http.ServerResponse, name: string) =>

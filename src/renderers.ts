@@ -7,6 +7,7 @@ import { chordProblem } from './shared/keymap.ts'
 import { BUILT_IN_RENDERERS, ConfigError, type Config, type ContributedRenderer, type Renderer, type RendererConfig } from './shared/model.ts'
 import { capabilityOf, type Manifest } from './shared/extensions.ts'
 import { CORE_VIEWS } from './shared/views.ts'
+import type { OfferedTheme } from './bridge/extensions.ts'
 import { MENU_LINE_IDS } from './shared/subject-menu.ts'
 import { addsLinesOn, BUDGETS, HOLDS, KIT_MEMBERS, OVERFLOWS, overflowOf, REGION_ID, SCALES, type Declared, type Hold, type Layout, type LayoutEntry, type LayoutProblem, type Overflow, type Region, type RendererRegions } from './shared/regions.ts'
 
@@ -288,20 +289,32 @@ export const fileBelow = (root: string, file: string): string | undefined => {
 export type Themes = Record<string, string[]>
 
 /**
- * Each renderer's themes: the accepted extensions' (`contributed`), then the config's `renderers.<name>.themes`, so the
- * config's come last and win. A config entry that is no list of absolute paths is a config error.
+ * Each renderer's themes: the one its config's `renderers.<name>.theme` names among those the accepted extensions offer
+ * (`offered`), then the config's `renderers.<name>.themes`, so the config's come last and win. An offered theme the
+ * config doesn't name loads nothing, nor does a name nothing offers (`tower config check` says it). A `theme` that is no
+ * string, or `themes` that are no list of absolute paths, is a config error.
  */
-export const themesOf = (config: Config, contributed: Themes): Themes => {
-  const own = Object.entries(config.renderers ?? {}).flatMap(([name, r]): [string, string[]][] => {
-    const themes: unknown = r?.themes
-    if (themes === undefined) return []
-    if (!Array.isArray(themes) || !themes.every((t) => typeof t === 'string' && path.isAbsolute(t)))
-      throw new ConfigError(`renderers.${name}.themes in the config: a list of the absolute paths of stylesheets`)
-    return [[name, themes]]
-  })
-  const merged: Themes = { ...contributed }
-  for (const [name, themes] of own) merged[name] = [...(merged[name] ?? []), ...themes]
-  return merged
+export const themesOf = (config: Config, offered: Record<string, OfferedTheme[]>): Themes =>
+  Object.fromEntries(
+    Object.entries(config.renderers ?? {}).flatMap(([name, r]): [string, string[]][] => {
+      const files = [...activeTheme(name, r?.theme, offered[name] ?? []), ...tweaks(name, r?.themes)]
+      return files.length ? [[name, files]] : []
+    }),
+  )
+
+/** The stylesheet of the offered theme `theme` names, none when it names none or one nothing offers. */
+const activeTheme = (renderer: string, theme: unknown, offered: OfferedTheme[]): string[] => {
+  if (theme === undefined) return []
+  if (typeof theme !== 'string') throw new ConfigError(`renderers.${renderer}.theme in the config: the id of a theme an extension offers, like harbor/harbor`)
+  return offered.filter((t) => t.id === theme).map((t) => t.file)
+}
+
+/** The config's own stylesheets for a renderer, loaded after its active theme. */
+const tweaks = (renderer: string, themes: unknown): string[] => {
+  if (themes === undefined) return []
+  if (!Array.isArray(themes) || !themes.every((t) => typeof t === 'string' && path.isAbsolute(t)))
+    throw new ConfigError(`renderers.${renderer}.themes in the config: a list of the absolute paths of stylesheets`)
+  return themes
 }
 
 /** Where theme `n` of `renderer` is served: its own name below a path of its own. */

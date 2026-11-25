@@ -1067,10 +1067,19 @@ export const Manifest = z
     ),
     themes: since230(
       z
-        .record(z.string().regex(/^[\w-]+(\.[\w-]+)?$/, "a renderer's name: page, week, tower3d or an extension's"), z.array(Path).min(1))
+        .record(
+          z.string().regex(/^[\w-]+(\.[\w-]+)?$/, "a renderer's name: page, week, tower3d or an extension's"),
+          z.record(
+            z.string().regex(NAME, 'a theme name: lowercase words of letters and digits joined by single dashes'),
+            z.strictObject({
+              title: z.string().min(1).describe('What a picker calls it.'),
+              file: Path.describe('Its stylesheet, inside the extension: the only file of it served.'),
+            }),
+          ),
+        )
         .optional()
         .describe(
-          "Themes it contributes, by renderer: stylesheets inside the extension that the renderer's pages load after their own, while it is accepted, before the config's renderers.<name>.themes. Each is imported into a layer of its own, so it outweighs the tower's rules whatever its selectors weigh, and names no layer; only the stylesheet itself is served.",
+          "Themes it offers, by renderer and name, each `<provides>/<name>` outside it: offered while it is accepted, loaded only when the config's renderers.<name>.theme names one. The active theme's stylesheet is imported into a layer of its own after the renderer's own sheet and before the config's renderers.<name>.themes, so it outweighs the tower's rules whatever its selectors weigh, and names no layer. Offered by name since 2.34; 2.30 to 2.33 loaded every listed stylesheet.",
         ),
     ),
     shelf: since213(

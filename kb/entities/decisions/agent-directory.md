@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-11-23",
+  "reviewed": "2026-11-25",
   "refs": ["hub/src/cli-verbs.ts#CLI_VERBS", "hub/src/directory.ts#cardAt", "hub/src/shared/crews.ts#workerAt", "hub/src/shared/crews.ts#holdersOf", "hub/src/mod/bin/tower", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/bridge/resources.ts#peers", "hub/src/machine.ts#peersIn", "hub/src/bridge/board.ts#board", "hub/src/shared/launches.ts#resumeRequest", "hub/src/bridge/chains.ts#resumeName", "hub/src/shared/callsign.ts#callsigns", "hub/src/shared/launches.ts#spawnRequest", "hub/src/shared/spawn-form.ts#spawnCall"]
 }
 ---
