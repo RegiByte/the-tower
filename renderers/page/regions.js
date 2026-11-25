@@ -958,7 +958,7 @@ export function regions(deps) {
       el.dataset.region = id
       if (!view.module) {
         hosting.failed(el, id, `${view.id} declares no module`)
-        const none = { el, hosted: /** @type {Hosted} */ (/** @type {unknown} */ ({ update: () => {}, visible: () => {}, tab: () => undefined, ready: () => true, close: () => {} })) }
+        const none = { el, hosted: /** @type {Hosted} */ (/** @type {unknown} */ ({ update: () => {}, visible: () => {}, tab: () => undefined, tallies: () => false, close: () => {} })) }
         held.set(view.id, none)
         return none
       }
@@ -968,14 +968,14 @@ export function regions(deps) {
     }
 
     /**
-     * What `view`'s heading says: its mounted view's tab, else its module's `tab` export on the board; `undefined` when
-     * it has no section now, or its module hasn't arrived to say.
+     * What `view`'s heading says: its mounted view's `tab()` when it answers one, else its module's `tab` export on the
+     * board; `undefined` when it has no section now, or its module hasn't arrived to say.
      * @param {View} view @returns {TabWords | undefined}
      */
     const wordsOf = (view) => {
       if (!view.tab) return {}
       const at = held.get(view.id)
-      if (at?.hosted.ready()) return at.hosted.tab()
+      if (at?.hosted.tallies()) return at.hosted.tab()
       const module = hosting.loaded(view)
       return module ? /** @type {Tab} */ (module[view.tab])(board(), boardSubject()) : (void hosting.moduleOf(view), undefined)
     }

@@ -434,7 +434,7 @@ do. The tower makes a best effort to avoid majors.
 **View state** (marks, a remembered tab, a viewer's preference) goes in `tower.store`: `tower.store.set(key, value)`,
 `await tower.store.get(key)`. It lives in the viewer's browser under keys every page shares, the tower page
 included, so the files you mark viewed in one renderer are viewed in the next; `tower.store.on((key) => …)` hears each
-key the page sets, a page it relays included, and (API 2.32) each key another window of the viewer's sets. `tower.remember` and `tower.recall`
+key the page sets, a page it relays included, and (API 2.32, a page outside a frame) each key another window of the viewer's sets. `tower.remember` and `tower.recall`
 keep one value for the page alone.
 
 **The viewer's appearance** is `tower.prefs`: the scheme, the text, heading and code faces (any face installed on the
@@ -1361,7 +1361,7 @@ the list N walks) is the first; a view of yours lands after it by declaring the 
 ```
 
 Its heading's tally is its `tab`, the same words a worker's tab reads: the module's export from the board alone, then
-the mounted view's `tab()`, drawn again on its bubbling `tab` event. A `tab` that answers `undefined` leaves the
+the mounted view's `tab()` when it has one, drawn again on its bubbling `tab` event. A `tab` that answers `undefined` leaves the
 section undrawn for now (Waiting with nobody waiting), its view still mounted; a view with no `tab` export is always
 drawn. Each view is mounted once and kept while offered; the page caps a section's height, so a view scrolls inside
 its host. The viewer folds a section to its heading, which tells the view `visible(false)`, and turns one off in

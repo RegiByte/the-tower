@@ -67,8 +67,8 @@
  *   tower.remember(value) / await tower.recall()    a value kept for this page in the viewer's browser (null if none)
  *   tower.store.set(key, value) / await tower.store.get(key)   a value kept in the viewer's browser under a key every page
  *                                                   shares, the tower page included (null if none), such as the files viewed in a diff
- *   tower.store.on((key) => …)                      called on each key this page sets, a page it relays included, and (since 2.32)
- *                                                   each key another window of the viewer's sets; returns unsubscribe
+ *   tower.store.on((key) => …)                      called on each key this page sets, a page it relays included, and (since 2.32,
+ *                                                   outside a frame) each key another window of the viewer's sets; returns unsubscribe
  *   tower.framed                                    whether the page runs inside the tower
  *   tower.version                                   the API version this script speaks, `"<major>.<minor>"`, checked on every board
  *   tower.served                                    what the tower served this script from: { id, version }, the code this page runs
