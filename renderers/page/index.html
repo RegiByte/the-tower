@@ -75,6 +75,7 @@ dialog h2 { margin: 0 0 var(--sp-l); font: var(--display-weight) var(--fs-xl)/1 
 .section-head[aria-expanded='false'] .icon { rotate: -90deg; }
 .section-tally { margin-left: auto; min-width: 2ch; padding: 0 var(--sp-s); border-radius: var(--radius-pill); background: var(--panel-2); color: var(--ink); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; text-align: center; }
 .section-tally.unseen { background: var(--ink); color: var(--panel); }
+.side-section[data-folded] { padding-block: calc(var(--sp-s) / 2); }
 .side-section[data-folded] .section-body { display: none; }
 .section-body { max-height: 12.5rem; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .side-views { display: flex; align-items: flex-start; gap: var(--sp-xs); padding: var(--sp-m) var(--sp-xl); border-bottom: 1px solid var(--line); }
