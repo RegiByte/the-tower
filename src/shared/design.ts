@@ -229,6 +229,7 @@ export const roles = { primary: 'ink', onPrimary: 'panel', hover: 'panel2' } as 
  * pane, inset, rounded and raised, float the main pane over one ground. A worker card's status is a stroke
  * `statusEdge` wide on its leading side, its other sides the line with `statusRingMix` of the status colour mixed in:
  * `100%` with a thin edge draws a full status border.
+ * A `.tree`, a crew hung from its head, draws its trunk and elbows in `treeLine`, each elbow rounded `treeRadius`.
  */
 export const character = {
   radiusCard: 'var(--radius)',
@@ -273,6 +274,8 @@ export const character = {
   mainGlowMix: '0%',
   mainGlowActive: 'var(--main-glow)',
   mainGlowActiveMix: 'var(--main-glow-mix)',
+  treeLine: 'color-mix(in oklab, var(--line-strong) 75%, transparent)',
+  treeRadius: '7px',
 }
 
 /** Icon sizes, as `--icon-<step>`, in rem so they follow the text: `s` beside words, `m` alone in a control. */
@@ -461,6 +464,24 @@ const COMPONENTS = `
 @keyframes blink { 50% { opacity: .25; } }
 .watching .lamp, .lamp.watching { animation: breathe 2.8s ease-in-out infinite; }
 @keyframes breathe { 50% { opacity: .35; } }
+/* A tree: a list hung from the row above it, its head. From under the head a trunk runs down --tree-indent in from the
+   list's edge, and a rounded elbow turns into each item --tree-y below the item's top, --tree-x wide; the trunk stops at
+   the last item's elbow. A tree inside a tree draws its own trunk, the outer one running on past it to the items below.
+   Lines are placed from an item's border box: an item says its left border's width (--tree-edge) and its top and
+   bottom borders' (--tree-rim); --tree-style dashes its elbow, and --tree-branch, an image, the straight part of an
+   elbow the trunk runs on past. An item draws with its ::before alone, leaving its ::after to the item: past an item
+   the trunk is that box's left border, and the elbow off it is painted. */
+.tree { --tree-edge: 0px; --tree-rim: 0px; position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--tree-gap); margin-left: var(--tree-indent); padding-left: var(--tree-x); }
+.tree > * { position: relative; }
+.tree::before, .tree > *::before, .tree > .tree::after { content: ''; position: absolute; border: 0 solid var(--tree-line); pointer-events: none; }
+.tree::before { left: 0; top: calc(-1 * var(--tree-gap)); height: var(--tree-gap); border-left-width: 1px; }
+.tree > :not(.tree)::before { left: calc(-1 * (var(--tree-x) + var(--tree-edge))); top: calc(-1 * var(--tree-rim)); width: var(--tree-x); }
+.tree > :is(:last-child, :has(+ .tree:last-child))::before { height: var(--tree-y); border-style: var(--tree-style, solid); border-width: 0 0 1px 1px; border-bottom-left-radius: var(--tree-radius); }
+.tree > :not(.tree, :last-child, :has(+ .tree:last-child))::before { bottom: calc(-1 * (var(--tree-gap) + var(--tree-rim))); border-left-width: 1px;
+  background: radial-gradient(circle var(--tree-radius) at 100% 0, transparent calc(var(--tree-radius) - 1.25px), var(--tree-line) calc(var(--tree-radius) - .75px),
+      var(--tree-line) calc(var(--tree-radius) - .25px), transparent calc(var(--tree-radius) + .25px)) 0 calc(var(--tree-y) - var(--tree-radius)) / var(--tree-radius) var(--tree-radius) no-repeat border-box,
+    var(--tree-branch, linear-gradient(var(--tree-line), var(--tree-line))) var(--tree-radius) calc(var(--tree-y) - 1px) / calc(var(--tree-x) - var(--tree-radius)) 1px no-repeat border-box; }
+.tree > .tree:not(:last-child)::after { left: calc(-1 * (var(--tree-indent) + var(--tree-x))); top: 0; bottom: calc(-1 * var(--tree-gap)); border-left-width: 1px; }
 .pill { display: inline-flex; align-items: center; gap: var(--sp-s); padding: var(--sp-2xs) var(--sp-l) var(--sp-2xs) var(--sp-m); border-radius: var(--radius-pill); font-size: var(--fs-s); font-weight: var(--label-weight);
   white-space: nowrap; background: var(--c); color: var(--on); }
 .pill .lamp { background: var(--on); }

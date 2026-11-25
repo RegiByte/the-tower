@@ -686,7 +686,7 @@ The tower serves a few things next to the library, each on its own terms:
 | URL | What it is | Its contract |
 |---|---|---|
 | `/tower.js` | the client: the board, every verb and read, streams, `tower.store`, the viewer's appearance (`tower.prefs`) | the API's: removing or renaming a `tower` member is a major |
-| `/design.css` | the design's tokens as custom properties (colours in both schemes, the type and spacing scales, corners), the faces, a few classes (`.needs`, `.pill`, `.eyebrow`…), and every button's pressed, held (`disabled`, `aria-disabled`) and busy (`aria-busy`) states | the API's: removing or renaming a token or a class is a major |
+| `/design.css` | the design's tokens as custom properties (colours in both schemes, the type and spacing scales, corners), the faces, a few classes (`.needs`, `.pill`, `.eyebrow`, `.tree`…), and every button's pressed, held (`disabled`, `aria-disabled`) and busy (`aria-busy`) states | the API's: removing or renaming a token or a class is a major |
 | `/x/<cap>/<module>.js` | an extension's client modules; the bundled ones are under `/x/drafts/`, `/x/floors/`, `/x/guides/`, `/x/pins/`, `/x/policies/`, `/x/quota/` and `/x/reviews/` | the extension's own `contract.json`, at its major ([the author's loop](#extensions)) |
 | `/x/tower/<name>.js` | the core's views, which a renderer mounts by id ([Views](#views)) | the view's id and what it `needs`, which a renderer relies on; the library holds no types for these modules |
 | `/xterm.js`, `/xterm.css`, `/addon-fit.js`, `/addon-web-links.js`, `/addon-unicode-graphemes.js`, `/marked.js` | the libraries the tower's own page uses, at the version it depends on | none: those are the libraries' APIs. Vendor your own copy when you need one to stay put |
@@ -721,6 +721,7 @@ renderer at once, each defaulting to an existing token or a fixed value, alike i
 | `--card-glow`, `--card-glow-mix` | a worker card's glow at rest: its blur, and how much of the card's status colour it is, a percent (a glow is a blur and a percent, not a colour, for the reason the status ring is) (since 2.38) | `0px`, `0%` |
 | `--card-glow-hover`, `--card-glow-hover-mix`, `--card-glow-active`, `--card-glow-active-mix` | the same under the pointer, and on the selected worker's card: emphasis on what is active (since 2.38) | the resting glow |
 | `--main-glow`, `--main-glow-mix`, `--main-glow-active`, `--main-glow-active-mix` | the main pane's glow, in the accent, at rest and while focus is in it (since 2.38) | `0px`, `0%`, then the resting glow |
+| `--tree-line`, `--tree-radius` | a `.tree`'s lines (a crew hung from its head): their colour, and the rounding of each elbow | `color-mix(in oklab, var(--line-strong) 75%, transparent)`, `7px` |
 
 A page's terminal takes `--enamel` (its background), `--term-fg` (its text) and its sixteen ANSI colours
 (`--ansi-black`, `--ansi-red`, `--ansi-green`, `--ansi-yellow`, `--ansi-blue`, `--ansi-magenta`, `--ansi-cyan`,
