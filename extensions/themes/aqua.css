@@ -159,6 +159,7 @@
   --main-surface: var(--panel);
   --dock-surface: transparent;
   --main-inset: 8px;
+  --main-pad: 0px;
   --main-radius: 14px;
   --status-edge: 1.5px;
   --status-ring-mix: 100%;

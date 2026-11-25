@@ -42,7 +42,7 @@ const handlers: Handlers<State, Event, Effect> = {
 
 const STYLE = viewCss(
   ID,
-  `& .stats { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--sp-xl) var(--sp-xl); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-card);
+  `& .stats { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--sp-xl) var(--sp-xl); background: var(--panel); border: var(--fit-hair) solid var(--line); border-radius: var(--fit-inner);
     scrollbar-width: thin; scrollbar-color: var(--line) transparent; scrollbar-gutter: stable; }`,
 )
 
