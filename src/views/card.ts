@@ -106,7 +106,7 @@ const CSS = `:where([data-view="${ID}"]) {
   & .ask .what b { color: var(--needs-text); }
   & .ask .call { font: var(--name-weight) var(--fs-l)/1 var(--display); letter-spacing: var(--name-tracking); }
   & .ask button { margin-left: auto; flex: none; }
-  & .screen { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--enamel); border-radius: var(--radius-card); }
+  & .screen { position: relative; flex: 1; min-height: 0; overflow: hidden; border-radius: var(--radius-card); }
   &.cell { gap: 0; }
   &.cell .bar { --tabs-room: 0px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; column-gap: var(--sp-m); padding: var(--sp-xs) var(--sp-m);
     border: 0; border-bottom: 1px solid var(--line); border-radius: 0; box-shadow: none; }
