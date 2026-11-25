@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-01",
-  "reviewed": "2026-11-23",
+  "reviewed": "2026-11-25",
   "refs": [
     "hub/src/shared/subject-menu.ts#MENU_LINE_IDS",
     "hub/src/shared/subject-menu.ts#menuPins",
