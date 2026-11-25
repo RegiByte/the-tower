@@ -12,6 +12,36 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.19.0
+
+Pick the page's theme from the page, live, and the two new themes get the room they were designed for (the theme pass:
+#728–#735). API 2.41. Nothing to restart beyond the tower (`tower update` does it).
+
+- **The theme picker.** "Open Theme" in the palette shows every offered theme, and Default, drawn on the page's own
+  parts (a floor, two workers, buttons, a menu, the terminal's colours) in light or dark. **Use here** sets this
+  screen only; **Make it the tower's** writes `renderers.<name>.theme` for every screen, as an agent would; **Use the
+  tower's** clears this screen's choice. Your tweak sheets stay on top of either. Renderers get the same through
+  `tower.theme`, and `renderer.json`'s `themeSample` lets a renderer draw its own parts in the previews.
+- **Shown documents follow the theme.** A shown markdown file, a kept item, a link card and Tower 3D's document panels
+  draw in the theme the screen draws (`frameLook` in `/lib/design.js`), switching live. A shown `.html` page stays its
+  author's.
+- **Neon where you are.** New tokens let a theme glow a worker card at rest, on hover and when selected, and the main
+  pane at rest and while you work in it; Flamingo now spends its neon on the selected worker and the focused pane.
+  More character tokens close the gaps a Lobby-like look needed: a card's own surface, a heading colour, weights for
+  names, labels and the brand, the primary button's shape, body tracking and leading, the hover lift apart from the
+  heads of views, and the floor sign's bar and badge. The default look is unchanged.
+- **A flush main pane.** In a theme whose main pane is raised (Aqua, Flamingo), the worker's head, the terminal, shown
+  documents and every view run to the pane's edges (`--main-pad`); the shells' foot belongs to the same surface. The
+  default look keeps its spacing. View authors: "Write a view" says how a body fits a flush pane (`PANE_FIT`).
+- **Crews as trees.** A crew hangs from its head's lamp: a trunk, a rounded elbow into each hire, the trunk stopping at
+  the last, a nested crew drawing its own; adapted from the Lobby renderer (MIT, © Felipe Taboada). A card short of
+  room drops its elapsed time before its status word. Themes can restyle the lines (`--tree-line`, `--tree-radius`).
+- **Fixes.** A click inside a shown document or a Tower 3D panel closes an open popover (settings, menus), in Safari
+  and Tower.app too. Folded sidebar sections centre their heading; a menu's highlight sits inside its rounded corners.
+  The sidebar's row drops its second Learning center button, and a layout's `hidden` now hides actions in the four
+  regions that ignored it. A shown document's rounded corners lose a dark hairline. The tower starts in about a second
+  after a landing that bumps the API, where it refolded every log before.
+
 ## v2.18.0
 
 The sidebar takes what extensions add, and the page gets two themes to choose from (the sidebar pass: #721–#726).
