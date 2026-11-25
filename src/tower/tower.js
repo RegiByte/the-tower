@@ -67,7 +67,8 @@
  *   tower.remember(value) / await tower.recall()    a value kept for this page in the viewer's browser (null if none)
  *   tower.store.set(key, value) / await tower.store.get(key)   a value kept in the viewer's browser under a key every page
  *                                                   shares, the tower page included (null if none), such as the files viewed in a diff
- *   tower.store.on((key) => …)                      called on each key this page sets, a page it relays included; returns unsubscribe
+ *   tower.store.on((key) => …)                      called on each key this page sets, a page it relays included, and (since 2.32)
+ *                                                   each key another window of the viewer's sets; returns unsubscribe
  *   tower.framed                                    whether the page runs inside the tower
  *   tower.version                                   the API version this script speaks, `"<major>.<minor>"`, checked on every board
  *   tower.served                                    what the tower served this script from: { id, version }, the code this page runs
@@ -309,6 +310,9 @@
    */
   const viewerId = () => randomHex(12)
 
+  /** What `tower.store` prefixes its keys with in the browser's `localStorage`. */
+  const STORE_PREFIX = 'tower-store:'
+
   /** At the tower's origin: the board on first subscribe, and every stream on one connection (`/mux`). @returns {Api} */
   const viaRoutes = () => {
     const [, kind, name, n] = location.pathname.split('/')
@@ -436,10 +440,10 @@
       },
       store: {
         set: (key, value) => {
-          try { localStorage.setItem(`tower-store:${key}`, JSON.stringify(value)) } catch {}
+          try { localStorage.setItem(`${STORE_PREFIX}${key}`, JSON.stringify(value)) } catch {}
         },
         get: async (key) => {
-          try { return JSON.parse(localStorage.getItem(`tower-store:${key}`) ?? 'null') } catch { return null }
+          try { return JSON.parse(localStorage.getItem(`${STORE_PREFIX}${key}`) ?? 'null') } catch { return null }
         },
       },
     }
@@ -659,7 +663,11 @@
 
   /** @type {Set<(key: string) => void>} */
   const storeWatchers = new Set()
-  /** `tower.store`, telling its watchers each key this page sets, a framed page's through `relay` included. @type {import('../shared/shelf-page.ts').Tower['store']} */
+  /**
+   * `tower.store`, telling its watchers each key this page sets, a framed page's through `relay` included, and each key
+   * another window of the viewer's sets, which the browser says with a `storage` event.
+   * @type {import('../shared/shelf-page.ts').Tower['store']}
+   */
   const store = {
     set: (key, value) => (api.store.set(key, value), storeWatchers.forEach((fn) => fn(key))),
     get: api.store.get,
@@ -668,6 +676,7 @@
       return () => storeWatchers.delete(fn)
     },
   }
+  if (!framed) addEventListener('storage', (e) => e.key?.startsWith(STORE_PREFIX) && storeWatchers.forEach((fn) => fn(/** @type {string} */ (e.key).slice(STORE_PREFIX.length))))
 
   /**
    * A shelf page framed by this page, given the board and the API over `postMessage` (src/shared/shelf-page.ts). The
