@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-11-18",
+  "reviewed": "2026-11-25",
   "refs": ["hub/src/checkpoints.ts#foldLog", "hub/src/checkpoints.ts#FOLD", "hub/src/checkpoints.ts#sourceHash", "hub/src/checkpoints.ts#writeCheckpoint", "hub/src/tail.ts#readHeader", "hub/src/tail.ts#readEvents", "hub/src/tail.ts#factEvents", "hub/src/system.ts#watchSystem", "hub/src/cli.ts", "hub/src/archive.ts#archiveLog", "hub/src/shared/paths.ts#systemPaths", "hub/test/checkpoints.test.ts"],
   "links": [
     { "to": "system-root", "verb": "writes", "carries": "cache/facts/<id>.v8: a checkpoint per log, moved to its last full line by each fold that read past it" }
@@ -28,11 +28,14 @@ to the new offset when it read anything. A checkpoint is `{fold, header, offset,
   Otherwise, or when the file can't be deserialized (said in the reader's log), the log is folded from its start and a
   new checkpoint written. Logs are append-only, so a prefix never changes.
 - **The fold hash is derived, never bumped by hand**: [`FOLD`](ref:hub/src/checkpoints.ts#FOLD) is a sha256 of the
-  source of `src/checkpoints.ts` and every module it imports by a relative path, transitively
+  source of `src/checkpoints.ts` and every module it imports by a relative path to run, transitively
   ([`sourceHash`](ref:hub/src/checkpoints.ts#sourceHash)): the fold steps, the event filter and readers in `tail.ts`.
-  A change to any of them retires every checkpoint at the next start; a comment or type change does too, costing one
-  cold start. Imports are read from statements at a line's start and from dynamic `import('./…')`, so a path quoted in
-  a comment is not one.
+  A change to any of them retires every checkpoint at the next start; a comment or type change in one does too,
+  costing one cold start. Imports are read from statements at a line's start and from dynamic `import('./…')`, so a
+  path quoted in a comment is not one. A type-only statement (`import type`, `export type … from`) is erased before the
+  code runs and is not followed: through one (`keymap.ts`'s `Board`) the hash reached the board and `API_VERSION`, so
+  nearly every landing retired every checkpoint, and a cold start of a few hundred logs, slowed by a busy machine,
+  outran `tower up`'s wait. An import mixing types and values (`import { type A, b }`) is followed.
 - **Resuming on a line boundary**: the fold continues with [`readEvents`](ref:hub/src/tail.ts#readEvents) from the
   offset, its filter ([`factEvents`](ref:hub/src/tail.ts#factEvents)) seeded with the checkpoint's state, so it skips
   exactly what a fold from the start skips. A live log's tail goes on from where its fold stopped.
@@ -57,6 +60,8 @@ boundary and asserts the facts deep-equal the fold from the start, and checks th
   must not have.
 - Hashing a fixed list of files: misses a new import.
 - Hashing the git commit: any commit invalidates, and a dirty working tree (every worker's) is not one.
+- Hashing the code with its types stripped: exact for type changes, but it needs a TypeScript transform at every start;
+  dropping type-only statements leaves only a type changed inside a module the fold runs costing a cold start.
 - JSON: lossy (`undefined` keys vanish, `NaN` becomes `null`), so equality would hold only modulo JSON.
 - A slot per fold hash (`facts/<fold>/<id>.v8`): two versions of the code reading one root would each keep theirs,
   but retired hashes' directories would pile up with nothing to remove them. With one slot per log they refold cold,
