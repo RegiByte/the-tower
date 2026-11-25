@@ -14,7 +14,7 @@ const ID = 'floors/repos'
 const STYLE = viewCss(
   ID,
   `& .floor-repos { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: var(--sp-xl); padding: var(--sp-xl) var(--sp-2xl);
-    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-card); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+    background: var(--panel); border: var(--fit-hair) solid var(--line); border-radius: var(--fit-inner); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
   & section { display: flex; flex-direction: column; gap: var(--sp-s); }
   & h3 { margin: 0; font-size: var(--fs-s); font-weight: 600; }
   & .hint { color: var(--muted); font-size: var(--fs-s); }

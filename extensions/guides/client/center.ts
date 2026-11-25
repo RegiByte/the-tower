@@ -16,7 +16,7 @@ const ID = 'guides/center'
 const STYLE = viewCss(
   ID,
   `& .center { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(200px, 18em) 1fr; gap: var(--sp-l); }
-  & .index, & .reader { min-height: 0; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-card); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+  & .index, & .reader { min-height: 0; overflow-y: auto; background: var(--panel); border: var(--fit-hair) solid var(--line); border-radius: var(--fit-inner); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
   & .index { display: flex; flex-direction: column; gap: var(--sp-m); padding: var(--sp-l); }
   & .index input { padding: var(--sp-s) var(--sp-m); font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line-strong); border-radius: var(--radius-control); }
   & .index input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
