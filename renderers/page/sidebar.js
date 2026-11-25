@@ -3,13 +3,13 @@ import { addedTidyOf, ATTENTION_NAME, branchLine, carriedLine, editedRows, extra
 import { placeOnOpen } from '/lib/chrome.js'
 import { subjectAreaHtml, subjectButtonHtml, subjectHtml } from '/lib/elements.js'
 import { keyshortcuts } from '/lib/keys.js'
-import { actionId, addedActions, badgesOf, exemptionsOf, isOnScreen, lineId, overflowOf, rankedBadges, rankedLines } from '/lib/layout.js'
+import { addedActions, badgesOf, exemptionsOf, isOnScreen, lineId, overflowOf, rankedBadges, rankedLines } from '/lib/layout.js'
 import { ICON, keyedTip, morphPanel, originIcon, SHELF_ICON, withIcons } from '/lib/view.js'
 import { domId } from '/lib/morph.js'
 import { base, esc, noun, plural, span } from '/lib/words.js'
 import { commandProbes, PROBE_ATTENTION, probeLine, probeTitle } from './clients.js'
 import { onDuty, lineOf, $, fillOf, told } from './kit.js'
-import { actionsHtml, asksHtml, badgeHtml, badgesHtml, drawCount, iconButtonsHtml, moreOf } from './added.js'
+import { actionsHtml, asksHtml, badgeHtml, badgesHtml, drawCount, drawnActions, iconButtonsHtml, moreOf } from './added.js'
 
 /**
  * @import { Attention, Board, Card, CommandLimits, Floor, FloorBranch, FloorWorktree, RateLimit, ShelfEntry, Subject, Unresumable } from '/lib/board.js'
@@ -107,8 +107,8 @@ export async function sidebar(deps) {
   /** Whether the viewer keeps region `id`'s buttons on screen (`LayoutEntry.onScreen`). @param {string} id */
   const onScreen = (id) => isOnScreen(regionLayout(id).entry)
 
-  /** What region `id` draws of `actions`: all of them on screen, its pins alone in the menu only. @template {Added<Action>} A @param {string} id @param {A[]} actions */
-  const shownIn = (id, actions) => (onScreen(id) ? actions : actions.filter((a) => regionLayout(id).entry?.pinned?.includes(actionId(a))))
+  /** What region `id` draws of `actions` under its layout (`drawnActions`). @template {Added<Action>} A @param {string} id @param {A[]} actions */
+  const shownIn = (id, actions) => drawnActions(regionLayout(id).entry, actions)
 
   /** @param {string} text */
   const lineHtml = (text) => `<div class="adds-line" data-tip="${esc(text)}">${esc(text)}</div>`
@@ -555,7 +555,7 @@ export async function sidebar(deps) {
   }
 
   /** What extensions add about no one floor (`board.sign`), beside Floors and Stats: their commands, each its icon. */
-  const boardSignHtml = () => iconButtonsHtml(board(), boardSubject(board()), heldActions(holdsOf('board.sign'), addedActions(board(), boardSubject(board()))))
+  const boardSignHtml = () => iconButtonsHtml(board(), boardSubject(board()), shownIn('board.sign', heldActions(holdsOf('board.sign'), addedActions(board(), boardSubject(board())))))
 
   /** What extensions add to an open floor's sign: their commands, each its icon. @param {Floor} f */
   const signHtml = (f) => iconButtonsHtml(board(), floorSubject(f), shownIn('floor.sign', heldActions(holdsOf('floor.sign'), addedActions(board(), floorSubject(f)))))

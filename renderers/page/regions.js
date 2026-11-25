@@ -2,14 +2,14 @@ import { can, findCard, parentOf, shownSubject } from '/lib/board.js'
 import { shownFrom } from '/lib/brief.js'
 import { subjectAreaHtml, subjectButtonHtml } from '/lib/elements.js'
 import { heldActions, shownKey, shownTitle } from '/lib/cards.js'
-import { actionId, addedActions, isOnScreen, offeredIn, ordered, overflowOf, paneShows, pickView, placedEntries, sectionViews, shownOf } from '/lib/layout.js'
+import { addedActions, offeredIn, ordered, overflowOf, paneShows, pickView, placedEntries, sectionViews, shownOf } from '/lib/layout.js'
 import { panesOf } from '/lib/keys.js'
 import { domId } from '/lib/morph.js'
 import { menuPins, subjectMenu } from '/lib/palette.js'
 import { mountTermView } from '/lib/terminal.js'
 import { ICON, keyedTip, morphPanel, viewHost } from '/lib/view.js'
 import { ago, esc } from '/lib/words.js'
-import { actionsHtml, badgesHtml, iconActionsHtml } from './added.js'
+import { actionsHtml, badgesHtml, drawnActions, iconActionsHtml } from './added.js'
 import { menu } from './menu.js'
 
 /**
@@ -338,7 +338,7 @@ export function regions(deps) {
     function heldHtml(id, on, drawn) {
       const holds = declared().find((r) => r.id === id)?.holds ?? []
       const entry = layout()[id]
-      const actions = heldActions(holds, addedActions(board(), on)).filter((a) => isOnScreen(entry) || entry?.pinned?.includes(actionId(a)))
+      const actions = drawnActions(entry, heldActions(holds, addedActions(board(), on)))
       return `${holds.includes('badges') ? badgesHtml(board(), on) : ''}${drawn(board(), on, actions)}`
     }
 
