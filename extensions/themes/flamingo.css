@@ -1,6 +1,7 @@
 /*
  * Flamingo: a coastal city in neon. Night is a navy ground lit in hot pink, violet and pool cyan; light is magic
- * hour, a lavender sky fading through pink to peach over cream cards.
+ * hour, a lavender sky fading through pink to peach over cream cards. At night the selected worker's card glows
+ * strongest, the others softly, a little more under the pointer, and the main pane more while focus is in it.
  * The bundled themes extension offers it as themes/flamingo: set renderers.page.theme to it. Tokens first, in both schemes
  * and in more contrast; then the best-effort rules, which reach the page's own classes and may need a change when the
  * page changes (docs/extending.md, "Write a theme").
@@ -90,7 +91,17 @@
     --shadow-pop: 0 0 0 .5px #ff2e8840, 0 24px 64px -16px #000000e0;
     --shadow-card: 0 0 0 .5px #ffffff0f, 0 1px 3px #00000066;
     --backdrop: #05051080;
-    --main-shadow: 0 0 0 1px #ff2e8833, 0 0 48px -10px #a646ff73, 0 0 120px -40px #ff2e8859;
+    --main-shadow: 0 0 0 1px #ff2e8833, 0 0 120px -40px #ff2e8840;
+  --main-glow: 32px;
+  --main-glow-mix: 35%;
+  --main-glow-active: 48px;
+  --main-glow-active-mix: 55%;
+  --card-glow: 12px;
+  --card-glow-mix: 40%;
+  --card-glow-hover: 18px;
+  --card-glow-hover-mix: 60%;
+  --card-glow-active: 26px;
+  --card-glow-active-mix: 90%;
   }
 }
 
@@ -134,7 +145,17 @@
   --shadow-pop: 0 0 0 .5px #ff2e8840, 0 24px 64px -16px #000000e0;
   --shadow-card: 0 0 0 .5px #ffffff0f, 0 1px 3px #00000066;
   --backdrop: #05051080;
-  --main-shadow: 0 0 0 1px #ff2e8833, 0 0 48px -10px #a646ff73, 0 0 120px -40px #ff2e8859;
+  --main-shadow: 0 0 0 1px #ff2e8833, 0 0 120px -40px #ff2e8840;
+  --main-glow: 32px;
+  --main-glow-mix: 35%;
+  --main-glow-active: 48px;
+  --main-glow-active-mix: 55%;
+  --card-glow: 12px;
+  --card-glow-mix: 40%;
+  --card-glow-hover: 18px;
+  --card-glow-hover-mix: 60%;
+  --card-glow-active: 26px;
+  --card-glow-active-mix: 90%;
 }
 
 :root[data-contrast='more'] { --muted: #312548; --faint: #382b4f; --deco: #5b4a73; --line: #8a6a8f; }
@@ -154,6 +175,7 @@
   --hover: color-mix(in oklab, var(--accent) 10%, var(--panel));
   --radius-card: 16px;
   --radius-control: 10px;
+  --radius-primary: var(--radius-pill);
   --display-weight: 700;
   --heading-case: uppercase;
   --heading-tracking: .05em;
@@ -186,19 +208,12 @@
   --ansi-bright-white: #fff8fc;
 }
 
-/* Best effort, beyond tokens: the wall as the sky at dusk, the one emphasized action as a pill, and at night neon:
-   cards and lamps glow in their status colour. */
+/* Best effort, beyond tokens: the wall as the sky at dusk, and at night lamps glow in their status colour. */
 body {
   background: linear-gradient(165deg, var(--flamingo-horizon-top), var(--wall) 48%, var(--flamingo-horizon-bottom)) fixed;
 }
 
-button.primary {
-  border-radius: var(--radius-pill);
-}
-
 @media (prefers-color-scheme: dark) {
-  :root:not([data-scheme='light']) .sess { box-shadow: 0 0 22px -6px color-mix(in oklab, var(--c) 85%, transparent); }
   :root:not([data-scheme='light']) .lamp { box-shadow: 0 0 8px 1px color-mix(in oklab, var(--c) 80%, transparent); }
 }
-:root[data-scheme='dark'] .sess { box-shadow: 0 0 22px -6px color-mix(in oklab, var(--c) 85%, transparent); }
 :root[data-scheme='dark'] .lamp { box-shadow: 0 0 8px 1px color-mix(in oklab, var(--c) 80%, transparent); }

@@ -15,7 +15,8 @@ blue, the main pane floats over it, and the wall runs from sky to sand.
 | ![Aqua, light](shots/aqua-light.png) | ![Aqua, dark](shots/aqua-dark.png) |
 
 **Flamingo (`themes/flamingo`): a coastal city in neon.** At night, a navy ground lit in hot pink, violet and pool
-cyan, with cards and lamps glowing in their status colour. In light, magic hour: a lavender sky fading through pink to
+cyan, with lamps glowing in their status colour and cards glowing most where you are: the selected worker's card
+strongest, the others softly, and the main pane while you work in it. In light, magic hour: a lavender sky fading through pink to
 peach over cream cards. Headings and labels are condensed capitals, and the one emphasized action is a pill.
 
 | Light | Dark |
@@ -44,8 +45,9 @@ offers.
 ## How it works
 
 The manifest's `themes` offers `aqua.css` and `flamingo.css` to the `page` renderer. Each is one stylesheet: tokens
-per scheme and for more contrast, then the shared character tokens, faces and ANSI colours. After those come a few
-best-effort rules on the page's own classes: the wall's gradient, Flamingo's pill and its night glow. Those rules may
+per scheme and for more contrast, then the shared character tokens, faces and ANSI colours; Flamingo's pill and its
+cards' glow are tokens too (`--radius-primary`, `--card-glow-*`, `--main-glow-*`). After those come a few best-effort
+rules on the page's own classes: the wall's gradient, and Flamingo's glowing lamps. Those rules may
 need a change when the page changes. The faces are ones macOS installs (Avenir Next, Avenir Next Condensed), with
 system fallbacks elsewhere.
 
