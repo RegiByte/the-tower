@@ -23,7 +23,8 @@
     "hub/src/bridge/landed.ts#parseLog",
     "hub/src/landed.ts#readLanded",
     "hub/test/fixtures/landed.gitlog",
-    "hub/test/stats.test.ts"
+    "hub/test/stats.test.ts",
+    "hub/src/views/stats.ts#mount"
   ],
   "links": [
     { "to": "log-reductions", "verb": "uses", "carries": "timed facts folded from session.measure, turn.*, Stop, prompt.submit, PermissionRequest, PostToolUseFailure, agent.spawn" },
@@ -94,4 +95,8 @@ and they are computable from the logs, so they are computed ([[logs-are-facts]])
 - *History on the board, or prompt texts in facts.* The board is pushed on every change to every renderer; only
   times and numbers are folded, and the brief reads texts from the logs when asked ([[brief-turns]]).
 
-**Impact.** Every renderer draws the shared Stats panel ([[shared-panels]]); any page or worker reads `/stats`.
+**Impact.** Every renderer draws the shared Stats panel ([[shared-panels]]); any page or worker reads `/stats`. The
+panel is the core view [`tower/stats`](ref:hub/src/views/stats.ts#mount), on the board (every floor's) and on a floor
+(that floor's): its scope tabs display it on the other subject, so the location names the scope, and it reads again
+over the viewer's range every minute while mounted. The tower page opens it from the sidebar's entries
+([[sidebar-nav]]).
