@@ -1,0 +1,160 @@
+{
+  "id": "pins",
+  "version": "1.0",
+  "title": "Pins",
+  "description": "Workers pinned as conversations worth coming back to, each with a note on why: a section of the sidebar lists them, the workers sent home included, and a worker's card says it is pinned.",
+  "requires": {
+    "tower": "2.32"
+  },
+  "server": "server.ts",
+  "client": "client",
+  "streams": {
+    "pins": {
+      "scope": "system",
+      "description": "Each pin and unpin, oldest first: a worker's session pinned with the floor it ran on and why, or unpinned.",
+      "facts": {
+        "p": {
+          "description": "A worker pinned: its session, the floor it ran on, and the note on why. A second pin of the same session replaces the first.",
+          "schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["session", "project"],
+            "properties": {
+              "session": { "type": "string", "minLength": 1 },
+              "project": { "type": "string", "minLength": 1 },
+              "note": { "type": "string", "maxLength": 200 }
+            }
+          }
+        },
+        "u": {
+          "description": "A worker unpinned.",
+          "schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["session"],
+            "properties": {
+              "session": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    }
+  },
+  "verbs": {
+    "pin": {
+      "scope": "system",
+      "description": "Pin a worker, a conversation worth coming back to, with a note on why: the calling worker unless `session` names one. Pinning a pinned worker again replaces its note.",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "session": { "type": "string", "minLength": 1, "description": "The worker's session id; the calling worker's own when left out." },
+          "note": { "type": "string", "maxLength": 200, "description": "Why it is worth coming back to, in a few words." }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": ["session", "callsign", "said"],
+        "properties": {
+          "session": { "type": "string" },
+          "callsign": { "type": "string" },
+          "said": { "type": "string" }
+        }
+      },
+      "words": { "label": "Pin", "hint": "keep this worker in the sidebar's Pinned, to come back to" },
+      "cli": { "print": "said", "usage": "pin [--note '<why>'] [--session <id>]" }
+    },
+    "unpin": {
+      "scope": "system",
+      "description": "Unpin a worker: the calling worker unless `session` names one. Refused when it isn't pinned.",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "session": { "type": "string", "minLength": 1, "description": "The worker's session id; the calling worker's own when left out." }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": ["session", "said"],
+        "properties": {
+          "session": { "type": "string" },
+          "said": { "type": "string" }
+        }
+      },
+      "words": { "label": "Unpin", "hint": "take this worker out of the sidebar's Pinned" },
+      "cli": { "print": "said", "usage": "unpin [--session <id>]" }
+    }
+  },
+  "reads": {
+    "list": {
+      "scope": "system",
+      "description": "Every pinned worker on every floor, newest pin first, those sent home included: its session, callsign, floor and note.",
+      "reply": {
+        "type": "object",
+        "required": ["pins", "said"],
+        "properties": {
+          "pins": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["session", "callsign", "project", "at"],
+              "properties": {
+                "session": { "type": "string" },
+                "callsign": { "type": "string" },
+                "project": { "type": "string" },
+                "note": { "type": "string" },
+                "at": { "type": "number", "description": "When it was pinned, epoch ms." }
+              }
+            }
+          },
+          "said": { "type": "string", "description": "One line per pin: callsign, floor, session, note." }
+        }
+      },
+      "cli": { "word": "list", "print": "said" }
+    }
+  },
+  "folds": {
+    "card": {
+      "adds": ["badges", "actions"]
+    },
+    "board": {
+      "x": {
+        "type": "object",
+        "required": ["pins"],
+        "properties": {
+          "pins": {
+            "type": "array",
+            "description": "Every pinned worker, newest pin first, those sent home included.",
+            "items": {
+              "type": "object",
+              "required": ["session", "callsign", "project", "at"],
+              "properties": {
+                "session": { "type": "string" },
+                "callsign": { "type": "string" },
+                "project": { "type": "string" },
+                "note": { "type": "string" },
+                "at": { "type": "number" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "views": {
+    "section": {
+      "module": "section.js",
+      "export": "mount",
+      "on": ["board"],
+      "scales": ["list"],
+      "needs": ["display", "toast"],
+      "tab": "tab",
+      "words": { "label": "Pinned", "hint": "workers pinned to come back to, those sent home included, newest first" }
+    }
+  },
+  "guidance": {
+    "brief": "Pin a conversation worth coming back to: `tower x pins pin --note '<why>'`; `tower x pins list` lists every pin with its session id.",
+    "full": "A pin keeps a worker in the sidebar's Pinned section, after it goes home too, so the user finds the conversation months later. Pin yourself when the user asks you to, or when the conversation made something they will want to come back to and asked for that: `tower x pins pin --note 'made the pricing page'` (a few words on why; pinning again replaces the note). `--session <id>` pins another worker. `tower x pins unpin` unpins you, or `--session <id>` another. `tower x pins list` lists every pin on every floor with its callsign, floor and session id: `tower agent <session>` then reads that worker. Don't pin as a matter of course: a pin is a bookmark the user reads."
+  }
+}

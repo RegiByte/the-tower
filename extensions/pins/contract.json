@@ -1,0 +1,22 @@
+{
+  "provides": "pins",
+  "major": 1,
+  "names": [
+    "verbs.pin",
+    "verbs.unpin",
+    "reads.list",
+    "streams.pins.p",
+    "streams.pins.u",
+    "client.section.js#mount",
+    "client.section.js#tab",
+    "words.pin",
+    "words.pin.--session",
+    "words.pin.--note",
+    "words.pin.print.said",
+    "words.unpin",
+    "words.unpin.--session",
+    "words.unpin.print.said",
+    "words.list",
+    "words.list.print.said"
+  ]
+}

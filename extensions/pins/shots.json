@@ -1,0 +1,41 @@
+{
+  "workers": 3,
+  "seed": [
+    "tower x pins pin --note 'made the pricing page'",
+    "tower x pins pin --session $WORKER_2 --note 'the schema research'",
+    "tower x pins pin --session $WORKER_3",
+    "tower home POIROT-08"
+  ],
+  "scenes": [
+    {
+      "name": "section",
+      "open": "#$WORKER_1",
+      "size": "1280x800",
+      "steps": [
+        {
+          "until": "[data-section=\"pins/section\"] .pin",
+          "text": "made the pricing page"
+        }
+      ],
+      "crop": "[data-section=\"pins/section\"]"
+    },
+    {
+      "name": "head",
+      "open": "#$WORKER_1",
+      "size": "1280x800",
+      "steps": [
+        {
+          "until": ".bar-top button.added",
+          "text": "Unpin"
+        }
+      ],
+      "crop": ".bar-top"
+    }
+  ],
+  "text": [
+    {
+      "name": "list",
+      "run": "tower x pins list"
+    }
+  ]
+}
