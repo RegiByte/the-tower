@@ -319,6 +319,7 @@
       "regions.*.layout.hidden",
       "regions.*.layout.options",
       "regions.*.layout.order",
+      "regions.*.optIn",
       "regions.*.scale",
       "regions.*.subject",
       "renderers",
@@ -398,6 +399,7 @@
       "views.*.needs",
       "views.*.on",
       "views.*.options",
+      "views.*.optsInto",
       "views.*.regions",
       "views.*.scales",
       "views.*.shows",
@@ -1959,6 +1961,10 @@
         },
         "pickView": {
           "since": "2.0",
+          "stability": "provisional"
+        },
+        "placedEntries": {
+          "since": "2.35",
           "stability": "provisional"
         },
         "rankedActions": {

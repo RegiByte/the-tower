@@ -3330,6 +3330,13 @@
         },
         "tab": {
           "type": "string"
+        },
+        "optsInto": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The opt-in regions it asks to be offered in (`Region.optIn`): `board.nav`, the tower page's sidebar entries."
         }
       },
       "required": [
@@ -3386,6 +3393,10 @@
         "opens": {
           "type": "string",
           "description": "The region this one's views open in: it draws each view it offers as an entry, and pressing one mounts the view there (`board.nav` opens in `board.main`). Only on a region of arity `all` that holds views."
+        },
+        "optIn": {
+          "type": "boolean",
+          "description": "Offers only the views that ask for it by name in their `optsInto`: a place too narrow for every view that could draw there, such as the sidebar's entries, which a view joins by asking."
         }
       },
       "required": [

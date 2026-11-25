@@ -62,6 +62,11 @@ export type Region = {
    * there (`board.nav` opens in `board.main`). Only on a region of arity `all` that holds views.
    */
   opens?: string
+  /**
+   * Offers only the views that ask for it by name in their `optsInto`: a place too narrow for every view that could
+   * draw there, such as the sidebar's entries, which a view joins by asking. @since 2.35
+   */
+  optIn?: boolean
 }
 
 /**
@@ -74,7 +79,10 @@ export type LayoutEntry = {
   hidden?: string[]
   open?: { view: string; subject?: string }
   options?: Record<string, Record<string, unknown>>
-  /** Drawn first, in this order, and drawn while there is room whatever the budgets: actions and lines by id. @since 1.138 */
+  /**
+   * Drawn first, in this order, and drawn while there is room whatever the budgets: actions and lines by id, and since
+   * 2.35 views, in a region that opens its views elsewhere. @since 1.138
+   */
   pinned?: string[]
   /** The ids a lower layer pins that this layer drops: the viewer unpinning a pin the config made. @since 1.138 */
   unpinned?: string[]
@@ -89,6 +97,8 @@ export type LayoutEntry = {
   badges?: number
   /** How many actions are drawn in place, as `badges`. @since 1.138 */
   actions?: number
+  /** In a region that opens its views elsewhere (`Region.opens`), how many of its entries are drawn in place, as `badges`. @since 2.35 */
+  views?: number
   /**
    * `false`: the region's buttons are in the menu only. It draws what is pinned of the actions and lines extensions
    * add, and their badges, which are information, whatever its form, and a region of the renderer's own buttons draws none; the subject's menu and the palette still
@@ -112,10 +122,10 @@ export type Layout = Record<string, LayoutEntry>
 export type ExtensionLayoutEntry = Pick<LayoutEntry, 'order' | 'hidden' | 'options'>
 
 /** The keys of a layout entry that are the user's alone: a manifest's layout never gives them. */
-export const USER_LAYOUT_KEYS = ['pinned', 'unpinned', 'overflow', 'lines', 'badges', 'actions', 'onScreen', 'folded'] as const satisfies readonly (keyof LayoutEntry)[]
+export const USER_LAYOUT_KEYS = ['pinned', 'unpinned', 'overflow', 'lines', 'badges', 'actions', 'views', 'onScreen', 'folded'] as const satisfies readonly (keyof LayoutEntry)[]
 
 /** The budget keys, each counting one hold. */
-export const BUDGETS = { lines: ['lines'], badges: ['badges'], actions: ['verbs', 'commands'] } as const satisfies Record<string, readonly Hold[]>
+export const BUDGETS = { lines: ['lines'], badges: ['badges'], actions: ['verbs', 'commands'], views: ['views'] } as const satisfies Record<string, readonly Hold[]>
 
 /**
  * The form `region` is drawn in under `entry`: the layout's when the region offers it, else its default. The default
@@ -220,15 +230,26 @@ const landed = (drawers: Drawer[], what: string, hold: Hold, on: string[], pin?:
   }),
 })
 
-/** Where a view lands: in each region holding views of a kind it is on, at a scale it draws, of a drawer lending all it needs. */
-const viewLanded = (drawers: Drawer[], what: string, view: { on: string[]; scales: Scale[]; needs?: KitMember[] }): Landing => ({
+/**
+ * Where a view lands: in each region holding views of a kind it is on, at a scale it draws, that it asks for when the
+ * region is opt-in, of a drawer lending all it needs; with the form of each that draws its views as entries.
+ */
+const viewLanded = (drawers: Drawer[], what: string, view: { on: string[]; scales: Scale[]; needs?: KitMember[]; optsInto?: string[] }): Landing => ({
   what,
   hold: 'views',
   on: view.on,
+  pin: what,
   at: drawers.map((d) => {
     const lacks = (view.needs ?? []).filter((m) => !d.kit?.includes(m))
-    const regions = d.regions?.filter((r) => draws(r, 'views', view.on) && (!r.scale || view.scales.includes(r.scale)))
-    return { drawer: d.name, regions: regions && (lacks.length ? [] : regions.map((r) => r.id)), ...(!d.regions && d.why && { why: d.why }), ...(d.regions && lacks.length && regions?.length && { why: `lends no ${lacks.join(', ')}` }) }
+    const regions = d.regions?.filter((r) => draws(r, 'views', view.on) && (!r.scale || view.scales.includes(r.scale)) && (!r.optIn || !!view.optsInto?.includes(r.id)))
+    const forms = regions && !lacks.length && formsOf(regions.filter((r) => r.opens), 'views', d.layout)
+    return {
+      drawer: d.name,
+      regions: regions && (lacks.length ? [] : regions.map((r) => r.id)),
+      ...(!d.regions && d.why && { why: d.why }),
+      ...(d.regions && lacks.length && regions?.length && { why: `lends no ${lacks.join(', ')}` }),
+      ...(forms && { forms }),
+    }
   }),
 })
 

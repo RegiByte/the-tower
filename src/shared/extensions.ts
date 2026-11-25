@@ -225,6 +225,8 @@ export type ExtensionViewEntry = {
   words: Words
   keys?: string[]
   tab?: string
+  /** The opt-in regions it asks to be offered in (`Region.optIn`): `board.nav`, the tower page's sidebar entries. @since 2.35 */
+  optsInto?: string[]
 }
 
 /** What a fold may contribute beside its own part: the `adds` a manifest's fold declares. */
@@ -984,6 +986,13 @@ const View = z.strictObject({
       .optional()
       .describe("An export of its module, (board, subject) => { text?, tip?, tone?, hint? } | undefined, read from the board alone: in a tabs region, whether it has a tab on the subject and the tab's tally; in a region of arity all (2.32), whether its section is drawn and the tally on its heading."),
   ),
+  optsInto: sinceAt('2.35')(
+    z
+      .array(z.string().regex(REGION_ID))
+      .min(1)
+      .optional()
+      .describe("The opt-in regions it asks to be offered in, by id: a region a renderer declares opt-in offers only the views that name it here, as the tower page's board.nav, the sidebar's entries, does."),
+  ),
 })
 const RegionDecl = z.strictObject({
   subject: since(z.union([SubjectKind, ViewerKind])),
@@ -992,6 +1001,7 @@ const RegionDecl = z.strictObject({
   arity: since(z.enum(['one', 'tabs']).optional()),
   description: since(z.string().min(1).optional()),
   label: sinceAt('2.25')(z.string().min(1).optional().describe("What the viewer calls the buttons drawn here when they choose to keep them on screen or in the menu only.")),
+  optIn: sinceAt('2.35')(z.boolean().optional().describe('Offers only the views that ask for it in their optsInto.')),
   layout: since(
     z
       .strictObject({
