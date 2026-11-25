@@ -1022,7 +1022,7 @@
           "stability": "provisional"
         },
         "WAIT_SAID": {
-          "since": "2.31"
+          "since": "2.32"
         },
         "WORKTREE_ASK": {
           "since": "2.0"
@@ -1948,7 +1948,7 @@
           "stability": "provisional"
         },
         "sectionViews": {
-          "since": "2.31",
+          "since": "2.32",
           "stability": "provisional"
         },
         "shownOf": {
@@ -2264,7 +2264,7 @@
           "since": "2.0"
         },
         "sidebarSection": {
-          "since": "2.31",
+          "since": "2.32",
           "stability": "provisional"
         },
         "soundSection": {
@@ -2284,11 +2284,11 @@
           "stability": "provisional"
         },
         "SectionChoice": {
-          "since": "2.31",
+          "since": "2.32",
           "stability": "provisional"
         },
         "SectionState": {
-          "since": "2.31",
+          "since": "2.32",
           "stability": "provisional"
         }
       }
