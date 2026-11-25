@@ -723,6 +723,13 @@ renderer at once, each defaulting to an existing token or a fixed value, alike i
 | `--main-glow`, `--main-glow-mix`, `--main-glow-active`, `--main-glow-active-mix` | the main pane's glow, in the accent, at rest and while focus is in it (since 2.38) | `0px`, `0%`, then the resting glow |
 | `--tree-line`, `--tree-radius` | a `.tree`'s lines (a crew hung from its head): their colour, and the rounding of each elbow | `color-mix(in oklab, var(--line-strong) 75%, transparent)`, `7px` |
 
+`.tree` draws a list hung from the row above it, as the page draws a crew under its head: a trunk, and a rounded elbow
+into each item. It takes its geometry from the renderer, which sets it on the list: `--tree-indent` (the trunk's place,
+in from the list's edge), `--tree-x` (from the trunk to the items) and `--tree-gap` (between items); and on each item
+`--tree-y` (where its elbow turns in, from its top), with `--tree-edge` and `--tree-rim` for an item with borders (its
+left border's width, and its top and bottom borders'), and `--tree-style: dashed` with a `--tree-branch` image for a
+dashed elbow. An item keeps its `::after`; the tree draws with its `::before`.
+
 A page's terminal takes `--enamel` (its background), `--term-fg` (its text) and its sixteen ANSI colours
 (`--ansi-black`, `--ansi-red`, `--ansi-green`, `--ansi-yellow`, `--ansi-blue`, `--ansi-magenta`, `--ansi-cyan`,
 `--ansi-white`, and each as `--ansi-bright-<name>`) as the page computes them, so a stylesheet that sets them
