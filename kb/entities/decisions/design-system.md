@@ -75,7 +75,11 @@ terminal that is a block of the ink colour.
   (`--radius-card`, `--radius-control`), a card's resting elevation (`--shadow-card`), and type in three roles at one
   `--display-weight`: headings and signs (`--heading-case`, `--heading-tracking`), names (callsigns,
   `--name-tracking`) and labels (`.eyebrow`, menu group labels, the heads of lists: the display face, small,
-  `--label-case`, `--label-tracking`), one label style wherever a label is drawn. Each defaults to an existing token
+  `--label-case`, `--label-tracking`), one label style wherever a label is drawn; the frame's elevation (the sidebar's
+  `--side-surface` and `--side-rule`, the main pane's `--main-surface`, `--main-inset`, `--main-radius` and
+  `--main-shadow`, so a theme can float the main pane over one ground, as Arc and Lobby do); and a worker card's status
+  edge (`--status-edge`, and `--status-ring-mix`, a percent of the status colour in its other sides, since a colour
+  token set on the root would resolve there, where no card's status is). Each defaults to an existing token
   or a fixed value, so the stock look and every scheme keep their values; the sites read the tokens, never a literal.
 - **Icons, controls and selection**: one SVG icon set ([`ICON`](ref:hub/src/shared/icons.ts#ICON)) in
   `currentColor`, hidden from assistive tech, the control naming itself; shared words keep their text marks

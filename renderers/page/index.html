@@ -28,7 +28,7 @@ dialog::backdrop { background: var(--backdrop); }
 dialog h2 { margin: 0 0 var(--sp-l); font: var(--display-weight) var(--fs-xl)/1 var(--display); text-transform: var(--heading-case); letter-spacing: var(--heading-tracking); }
 }
 @layer tower.page {
-.side { display: flex; flex-direction: column; min-height: 0; background: var(--panel); border-right: 1px solid var(--line); }
+.side { display: flex; flex-direction: column; min-height: 0; background: var(--side-surface); border-right: 1px solid var(--side-rule); }
 .brand { position: relative; display: flex; align-items: center; gap: var(--sp-xs); padding: var(--sp-xl) var(--sp-l) var(--sp-l) var(--sp-xl); white-space: nowrap; }
 .brand h1 { margin: 0; font: var(--fs-2xl)/1 var(--display); font-weight: calc(var(--display-weight) + 100); text-transform: var(--heading-case); letter-spacing: var(--heading-tracking); cursor: pointer; }
 .brand .host { margin: 0 var(--sp-2xs) 0 auto; display: flex; }
@@ -156,15 +156,15 @@ body:has(.crew-group.dragged) .tower-tip { visibility: hidden; }
 .crew-group.drop-before::before, .sessions.drop-end::after { content: ''; position: absolute; left: 0; right: 0; height: 2px; border-radius: 1px; background: var(--accent); pointer-events: none; }
 .crew-group.drop-before::before { top: calc(var(--sp-s) / -2 - 1px); }
 .sessions.drop-end::after { bottom: calc(var(--sp-s) / -2 - 1px); }
-.sess { position: relative; padding: var(--sp-m) var(--sp-l); border-radius: var(--radius-card); background: var(--panel); border: 1px solid var(--line);
-  border-left: 4px solid var(--c); box-shadow: var(--shadow-card); cursor: pointer; transition: border-color .15s ease-out, box-shadow .15s ease-out; }
+.sess { position: relative; padding: var(--sp-m) var(--sp-l); border-radius: var(--radius-card); background: var(--panel);
+  border: 1px solid color-mix(in oklab, var(--c) var(--status-ring-mix), var(--line)); border-left: var(--status-edge) solid var(--c); box-shadow: var(--shadow-card); cursor: pointer; transition: border-color .15s ease-out, box-shadow .15s ease-out; }
 .sess:hover { box-shadow: var(--shadow); }
 .sess.waits.needs { border-color: var(--c); background: color-mix(in oklab, var(--c) 8%, var(--panel)); }
 /* Waits that flash (`waits: 'flash'` in tower.prefs): what waits on the viewer, and isn't dismissed, is marked `calls`:
    its outline flashes in its attention's colour and its lamp blinks with it, at a need's pace, as does the lamp of
    every count of waits; reduced motion flashes it once. An arrow at the sidebar's edge (calls.js) blinks, pointing to those scrolled out of sight. */
 :root[data-waits='flash'] .sess.calls { border-color: var(--c); box-shadow: 0 0 0 2px var(--c); animation: call 1.1s steps(2, jump-none) infinite; }
-@keyframes call { 50% { border-color: var(--line); border-left-color: var(--c); box-shadow: none; } }
+@keyframes call { 50% { border-color: color-mix(in oklab, var(--c) var(--status-ring-mix), var(--line)); border-left-color: var(--c); box-shadow: none; } }
 :root[data-waits='flash'] :is(.calls .lamp, .lamp.calls, .chip.waits.some .lamp) { animation: blink 1.1s steps(2, jump-none) infinite; }
 .edge-call { position: fixed; z-index: 16; translate: -50% 0; display: inline-flex; align-items: center; gap: var(--sp-2xs); min-height: var(--control); padding: 0 var(--sp-m);
   border: 0; border-radius: var(--radius-pill); background: var(--c); color: var(--on); font-weight: 800; cursor: pointer; }
@@ -311,7 +311,8 @@ dialog.palette[open] { display: flex; flex-direction: column; max-height: min(56
 .patterns .summary { margin: 0 0 var(--sp-m); color: var(--muted); }
 @media (max-width: 560px) { .pal-hint { display: none; } .pal-keys { display: none; } }
 
-.main { position: relative; display: flex; flex-direction: column; gap: var(--sp-m); min-width: 0; min-height: 0; padding: var(--sp-xl) var(--sp-xl) 0; }
+.main { position: relative; display: flex; flex-direction: column; gap: var(--sp-m); min-width: 0; min-height: 0; padding: var(--sp-xl) var(--sp-xl) 0;
+  margin: var(--main-inset); border-radius: var(--main-radius); background: var(--main-surface); box-shadow: var(--main-shadow); }
 .untested, .layout-problems { color: var(--muted); font-size: var(--fs-s); text-decoration: underline dotted; cursor: help; white-space: nowrap; }
 .side-notes .layout-problems { display: block; white-space: normal; }
 
