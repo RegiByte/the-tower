@@ -247,10 +247,14 @@ export const fonts: { family: string; weight: number; style: 'normal' | 'italic'
   { family: 'JetBrains Mono', weight: 400, style: 'italic', pkg: 'jetbrains-mono', file: 'jetbrains-mono-latin-400-italic.woff2' },
 ]
 
-const ANSI = {
-  foreground: '#e6e4dc',
-  cursor: '#e6e4dc',
-  selectionBackground: '#35708a80',
+const TERM_FG = '#e6e4dc'
+const SELECTION = '#35708a80'
+
+/**
+ * The terminal's sixteen ANSI colours, warmed to sit beside paper, emitted as `--ansi-<name>` (`--ansi-bright-black`):
+ * a page's terminal reads them as the page computes them, so a theme that sets them recolours its terminals.
+ */
+export const ansi = {
   black: '#2c3537',
   red: '#e5676b',
   green: '#8fc79a',
@@ -269,14 +273,23 @@ const ANSI = {
   brightWhite: '#f6f3ea',
 }
 
+export type Ansi = Record<keyof typeof ansi, string>
+
 /**
- * An xterm.js `ITheme` on a surface: the terminal is a block of `enamel` with its text in `termFg`, its ANSI colours
- * warmed to sit beside paper. A page's terminal reads both as the page computes `--enamel` and `--term-fg`.
+ * An xterm.js `ITheme` on a surface: the terminal is a block of `enamel` with its text in `termFg` and its sixteen
+ * colours `ansi`. A page's terminal reads all three as the page computes `--enamel`, `--term-fg` and `--ansi-*`.
  */
-export const terminalThemeOn = ({ enamel, termFg }: { enamel: string; termFg: string }) => ({ ...ANSI, foreground: termFg, cursor: termFg, background: enamel, cursorAccent: enamel })
+export const terminalThemeOn = ({ enamel, termFg, ansi }: { enamel: string; termFg: string; ansi: Ansi }) => ({
+  ...ansi,
+  selectionBackground: SELECTION,
+  foreground: termFg,
+  cursor: termFg,
+  background: enamel,
+  cursorAccent: enamel,
+})
 
 /** The terminal's theme in a scheme as the design defines it, for surfaces that read no CSS (a canvas). */
-export const terminalTheme = (scheme: Scheme) => terminalThemeOn({ enamel: palettes[scheme].enamel, termFg: ANSI.foreground })
+export const terminalTheme = (scheme: Scheme) => terminalThemeOn({ enamel: palettes[scheme].enamel, termFg: TERM_FG, ansi })
 
 /**
  * The sky through the day, by the viewer's clock: the gradient top to horizon, the strength of the sun, how many
@@ -503,7 +516,8 @@ export function designCss(): string {
   )
   const mixes = Object.fromEntries(Object.entries(projectMix).map(([name, percent]) => [`p${name[0].toUpperCase()}${name.slice(1)}Mix`, `${percent}%`]))
   const roleVars = Object.fromEntries(Object.entries(roles).map(([role, token]) => [role, `var(--${kebab(token)})`]))
-  const shared = { ...type, ...shape, ...controls, termFg: ANSI.foreground, ...mixes, ...roleVars, ...character }
+  const ansiVars = Object.fromEntries(Object.entries(ansi).map(([name, colour]) => [`ansi${name[0].toUpperCase()}${name.slice(1)}`, colour]))
+  const shared = { ...type, ...shape, ...controls, termFg: TERM_FG, ...ansiVars, ...mixes, ...roleVars, ...character }
   const scheme = (name: Scheme) => `color-scheme: ${name};\n  ${variables(palettes[name])}`
   const [more, moreDark] = [variables(moreContrast('light')), variables(moreContrast('dark'))]
   const steps = (prefix: string, scale: Record<string, string>) => Object.entries(scale).map(([step, value]) => `--${prefix}-${step}: ${value};`).join('\n  ')

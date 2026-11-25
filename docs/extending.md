@@ -298,7 +298,7 @@ a palette in both schemes and in more contrast, rounder corners, and headings in
 
 - **Set tokens.** The palette (`--panel`, `--ink`, `--accent`…), the scales, and the character tokens
   ([Character](#beside-the-library)) are what a theme is for: every renderer, view and element reads them, the
-  terminal too (`--enamel`, `--term-fg`). The design's tokens are the promise: a token keeps its name and meaning
+  terminal too (`--enamel`, `--term-fg`, `--ansi-*`). The design's tokens are the promise: a token keeps its name and meaning
   within a major.
 - **Write the schemes yourself.** A theme that sets the palette sets it per scheme, as `/design.css` does: the
   viewer's choice is `data-scheme` on the root (`light`, `dark`, or none to follow the system), and more contrast is
@@ -684,8 +684,11 @@ renderer at once, each defaulting to an existing token or a fixed value, alike i
 | `--name-tracking` | names: callsigns wherever they are drawn | `.04em` |
 | `--label-case`, `--label-tracking` | labels: `.eyebrow`, menu group labels, the heads of lists | `uppercase`, `.08em` |
 
-A page's terminal takes `--enamel` (its background) and `--term-fg` (its text) as the page computes them, so a
-stylesheet that sets them recolours it; its sixteen ANSI colours stay the design's. `npm run tool:contrast` measures
+A page's terminal takes `--enamel` (its background), `--term-fg` (its text) and its sixteen ANSI colours
+(`--ansi-black`, `--ansi-red`, `--ansi-green`, `--ansi-yellow`, `--ansi-blue`, `--ansi-magenta`, `--ansi-cyan`,
+`--ansi-white`, and each as `--ansi-bright-<name>`) as the page computes them, so a stylesheet that sets them
+recolours it (since 2.34). The ANSI colours are alike in both schemes: a theme that wants them per scheme sets them in
+its scheme's block. `npm run tool:contrast` measures
 the role pairs (`roles` in `src/shared/design.ts`) as it does the palette's.
 
 A bundled extension's client holds what a renderer draws of that extension. `/x/drafts/drafts.js` edits a floor's
