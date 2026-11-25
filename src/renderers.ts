@@ -6,6 +6,7 @@ import { hiddenBelow } from './shelf.ts'
 import { chordProblem } from './shared/keymap.ts'
 import { BUILT_IN_RENDERERS, ConfigError, type Config, type ContributedRenderer, type Renderer, type RendererConfig } from './shared/model.ts'
 import { capabilityOf, type Manifest } from './shared/extensions.ts'
+import { CORE_VIEWS } from './shared/views.ts'
 import { MENU_LINE_IDS } from './shared/subject-menu.ts'
 import { addsLinesOn, BUDGETS, HOLDS, KIT_MEMBERS, OVERFLOWS, overflowOf, REGION_ID, SCALES, type Declared, type Hold, type Layout, type LayoutEntry, type LayoutProblem, type Overflow, type Region, type RendererRegions } from './shared/regions.ts'
 
@@ -75,7 +76,7 @@ const RegionSchema: z.ZodType<Region> = z.strictObject({
   subject: z.string().min(1),
   holds: z.array(z.enum(HOLDS)),
   scale: z.enum(SCALES).optional(),
-  arity: z.enum(['one', 'tabs']).optional(),
+  arity: z.enum(['one', 'tabs', 'all']).optional(),
   description: z.string().min(1).optional(),
   overflows: z
     .array(z.enum(OVERFLOWS))
@@ -108,14 +109,19 @@ export const LayoutSchema: z.ZodType<Layout> = z.record(
     badges: Budget,
     actions: Budget,
     onScreen: z.boolean().optional(),
+    folded: z.array(z.string()).optional(),
   }),
 )
 
-/** What a renderer's layout is checked against of the extensions that would start: the regions they declare, and the ids a pin can name. */
-export type LayoutReach = { regions: Region[]; offered: string[] }
+/**
+ * What a renderer's layout is checked against of the extensions that would start: the regions they declare, the ids a
+ * pin can name, and every view's id, the core's among them (@since 2.32).
+ */
+export type LayoutReach = { regions: Region[]; offered: string[]; views: string[] }
 
-/** What `manifests`, those of the extensions that would start, give a layout's checks: their regions, and their verbs', commands' and lines' ids. */
+/** What `manifests`, those of the extensions that would start, give a layout's checks: their regions, their verbs', commands' and lines' ids, and the views' ids with the core's. */
 export const layoutReachOf = (manifests: Manifest[]): LayoutReach => ({
+  views: [...CORE_VIEWS.map((v) => v.id), ...manifests.flatMap((m) => Object.keys(m.views ?? {}).map((name) => `${capabilityOf(m)}/${name}`))],
   regions: manifests.flatMap((m) => Object.entries(m.regions ?? {}).map(([id, { layout: _, ...region }]) => ({ id, ...region }))),
   offered: manifests.flatMap((m) => {
     const cap = capabilityOf(m)
@@ -145,9 +151,22 @@ export const layoutProblems = (renderer: string, configLayout: Layout, declared:
     const at = `renderers.${renderer}.layout.${id}`
     const region = regions.find((r) => r.id === id)
     if (!region) return [{ level: 'warn', key: at, problem: `neither ${renderer} nor any extension that would start declares region ${id}` }]
-    return regionProblems(renderer, at, region, entry, declared.layout[id], reach.offered)
+    return [...regionProblems(renderer, at, region, entry, declared.layout[id], reach.offered), ...foldProblems(renderer, at, region, entry, reach.views)]
   })
 }
+
+/**
+ * The problems of a region's `folded` and its sections' `onScreen` in the config's layout: only a region of arity
+ * `all` draws its views folded, each named by a view's id, and its sections fold or hide rather than leave the screen.
+ */
+const foldProblems = (renderer: string, at: string, region: Region, entry: LayoutEntry, views: readonly string[]): LayoutProblem[] => [
+  ...(region.arity === 'all' && entry.onScreen !== undefined ? [{ level: 'fail' as const, key: `${at}.onScreen`, problem: `${region.id}'s sections fold or hide, with folded and hidden: they never leave the screen for a menu` }] : []),
+  ...(entry.folded === undefined
+    ? []
+    : region.arity !== 'all'
+      ? [{ level: 'fail' as const, key: `${at}.folded`, problem: `${!region.holds.includes('views') ? `${region.id} holds no views` : `${renderer} draws ${region.id}'s views ${region.arity === 'tabs' ? 'as tabs' : 'one at a time'}`}: only a region of arity all folds them` }]
+      : entry.folded.flatMap((id, n): LayoutProblem[] => (views.includes(id) ? [] : [{ level: 'warn', key: `${at}.folded[${n}]`, problem: `no view "${id}" in the core or an extension that would start` }]))),
+]
 
 /** The lines of its subject's own menu a region can pin: one holding commands, beside a subject whose menu has them. */
 const ownLines = (region: Region): readonly string[] => (region.holds.includes('commands') ? (MENU_LINE_IDS[region.subject] ?? []) : [])

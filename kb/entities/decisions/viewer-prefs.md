@@ -124,6 +124,10 @@ they are written once in shared code and a next renderer gets them by importing 
   ([`ATTENTION_MEANS`](ref:hub/src/shared/status-words.ts#ATTENTION_MEANS),
   [`statusLegendHtml`](ref:hub/src/shared/status-words.ts#statusLegendHtml), [`hostState`](ref:hub/src/shared/health.ts#hostState),
   [`HOST_MEANS`](ref:hub/src/shared/health.ts#HOST_MEANS)), read by their tooltips and the `?` sheet alike.
+- *The sidebar's sections, per screen*: the settings popover's Sidebar part sets each section Open, Folded or Off in
+  the viewer's layer of the layout (`layout.<renderer>` in `tower.store`), over the config's default
+  ([[sidebar-regions]]). `tower.store.on` hears another window's writes too, so a choice or a dismissal made in one
+  window reaches the next.
 
 **Alternatives considered.**
 - *Appearance in the config*: follows the user to another browser, but it is a viewer's preference. Config defaults

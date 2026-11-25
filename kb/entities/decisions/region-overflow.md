@@ -120,7 +120,9 @@ one renderer ([[renderer-is-disposable]]). And the tower stores only intent, fac
   config can set it for the user). Off screen, the lines and actions budgets are 0 ([`drawnEntry`](ref:hub/src/shared/regions.ts#drawnEntry)),
   so the region draws its pins of those in any form and keeps its badges, which are information, never hidden; a labelled region that holds nothing names a group of the
   renderer's own buttons, drawn or not by [`isOnScreen`](ref:hub/src/shared/regions.ts#isOnScreen). It never hides a
-  capability: only regions whose buttons the subject's menu and the palette reach take a label.
+  capability: only regions whose buttons the subject's menu and the palette reach take a label. A region of arity
+  `all` takes no `onScreen`: its sections fold or hide instead, through the layout's `folded` and `hidden`
+  ([[sidebar-regions]]).
 - *"New" without a stored fact.* The viewer keeps a seen set in `tower.store`, per action id across every head and
   every renderer of theirs ([`seenOf`](ref:hub/src/shared/viewer.ts#seenOf)). With nothing kept, everything offered
   counts as seen, so a fresh tower highlights nothing. An action stops being new when the viewer runs it, pins it,

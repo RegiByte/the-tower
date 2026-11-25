@@ -363,6 +363,8 @@ export function viewHost(deps: HostDeps) {
         const now = machine.state()
         return now.t === 'mounted' ? now.done.tab?.() : undefined
       },
+      /** Whether its module has mounted it, so `tab` answers what the view read rather than nothing yet. */
+      ready: () => machine.state().t === 'mounted',
       /** The first terminal its kit opened, as a press of its tab's chord focuses it. */
       terminal: () => [...own][0]?.term(),
       close: () => machine.dispatch({ type: 'close' }),
@@ -378,6 +380,7 @@ export function viewHost(deps: HostDeps) {
     if (!region?.holds.includes('views')) return fills.contributions(host, id, subject, options)
     const byView = options as Record<string, Record<string, unknown>>
     if (region.holds.some((h) => h !== 'views')) return beside(host, region, subject, byView)
+    if (region.arity === 'all') throw new Error(`${id} draws every view it offers, each where the renderer places it: no view asks for it`)
     if (region.arity !== 'tabs') return one(host, region, subject, byView)
     if (!fills.tabs) throw new Error(`this renderer draws no tabs region: ${id} needs fills.tabs`)
     return fills.tabs(host, id, subject, byView)

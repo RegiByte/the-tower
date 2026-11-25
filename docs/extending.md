@@ -1108,7 +1108,7 @@ config declares; this table says it for the ones that ship, generated from their
 | `item.*` | `item.head`, the item's view, the drafts editor for a draft, and the palette: badges, verbs, commands | not drawn | not drawn | not drawn |
 | `collection` | `floor.trays`, a floor's row of trays in the sidebar, one view for each of its collections: the id names where it sits, its subject is the collection: views | not drawn | not drawn | not drawn |
 | `shelf` | not drawn | not drawn | not drawn | not drawn |
-| `board` | `board.main`, the main pane (a worker, the skyline, a floor's archive, a collection, a shelf entry): views<br>`board.dialog`, over the page, modal: a view to read or act in while the page goes on behind it, opened by display with that view, closed by its close button, Escape or a press outside: views<br>`board.strip`, a strip at the top of the sidebar, its view mounted for as long as the page is open: what an extension keeps in sight, or plays, whatever the main pane shows: views<br>`board.sign`, beside the sidebar's Floors and Stats, and the palette: commands about no one floor, such as a new floor, each its icon alone, its label and hint the tip: commands<br>`board.skyline`, in the skyline's greeting, the welcome on a new tower included: commands about no one floor, each its icon and label: commands<br>`board.notes`, the notes at the top of the sidebar, for asks about no floor: asks | not drawn | not drawn | not drawn |
+| `board` | `board.main`, the main pane (a worker, the skyline, a floor's archive, a collection, a shelf entry): views<br>`board.dialog`, over the page, modal: a view to read or act in while the page goes on behind it, opened by display with that view, closed by its close button, Escape or a press outside: views<br>`board.strip`, a strip at the top of the sidebar, its view mounted for as long as the page is open: what an extension keeps in sight, or plays, whatever the main pane shows: views<br>`board.sections`, the sidebar's sections, between the limits and the floors: every view offered, each under a heading with its tally, folded to it or open, in the layout's order: views<br>`board.sign`, beside the sidebar's Floors and Stats, and the palette: commands about no one floor, such as a new floor, each its icon alone, its label and hint the tip: commands<br>`board.skyline`, in the skyline's greeting, the welcome on a new tower included: commands about no one floor, each its icon and label: commands<br>`board.notes`, the notes at the top of the sidebar, for asks about no floor: asks | not drawn | not drawn | not drawn |
 <!-- /regions -->
 
 An extension's own kinds are drawn by none of them (`subjectAt` finds one, for a renderer of your own). A renderer
@@ -1350,6 +1350,26 @@ the page behind is inert and its shortcuts don't run. A view there reads `ctx.sc
 title and a close of its own. A renderer that draws no dialog, Tower 3D or one of your own, offers the view at `pane`
 in its main region instead, which is why a dialog view lists `pane` too: one with `dialog` alone is offered nowhere
 there. [`extensions/guides`](../extensions/guides/) is one to copy.
+
+**The sidebar's sections.** Between the limits and the floors, the tower page draws `board.sections`, a region of
+arity `all` at `list` scale (API 2.32): every view on the board it offers, each a section of its own under a heading
+with its label and tally, in the layout's `order`, less its `hidden`. `tower/waiting` (who waits on you and what asks,
+the list N walks) is the first; a view of yours lands after it by declaring the scale:
+
+```json
+"queue": { "module": "queue.js", "export": "mount", "on": ["board"], "scales": ["list"], "needs": ["display"], "words": { "label": "Queue", "hint": "…" }, "tab": "tab" }
+```
+
+Its heading's tally is its `tab`, the same words a worker's tab reads: the module's export from the board alone, then
+the mounted view's `tab()`, drawn again on its bubbling `tab` event. A `tab` that answers `undefined` leaves the
+section undrawn for now (Waiting with nobody waiting), its view still mounted; a view with no `tab` export is always
+drawn. Each view is mounted once and kept while offered; the page caps a section's height, so a view scrolls inside
+its host. The viewer folds a section to its heading, which tells the view `visible(false)`, and turns one off in
+Settings → Sidebar; both go to their layer of the layout (`folded`, `hidden`), and the config's
+`renderers.page.layout["board.sections"].folded` folds one by default. `list` is no row: `board.strip` never offers a
+`list` view, and a renderer with no `list` region offers it nowhere (`sectionViews(placing, region)` in
+`/lib/layout.js` lists what a region of arity `all` draws, for a renderer of your own). A tower older than 2.32
+refuses the scale, so declare `requires.tower: "2.32"`. An extension's own regions are `one` or `tabs`.
 
 **The bus.** What a view draws that the board never carries, and that a user can still point at, is a
 viewer subject: a prompt or an answer in the Brief (`said`), a section of a markdown document (`section`), lines

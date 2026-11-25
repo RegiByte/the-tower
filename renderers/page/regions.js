@@ -2,7 +2,7 @@ import { can, findCard, parentOf, shownSubject } from '/lib/board.js'
 import { shownFrom } from '/lib/brief.js'
 import { subjectAreaHtml, subjectButtonHtml } from '/lib/elements.js'
 import { heldActions, shownKey, shownTitle } from '/lib/cards.js'
-import { actionId, addedActions, isOnScreen, offeredIn, ordered, overflowOf, paneShows, pickView, shownOf } from '/lib/layout.js'
+import { actionId, addedActions, isOnScreen, offeredIn, ordered, overflowOf, paneShows, pickView, sectionViews, shownOf } from '/lib/layout.js'
 import { panesOf } from '/lib/keys.js'
 import { domId } from '/lib/morph.js'
 import { menuPins, subjectMenu } from '/lib/palette.js'
@@ -171,7 +171,10 @@ export function regions(deps) {
       },
     },
   })
-  hosting.onArrival(() => tabbed.forEach((r) => r.draw()))
+  hosting.onArrival(() => (tabbed.forEach((r) => r.draw()), arrived.forEach((fn) => fn())))
+
+  /** What else waits for a module to arrive: a stack of sections, to draw its headings again. @type {Set<() => void>} */
+  const arrived = new Set()
 
   /** The showings mounted in every tabs region, the least recently shown first. @type {{ key: string, drop: () => void }[]} */
   const shownKept = []
@@ -929,6 +932,93 @@ export function regions(deps) {
   }
 
   /**
+   * A region of arity `all` the page draws as a stack of sections (`board.sections`): every view it offers on the board
+   * (`sectionViews`), each under a heading with its label and its tab's tally, folded to the heading where the layout's
+   * `folded` names it. Each view is mounted once, in a host of its own, and kept while it is offered, folded or not, so
+   * its tally stays current; a folded one is told it is not seen. A view whose tab answers nothing has no section now,
+   * its heading undrawn and its view still mounted; one with no `tab` export always has one. A paint writes `html()`
+   * where the stack goes, then `place` puts each host, updated, in its section's body; `redraw` is told when a module
+   * arrives, as its heading may change.
+   * @param {string} id @param {string} place @param {() => void} redraw
+   */
+  function sections(id, place, redraw) {
+    /** @type {Map<string, { el: HTMLElement, hosted: Hosted }>} */
+    const held = new Map()
+    const region = () => /** @type {Region} */ (declared().find((r) => r.id === id))
+    const boardSubject = () => /** @type {Subject} */ (subjectOf('board'))
+    const offered = () => sectionViews({ board: board(), views: views(), regions: declared(), layout: layout(), kit: deps.kit, main: region() }, region())
+    const folded = (/** @type {string} */ view) => layout()[id]?.folded?.includes(view) ?? false
+    arrived.add(redraw)
+
+    /** The host of `view`'s section, mounted the first time it is offered. @param {View} view */
+    const hostOf = (view) => {
+      const was = held.get(view.id)
+      if (was) return was
+      const el = Object.assign(document.createElement('div'), { className: 'section-view' })
+      el.dataset.region = id
+      if (!view.module) {
+        hosting.failed(el, id, `${view.id} declares no module`)
+        const none = { el, hosted: /** @type {Hosted} */ (/** @type {unknown} */ ({ update: () => {}, visible: () => {}, tab: () => undefined, ready: () => true, close: () => {} })) }
+        held.set(view.id, none)
+        return none
+      }
+      const hosted = hosting.mountView(view, el, boardSubject(), { scale: region().scale, options: layout()[id]?.options?.[view.id] ?? {} })
+      held.set(view.id, { el, hosted })
+      return { el, hosted }
+    }
+
+    /**
+     * What `view`'s heading says: its mounted view's tab, else its module's `tab` export on the board; `undefined` when
+     * it has no section now, or its module hasn't arrived to say.
+     * @param {View} view @returns {TabWords | undefined}
+     */
+    const wordsOf = (view) => {
+      if (!view.tab) return {}
+      const at = held.get(view.id)
+      if (at?.hosted.ready()) return at.hosted.tab()
+      const module = hosting.loaded(view)
+      return module ? /** @type {Tab} */ (module[view.tab])(board(), boardSubject()) : (void hosting.moduleOf(view), undefined)
+    }
+
+    /** @param {View} view */
+    const sectionHtml = (view) => {
+      const words = wordsOf(view)
+      const open = !folded(view.id)
+      const tally = words?.text ? `<b class="section-tally${words.tone === 'unseen' ? ' unseen' : ''}"${words.tip ? ` data-tip="${esc(words.tip)}"` : ''}>${esc(words.text)}</b>` : ''
+      return `<section class="side-section" id="${esc(domId(place, view.id))}" data-section="${esc(view.id)}"${open ? '' : ' data-folded'}${words ? '' : ' hidden'}>
+        <button class="section-head" aria-expanded="${open}" data-fold-section="${esc(view.id)}" data-tip="${esc(words?.hint ?? view.words.hint ?? view.words.label)}">${ICON.caret}<span class="eyebrow">${esc(view.words.label)}</span>${tally}</button>
+        <div class="section-body" data-owned data-section-body="${esc(view.id)}"></div></section>`
+    }
+
+    return {
+      /** The sections as a paint writes them, in the region's order. */
+      html: () => offered().map(sectionHtml).join(''),
+      /** Puts each section's view, updated and told whether it is seen, in the body a paint of `root` left for it; closes those no longer offered. @param {HTMLElement} root */
+      place(root) {
+        const now = offered()
+        for (const view of now) {
+          const { el, hosted } = hostOf(view)
+          const body = root.querySelector(`[data-section-body="${CSS.escape(view.id)}"]`)
+          if (body && el.parentElement !== body) body.replaceChildren(el)
+          hosted.update(boardSubject())
+          hosted.visible(!folded(view.id))
+        }
+        for (const [key, { hosted }] of held) if (!now.some((v) => v.id === key)) (hosted.close(), held.delete(key))
+      },
+      /** The views the region could offer, hidden ones included, each with whether it is folded and whether hidden. */
+      choices: () => {
+        const all = layout()
+        const unhidden = { ...all, [id]: { ...all[id], hidden: [] } }
+        return sectionViews({ board: board(), views: views(), regions: declared(), layout: unhidden, kit: deps.kit, main: region() }, region()).map((v) => ({
+          view: v,
+          folded: folded(v.id),
+          hidden: all[id]?.hidden?.includes(v.id) ?? false,
+        }))
+      },
+    }
+  }
+
+  /**
    * The region over the page (`board.dialog`), drawn in the `<tower-dialog>` that names it: one view at a time, the one
    * display asked for, mounted as it opens, updated with each board and closed with the dialog, however it closes, or
    * once its subject leaves the board.
@@ -1007,6 +1097,7 @@ export function regions(deps) {
     onPick: (fn) => void (pickMain = fn),
     tabsAt,
     rows,
+    sections,
     dialog,
     mountedView: () => open?.view,
     refont: () => terminals.forEach((t) => void t.refont()),

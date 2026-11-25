@@ -13,8 +13,11 @@ export const REGION_ID = /^[a-z][a-z0-9-]*(\.([a-z][a-z0-9-]*|\*))*\.[a-z][a-z0-
 export const HOLDS = ['verbs', 'commands', 'badges', 'lines', 'marks', 'tidy', 'asks', 'views'] as const
 export type Hold = (typeof HOLDS)[number]
 
-/** The room a view gets in a region that holds views. */
-export const SCALES = ['chip', 'row', 'cell', 'pane', 'dialog'] as const
+/**
+ * The room a view gets in a region that holds views. `list` (@since 2.32): a block in a stack of blocks, the width of
+ * the region, a few rows high and scrolling past that, where `row` is one line.
+ */
+export const SCALES = ['chip', 'row', 'cell', 'pane', 'dialog', 'list'] as const
 export type Scale = (typeof SCALES)[number]
 
 /** What a renderer lends the views it hosts. */
@@ -31,15 +34,16 @@ export type Overflow = (typeof OVERFLOWS)[number]
 
 /**
  * A place a renderer draws for subjects of one kind. `id`: `<subject kind>.<place>`; `subject`: the kind, `item.*`
- * for every collection's items; `scale` and `arity` matter to one that holds views, `one` at a time or several as
- * `tabs`; `description`: where it is on screen, in words.
+ * for every collection's items; `scale` and `arity` matter to one that holds views, `one` at a time, several as
+ * `tabs`, or `all` (@since 2.32): every view offered, each drawn, in the layout's `order`, less its `hidden`
+ * (`sectionViews`); `description`: where it is on screen, in words.
  */
 export type Region = {
   id: string
   subject: string
   holds: Hold[]
   scale?: Scale
-  arity?: 'one' | 'tabs'
+  arity?: 'one' | 'tabs' | 'all'
   description?: string
   /**
    * The overflow forms the renderer draws this region in, its default first. Absent: it offers no choice, and a
@@ -86,6 +90,11 @@ export type LayoutEntry = {
    * reach every one. Unset or `true`, on screen. Offered only where the region has a `label`. @since 2.25
    */
   onScreen?: boolean
+  /**
+   * In a region of arity `all`: the views drawn folded, to their heading and tally. The highest layer's that sets it,
+   * whole, as `order`. @since 2.32
+   */
+  folded?: string[]
 }
 
 /**
@@ -98,7 +107,7 @@ export type Layout = Record<string, LayoutEntry>
 export type ExtensionLayoutEntry = Pick<LayoutEntry, 'order' | 'hidden' | 'options'>
 
 /** The keys of a layout entry that are the user's alone: a manifest's layout never gives them. */
-export const USER_LAYOUT_KEYS = ['pinned', 'unpinned', 'overflow', 'lines', 'badges', 'actions', 'onScreen'] as const satisfies readonly (keyof LayoutEntry)[]
+export const USER_LAYOUT_KEYS = ['pinned', 'unpinned', 'overflow', 'lines', 'badges', 'actions', 'onScreen', 'folded'] as const satisfies readonly (keyof LayoutEntry)[]
 
 /** The budget keys, each counting one hold. */
 export const BUDGETS = { lines: ['lines'], badges: ['badges'], actions: ['verbs', 'commands'] } as const satisfies Record<string, readonly Hold[]>

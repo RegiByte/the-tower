@@ -25,7 +25,8 @@ shows projects as buildings and sessions as lit windows, and welcomes the user o
 floor's archive, a collection, a shelf entry and every extension's status (`tower/extensions`) are the core's views too, the drafts editor and the Policies panel
 their extensions'.
 
-**The sidebar.** Each project directory links the web page of its origin remote (`GET /origins`). Each floor lists
+**The sidebar.** Between the limits and the Floors row, `board.sections` draws every `list` view on the board as a
+section that folds to its heading and tally, Waiting first ([[sidebar-regions]]). Each project directory links the web page of its origin remote (`GET /origins`). Each floor lists
 its workers by crew ([[crews]]), each row with its lamp, callsign, status word
 ([`statusWord`](ref:hub/src/shared/status-words.ts#statusWord)), time in state, and what extensions add, drawn in the
 form the layout picks for `card.row` ([[region-overflow]], [`drawCount`](ref:hub/renderers/page/added.js#drawCount));

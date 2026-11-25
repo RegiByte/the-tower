@@ -237,6 +237,7 @@ export const CORE_VIEWS: readonly View[] = [
   { ...pane('brief', ['conversation', 'said'], { label: 'Brief', hint: 'the last prompts and answers of each conversation, in full' }, ['region', 'bus', 'toast']), regions: ['card.composer'], tab: 'tab' },
   { ...pane('changes', ['lines'], { label: 'Changes', hint: "what changed in the worker's repos, as git reads it" }, ['region', 'toast']), regions: ['lines.acts'], tab: 'tab' },
   served(core('tower/archive', ['floor'], ['pane'], { label: 'Archive', hint: "the floor's past workers" }), ['display', 'toast']),
+  { ...served(core('tower/waiting', ['board'], ['list'], { label: 'Waiting on you', hint: 'who waits on you and what asks, oldest first: the list N walks' }), ['display', 'go']), tab: 'tab' },
   served(core('tower/extensions', ['board'], ['pane'], { label: 'Extensions', hint: 'every extension the tower found: its state, what it declares and its problems' }), ['display']),
   served(core('tower/collection', ['collection'], ['pane'], { label: 'Collection', hint: "a collection's items" }), ['display']),
   served(core('tower/tray', ['collection'], ['row'], { label: 'Tray', hint: "a collection's count, unfolding to its newest items" }), ['display']),
@@ -298,7 +299,7 @@ const unpinsOf = (at: LayoutEntry[]): string[] => [
 /**
  * The layout a renderer draws by, three layers each over the one before: its own (`renderer.json`), the config's, the
  * viewer's (`tower.store`'s `layout.<renderer>`). For each region, each field is the highest layer's that sets it,
- * every view's options apart; `hidden` is the layers' union, less each id a higher layer names in its `order` or pins
+ * every view's options apart (`order` and `folded` taken whole); `hidden` is the layers' union, less each id a higher layer names in its `order` or pins
  * where that pin stands in the merge; `pinned` is the layers' union, the highest's first, less what a higher layer names in `unpinned`; and
  * `unpinned`, what a layer unpins that a lower one pins.
  */
@@ -325,6 +326,7 @@ export const layoutOf = (declared: Layout, configured: Layout, stored: Layout | 
         ...(last('badges') !== undefined && { badges: last('badges') }),
         ...(last('actions') !== undefined && { actions: last('actions') }),
         ...(last('onScreen') !== undefined && { onScreen: last('onScreen') }),
+        ...(last('folded') && { folded: last('folded') }),
       }
       return [id, entry]
     }),
@@ -376,6 +378,15 @@ export const offeredIn = (views: View[], region: Region, layout: Layout, kit: re
 /** `views` in a region's layout `order`, the rest after in their own. */
 export const ordered = (views: View[], order: string[] | undefined) =>
   order ? [...order.flatMap((id) => views.filter((v) => v.id === id)), ...views.filter((v) => !order.includes(v.id))] : views
+
+/**
+ * The views a region of arity `all` draws, each as a section of its own (`board.sections`): those it offers on the
+ * board, in its layout's `order`, the rest after in their own. @since 2.32
+ */
+export const sectionViews = (p: Placing, region: Region): View[] => {
+  const board = subjectAt(p.board, 'board') as Subject
+  return ordered(offeredIn(p.views, region, p.layout, p.kit, board), p.layout[region.id]?.order)
+}
 
 /** The capability whose extension declares the collection `subject` is, or is an item of, when its floor carries one. */
 const ownerOf = (board: Board, subject: Subject): string | undefined => {

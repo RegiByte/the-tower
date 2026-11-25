@@ -12,6 +12,7 @@
  *   data-changes-files="<f>"     Changes' file tree shown or hidden beside the diffs, kept under `CHANGES_TREE_KEY` (`panels.ts`)
  *   data-tips="<on|off>"         whether tips show, kept under `VIEWER_KEYS.tips` (`viewer.ts`)
  *   data-tips-again              the tips dismissed for good shown again
+ *   data-section-state="<s>"     a sidebar section open, folded or off (`sidebarSection`), inside its `data-section-view`
  *
  * The appearance is data: `PREF_SECTIONS` describes each setting of `tower.prefs`, `prefSections` draws them, and
  * `wirePrefs(popover, tower.prefs.set)` wires every one, so a setting added here reaches every renderer with no wiring
@@ -109,6 +110,26 @@ export const screenSection = (groups: ScreenGroup[]) =>
         groups.map((g) => `<div class="screen-row" data-screen-region="${esc(g.region)}"><span>${esc(g.label)}</span><div class="seg" role="group" aria-label="${esc(g.label)}">${
           choice('data-on-screen', 'on', 'Shown', `${g.label}: on screen`, g.on) +
           choice('data-on-screen', 'off', 'Menu', `${g.label}: in the ⋯ and ⌘K only`, !g.on)}</div></div>`).join(''))
+
+/** How a section of the sidebar is drawn for the viewer: open, folded to its heading, or off. @since 2.32 */
+export type SectionState = 'open' | 'folded' | 'off'
+
+/** A section the sidebar could draw: its view, its label and how it is drawn now. @since 2.32 */
+export type SectionChoice = { view: string; label: string; state: SectionState }
+
+const SECTION_LABEL: Record<SectionState, string> = { open: 'Open', folded: 'Folded', off: 'Off' }
+const SECTION_MEANS: Record<SectionState, string> = { open: 'open, its rows in sight', folded: 'folded to its heading and tally', off: 'not drawn' }
+
+/**
+ * Each section of the sidebar open, folded or off on this screen, a choice marked `data-section-state` inside its
+ * row's `data-section-view` (`LayoutEntry.folded` and `hidden`). @since 2.32
+ */
+export const sidebarSection = (sections: SectionChoice[]) =>
+  !sections.length
+    ? ''
+    : section('Sidebar', 'its sections, on this screen',
+        sections.map((c) => `<div class="screen-row" data-section-view="${esc(c.view)}"><span>${esc(c.label)}</span><div class="seg" role="group" aria-label="${esc(c.label)}">${
+          (['open', 'folded', 'off'] as const).map((st) => choice('data-section-state', st, SECTION_LABEL[st], `${c.label}: ${SECTION_MEANS[st]}`, st === c.state)).join('')}</div></div>`).join(''))
 
 /** Whether tips show, and the tips dismissed for good brought back. */
 export const tipsSection = (on: boolean, dismissed: number) =>
