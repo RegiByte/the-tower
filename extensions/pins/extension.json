@@ -14,7 +14,7 @@
       "description": "Each pin and unpin, oldest first: a worker's session pinned with the floor it ran on and why, or unpinned.",
       "facts": {
         "p": {
-          "description": "A worker pinned: its session, the floor it ran on, and the note on why. A second pin of the same session replaces the first.",
+          "description": "A worker pinned: its session, the floor it ran on, and the note on why. A second pin of the same session replaces its note and keeps when it was first pinned.",
           "schema": {
             "type": "object",
             "additionalProperties": false,
@@ -43,7 +43,7 @@
   "verbs": {
     "pin": {
       "scope": "system",
-      "description": "Pin a worker, a conversation worth coming back to, with a note on why: the calling worker unless `session` names one. Pinning a pinned worker again replaces its note.",
+      "description": "Pin a worker, a conversation worth coming back to, with a note on why: the calling worker unless `session` names one. Pinning a pinned worker again replaces its note and keeps when it was pinned.",
       "input": {
         "type": "object",
         "additionalProperties": false,
