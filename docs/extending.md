@@ -86,7 +86,8 @@ declares beside its fields; a renderer with no file declares nothing. The tower 
   with what it `holds` (`verbs`, `commands`, `badges`, `lines`, `marks`, `tidy`, `asks`, `views`), and for one that
   holds views the room each gets (`scale`: `chip`, `row`, `cell`, `pane`, `dialog`, `list`) and whether it shows `one`,
   `tabs` or `all`, the region its views open in when it draws them as entries (`opens`, on a region of arity `all`:
-  `board.nav` opens in `board.main`), and the forms it draws it in when it is full, its default first (`overflows`:
+  `board.nav` opens in `board.main`), whether it offers only the views that ask for it (`optIn`: [The sidebar's
+  entries](#views)), and the forms it draws it in when it is full, its default first (`overflows`:
   [When a region is full](#when-a-region-is-full)). Only `regions` is required. `tower extensions check` and the table under
   [Extensions](#extensions) are read from them.
 - `kit`: what it lends the views it hosts (`terminal`, `region`, `run`, `display`, `go`, `bus`, `toast`, `notice`, `confirm`, `href`,
@@ -97,7 +98,7 @@ declares beside its fields; a renderer with no file declares nothing. The tower 
 - `layout`: its own default arrangement of its regions, by region id: `order` (view ids first, in this order; the
   rest after), `hidden` (not offered there: views, actions and an extension's lines), `open` (the
   tab a tabs region opens on), `options` (each view's own settings there), and `pinned`, `unpinned`,
-  `overflow` and the budgets `lines`, `badges` and `actions` ([When a region is full](#when-a-region-is-full)). The
+  `overflow` and the budgets `lines`, `badges`, `actions` and `views` ([When a region is full](#when-a-region-is-full)). The
   config's `renderers.<name>.layout` lies over it, and the viewer's, kept in `tower.store` under `layoutKey(name)`
   (`layout.<name>`), over both: `layoutOf(declared, configured, stored)` in `/lib/layout.js` takes each field from the highest layer that sets it;
   `hidden` from all of them, less an id a higher layer names in its `order`, or pins where that pin stands; and
@@ -150,6 +151,9 @@ The ranking is shared code in `/lib/layout.js`, so every renderer orders a regio
   apart (`exemptionsOf`): draw them with its identity and never tuck them. `badgesOf(board, subject)` is the two
   together, exemptions first: the order a region that draws all of a subject's badges draws them in.
 - `rankedLines(board, card, entry)`: a card's lines, pinned capabilities first, then fold order.
+- `placedEntries(placing, region)`: in a region that opens its views elsewhere (`opens`), the entries in place and
+  those behind its menu: the pinned first in their order, then the region's order; under `menu`, the pinned and
+  `views` of the rest in place.
 - `headRanked(badges, ranked)`: a head's fill order, the severe badges, the pinned actions, the other badges, the other
   actions.
 
@@ -159,7 +163,8 @@ place: fewer as soon as they don't fit, more only with `margin` to spare. Pass t
 of the region's inline size or of what it paints, never on a clock tick.
 
 The budgets `lines`, `badges` and `actions` say how many of each a `menu` region draws at most, or a `count` region
-exactly:
+exactly, and `views` how many entries a region that opens its views elsewhere draws in place under `menu`, pinned by
+view id:
 
 - pins don't count against a budget, and are drawn while there is room;
 - the region's own controls never count;
@@ -1132,7 +1137,7 @@ config declares; this table says it for the ones that ship, generated from their
 | `item.*` | `item.head`, the item's view, the drafts editor for a draft, and the palette: badges, verbs, commands | not drawn | not drawn | not drawn |
 | `collection` | `floor.trays`, a floor's row of trays in the sidebar, one view for each of its collections: the id names where it sits, its subject is the collection: views | not drawn | not drawn | not drawn |
 | `shelf` | not drawn | not drawn | not drawn | not drawn |
-| `board` | `board.main`, the main pane (a worker, the skyline, a floor's archive, a collection, a shelf entry): views<br>`board.dialog`, over the page, modal: a view to read or act in while the page goes on behind it, opened by display with that view, closed by its close button, Escape or a press outside: views<br>`board.strip`, a strip at the top of the sidebar, its view mounted for as long as the page is open: what an extension keeps in sight, or plays, whatever the main pane shows: views<br>`board.sections`, the sidebar's sections, between the limits and the floors: every view offered, each under a heading with its tally, folded to it or open, in the layout's order: views<br>`board.nav`, the sidebar's row above the floors: Floors first, then an entry per view on the board the main pane draws, each opening it there, marked while it is open: views<br>`board.sign`, at the end of the sidebar's entries row, and the palette: commands about no one floor, such as a new floor, each its icon alone, its label and hint the tip: commands<br>`board.skyline`, in the skyline's greeting, the welcome on a new tower included: commands about no one floor, each its icon and label: commands<br>`board.notes`, the notes at the top of the sidebar, for asks about no floor: asks | not drawn | not drawn | not drawn |
+| `board` | `board.main`, the main pane (a worker, the skyline, a floor's archive, a collection, a shelf entry): views<br>`board.dialog`, over the page, modal: a view to read or act in while the page goes on behind it, opened by display with that view, closed by its close button, Escape or a press outside: views<br>`board.strip`, a strip at the top of the sidebar, its view mounted for as long as the page is open: what an extension keeps in sight, or plays, whatever the main pane shows: views<br>`board.sections`, the sidebar's sections, between the limits and the floors: every view offered, each under a heading with its tally, folded to it or open, in the layout's order: views<br>`board.nav`, the sidebar's row above the floors: Floors first, then an entry per view on the board the main pane draws that asks for the row, each opening it there, marked while it is open; past its budget, the rest behind More…: views<br>`board.sign`, at the end of the sidebar's entries row, and the palette: commands about no one floor, such as a new floor, each its icon alone, its label and hint the tip: commands<br>`board.skyline`, in the skyline's greeting, the welcome on a new tower included: commands about no one floor, each its icon and label: commands<br>`board.notes`, the notes at the top of the sidebar, for asks about no floor: asks | not drawn | not drawn | not drawn |
 <!-- /regions -->
 
 An extension's own kinds are drawn by none of them (`subjectAt` finds one, for a renderer of your own). A renderer
@@ -1396,15 +1401,17 @@ Settings → Sidebar; both go to their layer of the layout (`folded`, `hidden`),
 refuses the scale, so declare `requires.tower: "2.32"`. An extension's own regions are `one` or `tabs`.
 
 **The sidebar's entries.** Above the floors, the tower page draws `board.nav`, a region of arity `all` at `pane` scale
-that `opens` in `board.main`: Floors first, the way home to the skyline, then an entry for every view on the board the
-main pane draws, in the layout's `order`, less its `hidden`. A press displays the view in the main pane, and the entry
-is marked while the main pane shows it. A view of yours on `board` at `pane` is an entry with nothing more declared;
-its `tab` export, read on the board, is the entry's tally. `tower/stats` is the first; the page hides
-`tower/skyline` (Floors stands for it), `tower/extensions` (the foot has its own) and the bundled views reached
-elsewhere (New floor and Clones, the Learning center) there. Hiding an entry, in the
-config's or the viewer's `renderers.page.layout["board.nav"].hidden`, takes it off the row and leaves it in the
-palette's "Open <label>". The row wraps when full. A renderer of your own lists the entries with
-`sectionViews(placing, region)`, as for sections, and reads `opens` for where they go.
+that `opens` in `board.main`: Floors first, the way home to the skyline, then an entry per view that asks for the row.
+To get an entry, give a view on `board` at `pane` the key `"optsInto": ["board.nav"]` (and `requires.tower: "2.35"`).
+The region is `optIn`: it offers only the views that name it in their `optsInto`, so the row isn't crowded by every
+board view an extension declares; the palette still offers each one as "Open <label>". A press displays the view in
+the main pane, and the entry is marked while the main pane shows it; the view's `tab` export, read on the board, is
+the entry's tally. `tower/stats` and the Learning center are entries by default. The row draws its `views` budget in
+place (4) after any pins, and the rest behind More…, which opens any of them and pins any entry to the row; More… is
+marked while one behind it is open. The layout's `order`, `hidden`, `pinned` and `views`, in the config's or the
+viewer's `renderers.page.layout["board.nav"]`, arrange it, and `overflow: "wrap"` draws every entry. A renderer of your
+own lists the entries with `placedEntries(placing, region)`, and reads `opens` for where they go and `optIn` for a
+region that offers only the views asking for it (`offeredIn` already applies it).
 
 **The bus.** What a view draws that the board never carries, and that a user can still point at, is a
 viewer subject: a prompt or an answer in the Brief (`said`), a section of a markdown document (`section`), lines

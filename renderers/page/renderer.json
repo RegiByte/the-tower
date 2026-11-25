@@ -4,7 +4,7 @@
     { "id": "board.dialog", "subject": "board", "holds": ["views"], "scale": "dialog", "arity": "one", "description": "over the page, modal: a view to read or act in while the page goes on behind it, opened by display with that view, closed by its close button, Escape or a press outside" },
     { "id": "board.strip", "subject": "board", "holds": ["views"], "scale": "row", "arity": "one", "description": "a strip at the top of the sidebar, its view mounted for as long as the page is open: what an extension keeps in sight, or plays, whatever the main pane shows" },
     { "id": "board.sections", "subject": "board", "holds": ["views"], "scale": "list", "arity": "all", "description": "the sidebar's sections, between the limits and the floors: every view offered, each under a heading with its tally, folded to it or open, in the layout's order", "label": "The sidebar's sections" },
-    { "id": "board.nav", "subject": "board", "holds": ["views"], "scale": "pane", "arity": "all", "opens": "board.main", "description": "the sidebar's row above the floors: Floors first, then an entry per view on the board the main pane draws, each opening it there, marked while it is open", "label": "The sidebar's entries", "overflows": ["wrap"] },
+    { "id": "board.nav", "subject": "board", "holds": ["views"], "scale": "pane", "arity": "all", "opens": "board.main", "optIn": true, "description": "the sidebar's row above the floors: Floors first, then an entry per view on the board the main pane draws that asks for the row, each opening it there, marked while it is open; past its budget, the rest behind More…", "label": "The sidebar's entries", "overflows": ["menu", "wrap"] },
     { "id": "board.sign", "subject": "board", "holds": ["commands"], "description": "at the end of the sidebar's entries row, and the palette: commands about no one floor, such as a new floor, each its icon alone, its label and hint the tip", "overflows": ["wrap"] },
     { "id": "board.skyline", "subject": "board", "holds": ["commands"], "description": "in the skyline's greeting, the welcome on a new tower included: commands about no one floor, each its icon and label", "overflows": ["wrap"] },
     { "id": "board.notes", "subject": "board", "holds": ["asks"], "description": "the notes at the top of the sidebar, for asks about no floor", "overflows": ["wrap"] },
@@ -32,7 +32,7 @@
   "keeps": [],
   "layout": {
     "board.sections": { "order": ["tower/waiting"] },
-    "board.nav": { "order": ["tower/stats"], "hidden": ["tower/skyline", "tower/extensions", "floors/form", "floors/clones", "guides/center"] },
+    "board.nav": { "order": ["tower/stats"], "views": 4 },
     "floor.section": { "hidden": ["policies/policies"] },
     "floor.trays": { "order": ["drafts/tray", "reviews/tray", "policies/tray"] },
     "card.head": { "lines": 1 },

@@ -2,7 +2,7 @@ import { can, findCard, parentOf, shownSubject } from '/lib/board.js'
 import { shownFrom } from '/lib/brief.js'
 import { subjectAreaHtml, subjectButtonHtml } from '/lib/elements.js'
 import { heldActions, shownKey, shownTitle } from '/lib/cards.js'
-import { actionId, addedActions, isOnScreen, offeredIn, ordered, overflowOf, paneShows, pickView, sectionViews, shownOf } from '/lib/layout.js'
+import { actionId, addedActions, isOnScreen, offeredIn, ordered, overflowOf, paneShows, pickView, placedEntries, sectionViews, shownOf } from '/lib/layout.js'
 import { panesOf } from '/lib/keys.js'
 import { domId } from '/lib/morph.js'
 import { menuPins, subjectMenu } from '/lib/palette.js'
@@ -1020,10 +1020,10 @@ export function regions(deps) {
 
   /**
    * A region of arity `all` whose views open in another region (`Region.opens`), drawn as a row of entries
-   * (`board.nav`): every view it offers on the board (`sectionViews`), each an entry with its label, its module's
-   * `tab` tally on the board, and its hint as the tip, marked `aria-current` while it is the view `current` names.
-   * Nothing is mounted here: a press displays the view where the region opens. `redraw` is told when a module arrives,
-   * as a tally may change.
+   * (`board.nav`): the views it offers on the board, placed by its form and budget (`placedEntries`), each an entry with
+   * its label, its module's `tab` tally on the board, and its hint as the tip, marked `aria-current` while it is the
+   * view `current` names. Nothing is mounted here: a press displays the view where the region opens. `redraw` is told
+   * when a module arrives, as a tally may change.
    * @param {string} id @param {() => void} redraw
    */
   function entries(id, redraw) {
@@ -1047,11 +1047,15 @@ export function regions(deps) {
     }
 
     return {
-      /** The entries in the region's order, the one `current` names marked. @param {string | undefined} current */
-      html: (current) =>
-        sectionViews({ board: board(), views: views(), regions: declared(), layout: layout(), kit: deps.kit, main: region() }, region())
-          .map((v) => entryHtml(v, v.id === current))
-          .join(''),
+      /** The entries in place and those behind the region's menu. */
+      placed: () => placedEntries({ board: board(), views: views(), regions: declared(), layout: layout(), kit: deps.kit, main: region() }, region()),
+      /** `drawn` as entries, the one `current` names marked. @param {View[]} drawn @param {string | undefined} current */
+      html: (drawn, current) => drawn.map((v) => entryHtml(v, v.id === current)).join(''),
+      /** `view` as its menu's item, keyed `key`, its tally as the hint. @param {View} view @param {string} key @returns {MenuItem} */
+      item: (view, key) => {
+        const text = wordsOf(view)?.text
+        return { t: 'item', key, label: view.words.label, ...(text && { hint: text }) }
+      },
     }
   }
 

@@ -3,7 +3,7 @@
   "version": "1.0",
   "title": "Guides",
   "description": "The learning center: short guides to the tower's gestures, its own and any extension's, read in a view of their own, and a guided tour by a worker.",
-  "requires": { "tower": "2.31" },
+  "requires": { "tower": "2.35" },
   "client": "client",
   "collections": {
     "guides": {
@@ -34,6 +34,7 @@
       "on": ["board"],
       "scales": ["dialog", "pane"],
       "needs": ["display", "run", "toast"],
+      "optsInto": ["board.nav"],
       "words": { "label": "Learning center", "hint": "the tower's guides by category, searched by title, keywords and body" }
     }
   },
