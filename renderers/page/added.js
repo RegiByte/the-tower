@@ -13,8 +13,8 @@ import { esc, plural, span } from '/lib/words.js'
  */
 
 /**
- * What a region draws of `actions` under its layout `entry`, in their order: less those it hides, and in the menu only
- * (`LayoutEntry.onScreen`), its pins alone.
+ * What a region draws of `actions` under its layout `entry`: less those it hides, and in the menu only
+ * (`LayoutEntry.onScreen`), its pins alone. They keep the order given: a pin is not drawn first.
  * @template {Added<Action>} A @param {LayoutEntry | undefined} entry @param {A[]} actions
  */
 export const drawnActions = (entry, actions) =>
