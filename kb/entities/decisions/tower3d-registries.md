@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-11-19",
+  "reviewed": "2026-11-25",
   "refs": ["hub/renderers/tower3d/src/app.ts#Db", "hub/renderers/tower3d/src/layers.ts#reconcile", "hub/renderers/tower3d/src/acts.ts#byKind", "hub/renderers/tower3d/src/panels.ts", "hub/renderers/tower3d/src/stage.ts#startStage", "hub/renderers/tower3d/src/door.ts#installDoor"]
 }
 ---

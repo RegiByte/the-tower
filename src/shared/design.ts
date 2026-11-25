@@ -405,6 +405,19 @@ const kebab = (name: string) => name.replace(/[A-Z0-9]/g, (c) => `-${c.toLowerCa
 
 const variables = (tokens: Record<string, string>) => Object.entries(tokens).map(([name, value]) => `--${kebab(name)}: ${value};`).join('\n  ')
 
+/**
+ * How a document drawn in a frame looks like the page around it: `root`, its root element's attributes (the viewer's
+ * appearance, `tower.prefs.attributes`), and `links`, the stylesheets it links: the design's tokens, then the renderer's
+ * themes as this screen draws them (`tower.theme`), its choice of theme included. Drawn again on `onThemes`.
+ */
+export type FrameLook = { root: string; links: string }
+
+/** The frame look of the page `tower` serves. */
+export const frameLook = (tower: { prefs: { attributes(): string }; theme: { sheet(theme: string | null): string; get(): { drawn: string | null } } }): FrameLook => ({
+  root: tower.prefs.attributes(),
+  links: `<link rel="stylesheet" href="/design.css"><link rel="stylesheet" href="${tower.theme.sheet(tower.theme.get().drawn)}">`,
+})
+
 /** A rendered markdown document in a frame of its own (a shelf's file, a brief): the page links `/design.css` too. */
 export const documentCss = `html { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 body { margin: 0; background: var(--panel); color: var(--ink); font: var(--fs-xl)/1.65 var(--ui); -webkit-font-smoothing: antialiased; }

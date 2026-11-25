@@ -1,7 +1,7 @@
 import type { Board, CardShown } from '/lib/board.js'
 import { shownTitle } from '/lib/cards.js'
 import type { Tower } from '/lib/client.js'
-import { documentCss } from '/lib/design.js'
+import { documentCss, frameLook } from '/lib/design.js'
 import { type Mount, viewLayer } from '/lib/view.js'
 import { esc } from '/lib/words.js'
 
@@ -23,7 +23,7 @@ type Address = CardShown & { card: string; project: string }
 
 /** The link page, a document frame: the design's tokens and `article`, its link opening a tab of its own. */
 const linkPage = (tower: Tower, callsign: string, s: Address) =>
-  `<!doctype html><html ${tower.prefs.attributes()}><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css"><style>${documentCss}${DOC_CSS}</style><article><h4>${esc(callsign)} asks you to open</h4><h2>${esc(shownTitle(s))}</h2><p><code>${esc(s.target)}</code></p>
+  `<!doctype html><html ${frameLook(tower).root}><meta charset="utf-8"><base target="_blank">${frameLook(tower).links}<style>${documentCss}${DOC_CSS}</style><article><h4>${esc(callsign)} asks you to open</h4><h2>${esc(shownTitle(s))}</h2><p><code>${esc(s.target)}</code></p>
     <p><a href="${esc(s.target)}" rel="noreferrer"><b>Open ↗</b></a></p></article>`
 
 /** The callsign of the worker that showed `s`, as the board holds it. */
@@ -39,7 +39,7 @@ export const mount: Mount = (host, { tower, board: first, subject }) => {
   const frame = host.querySelector('iframe')!
   const draw = () => s.kind === 'link' && (frame.srcdoc = linkPage(tower, callsignOf(board, s), s))
   draw()
-  const offs = [tower.onScheme(draw), tower.prefs.on(draw)]
+  const offs = [tower.onScheme(draw), tower.prefs.on(draw), tower.onThemes(draw)]
   return {
     update(next) {
       board = next

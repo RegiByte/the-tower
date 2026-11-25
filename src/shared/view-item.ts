@@ -2,7 +2,7 @@ import type { Board, CardShown, Floor, FloorCollection, FloorItem } from '../bri
 import { type CheckoutFile, itemSubject, type Subject } from './subjects.ts'
 import { shownHref, shownTitle } from './worker-details.ts'
 import type { Tower } from './shelf-page.ts'
-import { documentCss } from './design.ts'
+import { documentCss, frameLook } from './design.ts'
 import { type Kit, type Mount, viewsOf } from './views.ts'
 import { closeHtml, paintOnce, viewCss } from './view-parts.ts'
 import { deleteAsk, itemFile, itemPath, itemsCss, keptTitles } from './items.ts'
@@ -59,8 +59,10 @@ export const bodyText = async (el: HTMLElement, { tower, title, url, body, stale
   })
 
 /** A document frame's document, from the design's tokens and `docCss`, holding `html`. */
-export const frameDoc = (tower: Tower, docCss: string, html: string) =>
-  `<!doctype html><html ${tower.prefs.attributes()}><meta charset="utf-8"><link rel="stylesheet" href="/design.css"><style>${documentCss}${docCss}</style>${html}`
+export const frameDoc = (tower: Tower, docCss: string, html: string) => {
+  const { root, links } = frameLook(tower)
+  return `<!doctype html><html ${root}><meta charset="utf-8">${links}<style>${documentCss}${docCss}</style>${html}`
+}
 
 /** A body's file as served, as of its version when it has one: a frame or an element loading it gets the newest. */
 export const versioned = ({ url, version }: Body) => (version === undefined ? esc(url) : `${esc(url)}?v=${version}`)
@@ -175,7 +177,7 @@ const itemFrame = (spec: TypeViewSpec): Mount => (host, { tower, board: first, s
     if (copy) void copyTelling(copy, copy, kit.toast)
   })
 
-  const offs = spec.restyled ? [tower.prefs.on(drawBody), tower.onScheme(drawBody)] : []
+  const offs = spec.restyled ? [tower.prefs.on(drawBody), tower.onScheme(drawBody), tower.onThemes(drawBody)] : []
 
   drawHead()
   drawBody()
@@ -263,7 +265,7 @@ const bareFrame = (spec: TypeViewSpec): Mount => (host, { tower, subject, kit })
     if (target.closest('[data-read-again]')) drawBody()
   })
 
-  const offs = spec.restyled ? [tower.prefs.on(drawBody), tower.onScheme(drawBody)] : []
+  const offs = spec.restyled ? [tower.prefs.on(drawBody), tower.onScheme(drawBody), tower.onThemes(drawBody)] : []
   drawBody()
 
   return {
