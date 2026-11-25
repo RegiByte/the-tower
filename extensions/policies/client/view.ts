@@ -18,7 +18,7 @@ const ID = 'policies/policies'
 const STYLE = `${componentsLayer(panelsCss)}${viewLayer(policiesPanelCss)}
 ${viewCss(
   ID,
-  `& .policies-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--sp-l); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius-card);
+  `& .policies-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--sp-l); background: var(--panel-2); border: var(--fit-hair) solid var(--line); border-radius: var(--fit-inner);
     scrollbar-width: thin; scrollbar-color: var(--line) transparent; scrollbar-gutter: stable; }`,
 )}`
 
