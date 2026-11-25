@@ -19,7 +19,7 @@ const HUB_HINT = 'Where its sessions start by default; the new-worker form can s
 const STYLE = viewCss(
   ID,
   `& .floor-form { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: var(--sp-xl); padding: var(--sp-xl) var(--sp-2xl);
-    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-card); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+    background: var(--panel); border: var(--fit-hair) solid var(--line); border-radius: var(--fit-inner); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
   & fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
   & .sources { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--sp-m); }
   & .sources label { display: flex; flex-direction: column; gap: var(--sp-xs); padding: var(--sp-l); border: 1px solid var(--line-strong); border-radius: var(--radius-control); cursor: pointer; }
