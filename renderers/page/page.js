@@ -1582,8 +1582,8 @@ addEventListener('blur', () => setTimeout(() => {
 document.addEventListener('visibilitychange', () => page.dispatch({ type: 'visible', visible: document.visibilityState === 'visible' }))
 
 /**
- * Whether the viewer's last press landed in the main pane: a press on what takes no focus (a brief's text) leaves
- * focus on the body, so there the press says where the viewer is. A press anywhere else clears it.
+ * Whether the viewer was last in the main pane: a press on what takes no focus (a brief's text) leaves focus on the
+ * body, so there the last press says where the viewer is. A press, or focus, anywhere else clears it.
  */
 let lastPressInMain = false
 
@@ -1597,12 +1597,19 @@ const inMain = () => {
   return document.hasFocus() && (at === document.body ? lastPressInMain : $('main').contains(at))
 }
 
-/** The main pane is marked `focus-in` while the viewer is in it, read once focus settles after its events. */
+/**
+ * The main pane is marked `focus-in` while the viewer is in it, read once focus settles after its events. With focus
+ * in one of the pane's frames, the window leaving for another app blurs only the frame's window, which the page
+ * doesn't hear, so the mark holds while the viewer is away: they come back to focus in that same frame.
+ */
 const markMainFocus = () => setTimeout(() => $('main').classList.toggle('focus-in', inMain()))
 document.addEventListener('pointerdown', (e) => {
   lastPressInMain = $('main').contains(/** @type {Node} */ (e.target))
   markMainFocus()
 }, true)
+document.addEventListener('focusin', (e) => {
+  if (!$('main').contains(/** @type {Node} */ (e.target))) lastPressInMain = false
+})
 for (const type of ['focusin', 'focusout']) document.addEventListener(type, markMainFocus)
 for (const type of ['focus', 'blur']) addEventListener(type, markMainFocus)
 
