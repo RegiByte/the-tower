@@ -216,7 +216,7 @@ export async function sidebar(deps) {
   /** A worker and everyone under it. @param {Crews} crews @param {Card} c @param {Card} [over] @returns {string} */
   const wholeCrewHtml = (crews, c, over) => {
     const hires = crews.hires(c)
-    return sessionHtml(c, over) + (hires.length ? `<div class="crew">${hires.map((h) => wholeCrewHtml(crews, h, c)).join('')}</div>` : '')
+    return sessionHtml(c, over) + (hires.length ? `<div class="crew tree">${hires.map((h) => wholeCrewHtml(crews, h, c)).join('')}</div>` : '')
   }
 
   /** A hire working on another floor, as a link to its card there. @param {Card} h */
@@ -238,7 +238,7 @@ export async function sidebar(deps) {
       : ''
     const away = crews.hiresEverywhere(c).filter((h) => h.project !== c.project && !goneHome(crews.everyone, h))
     const under = drawn.map((h) => crewHtml(crews, h, c)).join('') + away.map(awayHtml).join('') + fold
-    return sessionHtml(c, over) + (under ? `<div class="crew">${under}</div>` : '')
+    return sessionHtml(c, over) + (under ? `<div class="crew tree">${under}</div>` : '')
   }
 
   /**

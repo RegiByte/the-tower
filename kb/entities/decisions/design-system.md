@@ -88,7 +88,8 @@ terminal that is a block of the ink colour.
   token set on the root would resolve there, where no card's status is); and emphasis on what is active, a glow
   (`--card-glow`, its `-hover` and `-active` states, and `--main-glow` with its `-active` state while focus is in the
   main pane), each a blur and a percent of the card's status colour or the accent, by the same reasoning, drawn by a
-  box of its own so it adds to the shadow under it. Each defaults to an existing token
+  box of its own so it adds to the shadow under it; and the lines of a `.tree`, a crew hung from its head
+  (`--tree-line`, `--tree-radius`). Each defaults to an existing token
   or a fixed value, so the stock look and every scheme keep their values; the sites read the tokens, never a literal.
 - **Icons, controls and selection**: one SVG icon set ([`ICON`](ref:hub/src/shared/icons.ts#ICON)) in
   `currentColor`, hidden from assistive tech, the control naming itself; shared words keep their text marks

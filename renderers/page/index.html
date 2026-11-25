@@ -216,8 +216,13 @@ body:has(.crew-group.dragged) .tower-tip { visibility: hidden; }
 .sess .act { margin-top: var(--sp-s); display: flex; gap: var(--sp-s); }
 .sess .act.resumes { display: none; }
 .sess:not(.sel):is(:hover, :focus-within) .act.resumes { display: flex; position: absolute; inset: auto var(--sp-l) var(--sp-m); margin: 0; background: inherit; }
-.crew { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-s); margin-left: var(--sp-l); padding-left: var(--sp-m); border-left: 2px solid var(--line); }
-.crew .crew { margin-left: 0; padding-left: var(--sp-s); }
+/* A crew hangs from its head's lamp, 9px wide at the card's padding; each elbow turns in at a row's middle: a card's
+   name row, a control's height. */
+.crew { --tree-gap: var(--sp-s); --tree-x: var(--sp-l); --tree-indent: calc(var(--status-edge) + var(--sp-l) + 4px); }
+.crew > .sess { --tree-edge: var(--status-edge); --tree-rim: 1px; --tree-y: calc(1px + var(--sp-m) + var(--control) / 2); }
+.crew > .sess.gone { --tree-style: dashed; --tree-branch: repeating-linear-gradient(to right, var(--tree-line) 0 3px, transparent 3px 5px); }
+.crew > .away { --tree-edge: 4px; --tree-rim: 1px; --tree-y: calc(var(--control) / 2); }
+.crew > .gone-home { --tree-edge: 1px; --tree-rim: 1px; --tree-y: calc(var(--control) / 2); }
 .sess.gone { opacity: .55; }
 .gone-home { justify-self: start; display: inline-flex; align-items: center; gap: var(--sp-xs); min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); background: none; border-color: transparent; }
 .gone-home:hover { color: var(--ink); }

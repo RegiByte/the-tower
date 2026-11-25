@@ -16,12 +16,12 @@ const STYLE = viewCss(
   `& .archive { flex: 1; min-height: 0; overflow-y: auto; padding: var(--sp-m); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-card);
     scrollbar-width: thin; scrollbar-color: var(--line) transparent; scrollbar-gutter: stable;
     display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; align-content: start; gap: var(--sp-2xs); }
-  & .crew { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-2xs); margin-left: var(--sp-l); padding-left: var(--sp-m); border-left: 2px solid var(--line); }
-  & .crew .crew { margin-left: 0; padding-left: var(--sp-s); }
+  & .crew { --tree-gap: var(--sp-2xs); --tree-x: var(--sp-m); --tree-indent: calc(var(--sp-l) + 4px); }
+  & .crew > .past { --tree-y: calc(var(--sp-s) + .725em); }
   & .filter { flex: 1; min-width: 120px; max-width: 420px; padding: var(--sp-xs) var(--sp-l); font: var(--fs-m) var(--ui); color: var(--ink); background: var(--panel-2);
     border: 1px solid var(--line-strong); border-radius: var(--radius-control); }
   & .filter:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-  & .past { overflow: hidden; padding: var(--sp-s) var(--sp-l); border-radius: var(--radius-control); font-size: var(--fs-m); color: var(--muted); cursor: pointer; }
+  & .past { min-width: 0; padding: var(--sp-s) var(--sp-l); border-radius: var(--radius-control); font-size: var(--fs-m); color: var(--muted); cursor: pointer; }
   & .past:hover { background: var(--hover); color: var(--ink); }
   & .past .head { display: flex; align-items: center; gap: var(--sp-m); }
   & .past .call { font: var(--name-weight) var(--fs-m)/1 var(--display); letter-spacing: var(--name-tracking); color: var(--ink); text-decoration: none; }
@@ -76,7 +76,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
     ${c.conversations.map(conversationHtml).join('') || '<div class="conv"><i class="what">no conversation</i></div>'}
   </div>`
 
-  const crewsHtml = (crews: PastCrew[]): string => crews.map(({ card, crew }) => pastHtml(card) + (crew.length ? `<div class="crew">${crewsHtml(crew)}</div>` : '')).join('')
+  const crewsHtml = (crews: PastCrew[]): string => crews.map(({ card, crew }) => pastHtml(card) + (crew.length ? `<div class="crew tree">${crewsHtml(crew)}</div>` : '')).join('')
 
   /** The floor's archive, read again as its `archiveKey` moves: the cards read before are drawn until the next read lands. */
   const archive = loop({
