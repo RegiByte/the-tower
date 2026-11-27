@@ -30,7 +30,10 @@ export type RepoAsk = { dir: string; last: RepoParts | undefined; stale: Stale }
 /** What the reader is asked: a dir's refs, or its checkouts judged on the refs just read. */
 export type ReaderAsk = ({ t: 'refs' } & RepoAsk) | ({ t: 'checkouts'; refs: RepoRefsReading } & RepoAsk)
 
-/** The reader's two reads, each answered as it settles. */
+/** A read the reader never answered because the tower stopped it: nothing waits on it, so it goes unsaid. */
+export class ReaderStopped extends Error {}
+
+/** The reader's two reads, each answered as it settles; a read cut off by the tower's stop is a `ReaderStopped`. */
 export type RepoReader = {
   refs: (ask: RepoAsk) => Promise<PromiseSettledResult<RefsReading>>
   checkouts: (ask: RepoAsk, refs: RepoRefsReading) => Promise<PromiseSettledResult<RepoReading>>
@@ -142,6 +145,7 @@ export const watchRepos = (
   /** What a dir's read says: a dir that fails keeps its last read, said once until the reason changes. */
   const land = (dir: string, result: PromiseSettledResult<RepoReading>) => {
     if (result.status === 'rejected') {
+      if (result.reason instanceof ReaderStopped) return
       const why = (result.reason as Error).message
       if (failing.get(dir) !== why) console.error(`git in ${dir}:`, result.reason)
       failing.set(dir, why)

@@ -14,7 +14,7 @@ import { frozen } from './bridge/frozen.ts'
 import type { Peer, Resource } from './bridge/resources.ts'
 import type { FirstRead, RepoRead } from './bridge/worktrees.ts'
 import { scanCollections } from './collections.ts'
-import { watchRepos, type ReaderAsk, type RepoReader } from './repo-watch.ts'
+import { ReaderStopped, watchRepos, type ReaderAsk, type RepoReader } from './repo-watch.ts'
 import { heldJobs, hostLive, peersIn, resourcesIn, scanProcesses, termsShells } from './machine.ts'
 import { ConfigError, projectDirs, type CollectionItem, type Config } from './shared/model.ts'
 import { projectsStreamsPath, systemStreamsPath } from './shared/paths.ts'
@@ -478,7 +478,9 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
       started.unanswered.delete(id)
     })
     worker.on('error', failed)
-    worker.on('exit', (code) => failed(new Error(`the git reader exited (${code}) before it answered`)))
+    worker.on('exit', (code) =>
+      failed(stopped ? new ReaderStopped('the tower stopped the git reader') : new Error(`the git reader exited (${code}) before it answered`)),
+    )
     return started
   }
   const asked = <T>(ask: ReaderAsk) =>
