@@ -107,7 +107,7 @@ export async function sidebar(deps) {
   /** Whether the viewer keeps region `id`'s buttons on screen (`LayoutEntry.onScreen`). @param {string} id */
   const onScreen = (id) => isOnScreen(regionLayout(id).entry)
 
-  /** What region `id` draws of `actions` under its layout (`drawnActions`). @template {Added<Action>} A @param {string} id @param {A[]} actions */
+  /** What region `id` draws of `actions` under its layout (`drawnActions`). @param {string} id @param {Added<Action>[]} actions */
   const shownIn = (id, actions) => drawnActions(regionLayout(id).entry, actions)
 
   /** @param {string} text */

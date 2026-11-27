@@ -1,5 +1,5 @@
 import { DISMISS_ASK_TITLE } from '/lib/cards.js'
-import { actionId, actionWords, badgeGlyphOf, badgesOf, glyphOf, isOnScreen } from '/lib/layout.js'
+import { actionWords, badgeGlyphOf, badgesOf, glyphOf, isOnScreen, rankedActions } from '/lib/layout.js'
 import { ICON } from '/lib/view.js'
 import { domId } from '/lib/morph.js'
 import { esc, plural, span } from '/lib/words.js'
@@ -13,12 +13,14 @@ import { esc, plural, span } from '/lib/words.js'
  */
 
 /**
- * What a region draws of `actions` under its layout `entry`: less those it hides, and in the menu only
- * (`LayoutEntry.onScreen`), its pins alone. They keep the order given: a pin is not drawn first.
- * @template {Added<Action>} A @param {LayoutEntry | undefined} entry @param {A[]} actions
+ * What a region draws of `actions` under its layout `entry`, ranked (`rankedActions`): less those it hides, its pins
+ * first, and in the menu only (`LayoutEntry.onScreen`), its pins alone.
+ * @param {LayoutEntry | undefined} entry @param {Added<Action>[]} actions
  */
 export const drawnActions = (entry, actions) =>
-  actions.filter((a) => !entry?.hidden?.includes(actionId(a)) && (isOnScreen(entry) || entry?.pinned?.includes(actionId(a))))
+  rankedActions(actions, entry)
+    .filter((r) => isOnScreen(entry) || r.pinned)
+    .map((r) => r.action)
 
 /** One badge with `more` among its attributes: a link when it has `href`, its glyph before its label when it names one. @param {Added<Badge>} b @param {string} more */
 const badgeWith = (b, more) => {
