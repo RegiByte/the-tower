@@ -6,9 +6,10 @@
  * (`custom`) by Enter alone; `<tower-menu>` opened by a right-click on a `<tower-menu-area>` and by Enter on a
  * `<tower-menu-button>`, its submenu, its action, its focus coming back and its subject said again on an opening for
  * the same one; `<tower-split>` stepped by its keys, its size written back and held as it narrows and widens, its grip
- * naming its sized pane; and `<tower-dialog>` holding a frame, closed by an Escape pressed inside the frame
- * (`passEscapeOut`); each checked as it happens by the scene's own steps (`playground.act`); a check failing fails
- * the run.
+ * naming its sized pane; `<tower-dialog>` holding a frame, closed by an Escape pressed inside the frame
+ * (`passEscapeOut`); and `<tower-popover>` beside a button redrawn the same way, opened by Enter and by a click,
+ * closed by Escape, its button again, a press into a frame with no script and a press outside; each checked as it
+ * happens by the scene's own steps (`playground.act`); a check failing fails the run.
  * Run it on every bump of the UI SDK, in both engines:
  *
  *   npm run tool:lib-ui -- chrome [--shots <dir>]    headless Chrome (`scripts/drive.ts`)
@@ -19,10 +20,10 @@
  * This script serves the playground itself, with no tower behind it (`?alone`): the scenes in the default look only,
  * which the page says. Every theme the page is offered is drawn on a tower, the sandbox's at `/r/playground/`.
  *
- * `--shots` saves a PNG of the open combobox, the menu with its submenu, the menu a button opened, the split, and the
- * dialog holding a frame, as `<dir>/<engine>-<name>.png`. The menu scene places its rows exactly (`rowPoint`), and
- * `?bare` puts its frame at the window's top left, so a right-click lands on a row in either engine without reading
- * the page first.
+ * `--shots` saves a PNG of the open combobox, the menu with its submenu, the menu a button opened, the split, the
+ * dialog holding a frame and the open popover, as `<dir>/<engine>-<name>.png`. The menu scene places its rows exactly
+ * (`rowPoint`), and `?bare` puts its frame at the window's top left, so a right-click lands on a row in either engine
+ * without reading the page first.
  */
 import { spawn } from 'node:child_process'
 import { existsSync, readFileSync, statSync } from 'node:fs'
@@ -32,13 +33,14 @@ import { fontFile } from '../src/packages.ts'
 import { designCss, fonts } from '../src/shared/design.ts'
 import { servedModule } from '../src/tower/served.ts'
 import { rowPoint, SUBJECTS } from '../renderers/playground/scenes/menu.js'
+import { POINTS } from '../renderers/playground/scenes/popover.js'
 import { freePort, sleep, withPage } from './drive.ts'
 
 const ENGINES = ['chrome', 'webkit'] as const
 type Engine = (typeof ENGINES)[number]
 
 /** One step of the run, as both drivers take it. */
-type Step = { eval: string } | { rclick: [number, number] } | { key: string } | { wait: number } | { shot: string }
+type Step = { eval: string } | { click: [number, number] } | { rclick: [number, number] } | { key: string } | { wait: number } | { shot: string }
 
 const PLAYGROUND = path.join(import.meta.dirname, '..', 'renderers', 'playground')
 
@@ -227,8 +229,46 @@ const ESCAPE_OUT = (shots: (name: string) => Step[]): Step[] => {
   return [READY, e('open'), { wait: 300 }, e('opened'), ...shots('escape-out'), { key: 'Escape' }, { wait: 500 }, e('closed')]
 }
 
+const POPOVER = (shots: (name: string) => Step[]): Step[] => {
+  const p = (step: string, ...args: unknown[]) => act('popover', step, ...args)
+  return [
+    READY,
+    p('start'),
+    p('focusButton'),
+    { key: 'Enter' },
+    { wait: 500 },
+    p('opened', 'trigger-press'),
+    ...shots('popover'),
+    { key: 'Escape' },
+    { wait: 500 },
+    p('closed', ['escape-key'], true),
+    { click: POINTS.button },
+    { wait: 500 },
+    p('opened', 'trigger-press'),
+    { click: POINTS.button },
+    { wait: 500 },
+    p('closed', ['trigger-press'], true),
+    { click: POINTS.button },
+    { wait: 500 },
+    p('opened', 'trigger-press'),
+    { click: POINTS.frame },
+    { wait: 500 },
+    p('closed', ['window-blur', 'focus-out'], false),
+    { click: POINTS.button },
+    { wait: 500 },
+    p('opened', 'trigger-press'),
+    { click: POINTS.empty },
+    { wait: 500 },
+    p('closed', ['outside-press'], false),
+    p('stop'),
+    p('ownAttributes'),
+    p('errors'),
+  ]
+}
+
+
 /** The scenes checked, each on a page of its own, with its steps. */
-const RUNS = { combobox: COMBOBOX, menu: MENU, split: SPLIT, 'escape-out': ESCAPE_OUT }
+const RUNS = { combobox: COMBOBOX, menu: MENU, split: SPLIT, 'escape-out': ESCAPE_OUT, popover: POPOVER }
 
 /** Serves the playground, the design and every module it reaches. */
 async function serve() {
@@ -258,7 +298,11 @@ async function inChrome(url: string, steps: Step[]) {
   await withPage(url, { width: 900, height: 600, scale: 2 }, async (page) => {
     for (const step of steps) {
       if ('eval' in step) console.log(`✔ ${step.eval}  ${JSON.stringify(await page.eval(step.eval))}`)
-      else if ('rclick' in step) {
+      else if ('click' in step) {
+        await page.mouse(...step.click)
+        await page.press('left', true)
+        await page.press('left', false)
+      } else if ('rclick' in step) {
         await page.mouse(...step.rclick)
         await page.press('right', true)
         await page.press('right', false)
@@ -274,6 +318,7 @@ async function inChrome(url: string, steps: Step[]) {
 async function inWebKit(url: string, steps: Step[]) {
   const args = steps.flatMap((step) =>
     'eval' in step ? ['--eval', step.eval]
+    : 'click' in step ? ['--click', step.click.join(',')]
     : 'rclick' in step ? ['--rclick', step.rclick.join(',')]
     : 'key' in step ? ['--key', step.key]
     : 'wait' in step ? ['--wait', String(step.wait)]
