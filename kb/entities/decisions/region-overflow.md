@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-01",
-  "reviewed": "2026-11-25",
+  "reviewed": "2026-11-27",
   "refs": [
     "hub/src/shared/subject-menu.ts#MENU_LINE_IDS",
     "hub/src/shared/subject-menu.ts#menuPins",
@@ -123,7 +123,9 @@ one renderer ([[renderer-is-disposable]]). And the tower stores only intent, fac
   then the region's `order`, `hidden` removing one, pins named by view id in the same id space
   ([`placedEntries`](ref:hub/src/shared/views.ts#placedEntries)). Under `menu` the pinned and `views` of the rest are
   in place, the rest behind a More… entry, which also pins any entry; with no budget, or under `wrap`, every entry
-  is. The budget is counted, not measured: an entry row is short, and a row narrower than its entries wraps them. A
+  is. The count is a ceiling, not the fit: under `menu` the tower page measures the row too, as it does a worker's
+  head, and keeps in place only the prefix of those entries that fits on one line ([`fill`](ref:hub/src/shared/fill.ts#fill)),
+  the rest joining what the budget tucked, so any number of extensions' entries never makes the row taller. A
   `views` budget on a region that mounts its views is refused by the checks, as a pin of one would be
   ([`regionProblems`](ref:hub/src/renderers.ts#regionProblems)), and a pin or an `order` entry naming a view the region
   never offers (not on its subject, not at its scale, or not asking for an opt-in region) is warned of, with the

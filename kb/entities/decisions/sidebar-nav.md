@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "The sidebar's entries: board.nav opens views in the main pane",
-  "summary": "The row above the tower page's floors is board.nav, a region of arity all that opens in board.main: Floors first, the way home to the skyline, then an entry per view on the board the main pane draws, each displayed there on a press and marked while it is open. Stats is one, the core view tower/stats; an extension's board pane view is one when it asks for the row (optsInto), since the region is opt-in; past a budget of four the rest are behind More…, and pins choose.",
+  "summary": "The row above the tower page's floors is board.nav, a region of arity all that opens in board.main: Floors first, the way home to the skyline, then an entry per view on the board the main pane draws, each displayed there on a press and marked while it is open. Stats is one, the core view tower/stats; an extension's board pane view is one when it asks for the row (optsInto), since the region is opt-in; past a budget of four, or past what fits on its one line, the rest are behind More…, and pins choose.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-25",
@@ -19,6 +19,7 @@
     "hub/renderers/page/renderer.json",
     "hub/renderers/page/regions.js#regions",
     "hub/renderers/page/page.js#paintNav",
+    "hub/src/shared/fill.ts#fill",
     "hub/docs/extending.md"
   ]
 }
@@ -57,9 +58,13 @@ an extension to reach into ([[sidebar-regions]], [[renderer-is-disposable]]).
 - *Stats* is the core view [`tower/stats`](ref:hub/src/views/stats.ts#mount), on the board and on a floor ([[stats]]).
   From the row it opens on every floor; a floor's opens from that floor's menu or the palette. The sidebar mode and its
   machine are gone.
-- `board.sign`'s icons stay at the row's end, on the entries' line while they fit beside them. A sidebar too narrow
-  for both puts the icons on a line of their own, at its end, so the entries keep one line; only entries too wide for
-  the whole row wrap among themselves.
+- *One line.* Any extension can add an entry, so under `menu` the row never grows taller: each frame after a paint, and
+  whenever the row's width changes (the sidebar dragged, the window resized) or the type does, the page draws every
+  entry the budget placed, measures them on one line, and keeps in place those that fit beside Floors, More… and
+  `board.sign`'s icons, in rank order, pins first; the rest go behind More… before the budget's. Floors is never
+  tucked, and the icons stay on the same line at its end. The write lands in the same frame as the measure, so the
+  untucked row is never painted ([`paintNav`](ref:hub/renderers/page/page.js#paintNav)). Under `wrap`, a viewer's
+  choice, every entry is in place and the row wraps, the icons breaking onto a line of their own first.
 
 **Alternatives considered.**
 - *Every board pane view an entry, trimmed with `hidden`* (the first version): with thirty or forty extensions the
@@ -69,6 +74,10 @@ an extension to reach into ([[sidebar-regions]], [[renderer-is-disposable]]).
 - *A labelled command in `board.sign`*: it has no open state to mark.
 - *An `entries` manifest key*: it would repeat a view's words and its "opens in the main pane" meaning.
 - *A view at an `entry` scale drawing its own button*: extension code would draw the row's DOM again.
+- *A row that wraps* (before the width tuck): an entry row any extension can grow grew without bound in the densest
+  view, and a second line read as inconsistent.
+- *A row that scrolls sideways*, as the worker view's tabs do: it clips a label, hides how much there is, and a mouse
+  wheel scrolls vertically.
 - *Stats kept as a sidebar mode, with a second row for entries*: the row would then mean two things.
 - *The nav entry opening Stats on the floor in view*: the page would special-case one entry; the location now says
   the scope instead.
