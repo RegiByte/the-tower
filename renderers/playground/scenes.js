@@ -3,6 +3,7 @@ import { scene as combobox } from './scenes/combobox.js'
 import { scene as dialog } from './scenes/dialog.js'
 import { scene as framePress } from './scenes/frame-press.js'
 import { scene as menu } from './scenes/menu.js'
+import { scene as popover } from './scenes/popover.js'
 import { scene as tips } from './scenes/tips.js'
 import { scene as toasts } from './scenes/toasts.js'
 
@@ -19,4 +20,4 @@ import { scene as toasts } from './scenes/toasts.js'
  */
 
 /** Every scene, in the playground's order: the elements, then the behaviors. @type {Scene[]} */
-export const SCENES = [menu, combobox, dialog, tips, toasts, ask, framePress]
+export const SCENES = [menu, combobox, dialog, popover, tips, toasts, ask, framePress]
