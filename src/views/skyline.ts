@@ -2,7 +2,7 @@ import { type Board, boardSubject, can, type Card, type Floor, floorSubject } fr
 import { gistLine, heededWaits, HOST_MEANS, loudest, statusName, whyNot } from '/lib/cards.js'
 import { skyAt } from '/lib/design.js'
 import { chordLabel } from '/lib/keys.js'
-import { type Mount, PANE_FIT, paintOnce, viewLayer } from '/lib/view.js'
+import { type Mount, paintOnce, viewLayer } from '/lib/view.js'
 import { readViewer, VIEWER_KEYS } from '/lib/viewer.js'
 import { esc } from '/lib/words.js'
 import { paintOf } from '../shared/view-parts.ts'
@@ -21,7 +21,6 @@ const BUILDING_MIN_WINDOWS = 16
 
 const STYLE = `@keyframes beacon { 0%, 60%, 100% { opacity: .2; } 70%, 85% { opacity: 1; } }
 :where([data-view="${ID}"]) {
-  ${PANE_FIT}
   position: relative; overflow: hidden; border-radius: var(--fit-outer) var(--fit-outer) var(--fit-inner) var(--fit-inner);
   background: linear-gradient(180deg, var(--sky-top), var(--sky-mid) 60%, var(--sky-horizon));
   & .stars { position: absolute; inset: 0; pointer-events: none; opacity: var(--stars);

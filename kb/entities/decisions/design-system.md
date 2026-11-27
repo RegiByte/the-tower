@@ -27,7 +27,9 @@ terminal that is a block of the ink colour.
 - The tower serves it three ways ([`design`](ref:hub/src/tower/http.ts#design)): `/design.css`
   ([`designCss`](ref:hub/src/shared/design.ts#designCss): the order of a page's cascade layers ([[cascade-layers]]),
   then faces, and in the design's layer the `--` variables and the shared components, among
-  them the attention classes and every button's pressed, held and busy states, [[press-feedback]]), `design.ts`
+  them the attention classes, every button's pressed, held and busy states, [[press-feedback]], and `.tower-fit`, the
+  pane fit's four `--fit-*` variables ([`PANE_FIT`](ref:hub/src/shared/design.ts#PANE_FIT)), which the view host
+  gives every view it mounts ([`mountView`](ref:hub/src/shared/view-host.ts)), so no view misses them), `design.ts`
   and `/fonts/<file>` from the `@fontsource` packages. All three answer any origin: a framed shelf page has an
   opaque origin, and fonts and modules load only with CORS.
 - **Colour is attention.** Each board card carries `attention` (`needs | ready | working | quiet | broken`),

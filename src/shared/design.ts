@@ -438,6 +438,15 @@ blockquote { margin: 0; padding: 0 1em; border-left: 3px solid var(--line); colo
 table { border-collapse: collapse; } th, td { border: 1px solid var(--line); padding: var(--sp-xs) var(--sp-l); } th { background: var(--panel-2); }`
 
 /**
+ * How a view fits the pane holding it, declared on the view's element: the pane lends how far its content sits from its
+ * edges as `--pane-pad` (unlent, as in a dialog, `var(--sp-xl)`), and from it come `--fit-hair`, a border that vanishes
+ * when flush, `--fit-inner`, a corner never rounder than the gap, and `--fit-outer`, a corner that takes the pane's
+ * radius where it meets the pane. The class `.tower-fit` declares them; a view host gives it to every view it mounts.
+ */
+export const PANE_FIT = `--fit-pad: var(--pane-pad, var(--sp-xl)); --fit-hair: min(1px, var(--fit-pad)); --fit-inner: min(var(--radius-card), var(--fit-pad));
+  --fit-outer: max(var(--fit-inner), calc(var(--main-radius) - var(--fit-pad)));`
+
+/**
  * The components every renderer draws the same way, by class: an attention class (`needs`, `ready`, `working`,
  * `quiet`, `broken`, and `offered`, a policy's slot waiting to be started, its text tone its own colour) sets `--c`, the text colour on it, `--on`, and its tone as text on paper, `--c-text`; a lamp,
  * pill, chip and meter read them; an unfilled chip is in ink, whatever it sits on. A floor sign takes its project colour as `--p`. A meter's `s` is a tick on its track.
@@ -452,6 +461,7 @@ table { border-collapse: collapse; } th, td { border: 1px solid var(--line); pad
  * (`--glyph: url(…)`) drawn as a mask in the ink around it, so it follows the palette as the core's icons do.
  */
 const COMPONENTS = `
+.tower-fit { ${PANE_FIT} }
 .icon { width: var(--icon-s); height: var(--icon-s); flex: none; vertical-align: -.125em; }
 .icon-btn { display: inline-grid; place-items: center; min-width: var(--control); min-height: var(--control); padding: 0; border: 1px solid transparent; border-radius: var(--radius-control);
   background: none; color: var(--muted); cursor: pointer; }
