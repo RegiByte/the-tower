@@ -1,11 +1,14 @@
 /**
  * The tower's menu, served as `/lib-ui/menu.js`. Importing it defines three elements: `<tower-menu>`, one menu a page
- * holds for many subjects, filled for the subject it opens for; `<tower-menu-button>`, the ⋯ button that opens it for
- * one subject, from the keyboard too; and `<tower-menu-area>`, around a subject's own markup, where a right-click, the
+ * holds for many subjects, filled for the subject it opens for; `<tower-menu-button>`, the button that opens it for
+ * one subject, from the keyboard too: a ⋯ of its own, or the page's button inside it; and `<tower-menu-area>`, around a subject's own markup, where a right-click, the
  * context-menu key or a long press opens it at the pointer. Placement, dismissal, focus and the keys are the SDK's.
  *
  * A page writes the tags and their attributes only, and marks `<tower-menu>` and `<tower-menu-button>`
- * `data-owned="children"`, since each builds its parts inside itself. An area's children stay the page's.
+ * `data-owned="children"`, since each builds its parts inside itself. An area's children stay the page's. A
+ * `<tower-menu-button>` drawn with a `<button>` inside opens from that button instead of a ⋯ of its own: its text and
+ * look stay the page's, which writes it as any button of its own, and the SDK writes the menu's marks and anchor on it,
+ * so a redraw through the morph must leave it be.
  */
 import type { MenuData } from '@ui-sdk/web/menu'
 import { relay, type ElementContract } from './sdk.ts'
@@ -37,7 +40,7 @@ export const elements = {
     attributes: {
       for: 'The id of the `<tower-menu>` it opens.',
       payload: 'The subject it opens the menu for.',
-      label: "The button's accessible name, `Menu` when absent.",
+      label: "The button's accessible name: `Menu` when absent on its own ⋯; a page's button keeps its own when absent.",
     },
     properties: {},
     events: {},
@@ -241,12 +244,16 @@ class TowerMenuButton extends HTMLElement {
   static observedAttributes = Object.keys(elements['tower-menu-button'].attributes)
   #trigger?: HTMLElementTagNameMap['ui-menu-trigger']
 
+  /** Whether the button is the page's own, drawn inside it, or its ⋯. */
+  #own = false
+
   connectedCallback() {
     if (this.#trigger) return
     const trigger = document.createElement('ui-menu-trigger')
-    const button = document.createElement('button')
-    button.type = 'button'
-    button.textContent = '⋯'
+    const page = this.querySelector<HTMLButtonElement>(':scope > button')
+    this.#own = !page
+    const button = page ?? Object.assign(document.createElement('button'), { type: 'button', textContent: '⋯' })
+    if (!page) button.dataset.towerMenu = 'dots'
     trigger.append(button)
     this.append(trigger)
     this.#trigger = trigger
@@ -262,7 +269,8 @@ class TowerMenuButton extends HTMLElement {
     if (!trigger) return
     trigger.setAttribute('for', innerId(this.getAttribute('for') ?? ''))
     trigger.payload = this.getAttribute('payload') ?? undefined
-    trigger.querySelector('button')!.setAttribute('aria-label', this.getAttribute('label') ?? 'Menu')
+    const label = this.getAttribute('label') ?? (this.#own ? 'Menu' : null)
+    if (label !== null) trigger.querySelector('button')!.setAttribute('aria-label', label)
   }
 }
 

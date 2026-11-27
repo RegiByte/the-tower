@@ -5,11 +5,12 @@
  * while open and passed on while closed, one named by a label drawn apart (`labelledby`), one taking text typed
  * (`custom`) by Enter alone; `<tower-menu>` opened by a right-click on a `<tower-menu-area>` and by Enter on a
  * `<tower-menu-button>`, its submenu, its action, its focus coming back and its subject said again on an opening for
- * the same one; `<tower-split>` stepped by its keys, its size written back and held as it narrows and widens, its grip
- * naming its sized pane; `<tower-dialog>` holding a frame, closed by an Escape pressed inside the frame
- * (`passEscapeOut`); and `<tower-popover>` beside a button redrawn the same way, opened by Enter and by a click,
- * closed by Escape, its button again, a press into a frame with no script and a press outside; each checked as it
- * happens by the scene's own steps (`playground.act`); a check failing fails the run.
+ * the same one, and one opened from a button of the page's own by ↓ and ↑, typing, a checkbox item keeping it open;
+ * `<tower-split>` stepped by its keys, its size written back and held as it narrows and widens, its grip naming its
+ * sized pane; `<tower-dialog>` holding a frame, closed by an Escape pressed inside the frame (`passEscapeOut`); and
+ * `<tower-popover>` beside a button redrawn the same way, opened by Enter and by a click, closed by Escape, its button
+ * again, a press into a frame with no script and a press outside; each checked as it happens by the scene's own steps
+ * (`playground.act`); a check failing fails the run.
  * Run it on every bump of the UI SDK, in both engines:
  *
  *   npm run tool:lib-ui -- chrome [--shots <dir>]    headless Chrome (`scripts/drive.ts`)
@@ -186,6 +187,26 @@ const MENU = (shots: (name: string) => Step[]): Step[] => {
     m('saidAgain', SUBJECTS[1]!.id),
     { key: 'Escape' },
     { wait: 300 },
+    m('focusMore'),
+    { key: 'ArrowDown' },
+    { wait: 500 },
+    m('moreOpen', 'Stats'),
+    ...shots('more'),
+    { key: 'l' },
+    { wait: 200 },
+    m('moreOpen', 'Learning center'),
+    { key: 'Escape' },
+    { wait: 500 },
+    m('moreClosed'),
+    { key: 'ArrowUp' },
+    { wait: 500 },
+    m('moreOpen', 'Stats'),
+    { key: 'Enter' },
+    { wait: 300 },
+    m('moreChecked'),
+    { key: 'Escape' },
+    { wait: 500 },
+    m('moreClosed'),
     m('stop'),
     m('ownAttributes'),
     m('errors'),

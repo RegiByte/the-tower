@@ -4,7 +4,9 @@ import { fail } from '../checks.js'
  * `<tower-menu>` over four subjects' rows redrawn through the morph every 100 ms once started: opened by a right-click on
  * a `<tower-menu-area>` and by Enter on a `<tower-menu-button>`, its submenu, its action, a checkbox item, its focus
  * coming back and its subject said again on an opening for the same one. The rows sit where `ROWS` says, so a driver's
- * right-click lands on one without reading the frame first.
+ * right-click lands on one without reading the frame first. Below them, a `<tower-menu-button>` around a button of the
+ * page's own, "More…", opens a menu of its own: ↓ and ↑ open it on its first and last item, typing finds an item, a
+ * checkbox item stays open, Escape gives focus back to the page's button.
  */
 
 export const SUBJECTS = [
@@ -19,6 +21,17 @@ export const ROWS = { left: 24, top: 48, width: 360, height: 32 }
 
 /** The point in the frame at the middle of row `i`'s name. @returns {[number, number]} */
 export const rowPoint = (/** @type {number} */ i) => [ROWS.left + 120, ROWS.top + i * ROWS.height + ROWS.height / 2]
+
+/** Where "More…" sits in the frame. */
+const MORE_TOP = ROWS.top + SUBJECTS.length * ROWS.height + 24
+
+/** What "More…" offers: two views to open and a choice that keeps it open. */
+const MORE_ITEMS = [
+  { value: 'open/stats', label: 'Stats', hint: '3 this week' },
+  { value: 'open/learning', label: 'Learning center' },
+  { type: 'separator' },
+  { type: 'group', label: 'Pin to the row', items: [{ type: 'checkbox', value: 'pin/stats', label: 'Stats', checked: false }] },
+]
 
 /** @type {Record<string, string[]>} */
 const VERBS = { floor: ['New worker', 'Tidy'], worker: ['Open', 'Message', 'Send home'], tab: ['Open', 'Close'] }
@@ -37,7 +50,7 @@ const itemsOf = (/** @type {string} */ id) => {
 export const scene = {
   id: 'menu',
   title: '<tower-menu>',
-  about: 'A right-click on a row or Enter on its ⋯ opens the subject menu there: a group, a submenu, a checkbox item; Escape gives focus back; the row marks :state(open).',
+  about: 'A right-click on a row or Enter on its ⋯ opens the subject menu there: a group, a submenu, a checkbox item; Escape gives focus back; the row marks :state(open). "More…" is a button of the page\'s own opening a menu of its own.',
   size: [420, 380],
   css: `body { padding: 0; }
   #view { position: absolute; left: ${ROWS.left}px; top: ${ROWS.top - 24}px; width: ${ROWS.width}px; }
@@ -45,8 +58,9 @@ export const scene = {
   tower-menu-area { display: flex; align-items: center; gap: var(--sp-m); box-sizing: border-box; height: ${ROWS.height}px; padding: 0 var(--sp-m); border-radius: var(--radius); }
   tower-menu-area:state(open) { background: var(--panel-2); box-shadow: var(--selected); }
   tower-menu-area .name { flex: 1; }
-  tower-menu-area .age { color: var(--muted); font-variant-numeric: tabular-nums; }`,
-  html: () => '<div id="view"></div>',
+  tower-menu-area .age { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .more { position: absolute; left: ${ROWS.left}px; top: ${MORE_TOP}px; }`,
+  html: () => `<div id="view"></div><div class="more"><tower-menu-button for="more-menu" payload="more" data-owned="children"><button type="button" class="eyebrow">More…</button></tower-menu-button><tower-menu id="more-menu" data-owned="children"></tower-menu></div>`,
   async wire(doc, win) {
     const { subjectHtml, subjectMenuHtml } = await import('/lib/elements.js')
     const { morph } = await import('/lib/morph.js')
@@ -68,6 +82,14 @@ export const scene = {
     render()
 
     const menu = /** @type {HTMLElement & { open: boolean, items: unknown[], api: { getPayload(): string }, openAt(payload: string, at: Element): void }} */ (doc.getElementById('subject-menu'))
+    const more = /** @type {HTMLElement & { open: boolean, items: unknown[] }} */ (doc.getElementById('more-menu'))
+    more.items = MORE_ITEMS
+    const moreButton = /** @type {HTMLButtonElement} */ (doc.querySelector('.more button'))
+    /** @type {unknown[][]} */
+    const moreLog = []
+    more.addEventListener('action', (e) => moreLog.push(['action', detailOf(e).value]))
+    more.addEventListener('checkedchange', (e) => moreLog.push(['checked', detailOf(e).value, detailOf(e).checked]))
+    const moreContent = () => more.querySelector('[data-slot="menu-content"]')
     const detailOf = (/** @type {Event} */ e) => /** @type {CustomEvent<{ value: any, reason?: string, checked?: boolean }>} */ (e).detail
     root.addEventListener('payloadchange', (e) => (log.push(['payload', detailOf(e).value]), (menu.items = itemsOf(detailOf(e).value))))
     root.addEventListener('openchange', (e) => log.push([/** @type {Element} */ (e.target).localName, 'open', detailOf(e).value, detailOf(e).reason]))
@@ -131,6 +153,27 @@ export const scene = {
       saidAgain: (/** @type {string} */ payload) => {
         const seen = log.filter((l) => l[0] === 'payload').slice(payloads)
         if (JSON.stringify(seen) !== JSON.stringify([['payload', payload]])) fail(`an opening for ${payload} again should say it once more`, seen)
+        return seen
+      },
+      focusMore: () => (win.focus(), moreButton.focus(), doc.activeElement === moreButton),
+      /** "More…" open below the page's button, its marks on it, `active` the item focus is on. */
+      moreOpen: (/** @type {string} */ active) => {
+        const b = moreButton.getBoundingClientRect()
+        const r = moreContent()?.getBoundingClientRect()
+        const seen = { open: more.open, text: moreButton.textContent, at: r && [Math.round(r.x), Math.round(r.y)], button: [Math.round(b.x), Math.round(b.bottom)], active: doc.activeElement?.textContent?.trim(), expanded: moreButton.getAttribute('aria-expanded'), haspopup: moreButton.getAttribute('aria-haspopup') }
+        if (!seen.open || seen.text !== 'More…' || seen.expanded !== 'true' || seen.haspopup !== 'menu') fail('"More…" should be open from the page\'s own button', seen)
+        if (!r || r.y < b.bottom - 1 || r.y > b.bottom + 16) fail('"More…" is not anchored below its button', seen)
+        if (!seen.active?.startsWith(active)) fail(`focus should be on ${active}`, seen)
+        return seen
+      },
+      moreChecked: () => {
+        const seen = { open: more.open, last: moreLog.at(-1) }
+        if (!seen.open || seen.last?.[0] !== 'checked' || seen.last?.[1] !== 'pin/stats' || seen.last?.[2] !== true) fail('a checkbox item should fire checkedchange and stay open', seen)
+        return seen
+      },
+      moreClosed: () => {
+        const seen = { open: more.open, focused: doc.activeElement === moreButton, label: moreButton.getAttribute('aria-label') }
+        if (seen.open || !seen.focused || seen.label !== null) fail('Escape should close "More…" and give focus back to the page\'s button, its name its own', seen)
         return seen
       },
       ownAttributes: () => {
