@@ -1,7 +1,7 @@
 import { can, fileSubject } from '/lib/board.js'
 import { UNRESUMABLE_TITLE, verbHint } from '/lib/cards.js'
 import { MAIN_CHECKOUT } from '/lib/files.js'
-import { fileButtonsHtml, fileCall, PANE_FIT, viewLayer } from '/lib/view.js'
+import { fileButtonsHtml, fileCall, viewLayer } from '/lib/view.js'
 import { esc } from '/lib/words.js'
 
 /**
@@ -33,7 +33,6 @@ const MAX_POLL_MS = 30_000
 const FOLLOW_BYTES = 1024 * 1024
 
 const CSS = `:where([data-view="${ID}"]) {
-  ${PANE_FIT}
   container-type: inline-size; position: relative;
   & .fx { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(12rem, 18rem) minmax(0, 1fr); background: var(--panel); border: var(--fit-hair) solid var(--line); --fx-inner: min(var(--radius), var(--fit-pad)); --fx-outer: max(var(--fx-inner), calc(var(--main-radius) - var(--fit-pad)));
     border-radius: var(--fx-outer) var(--fx-outer) var(--fx-inner) var(--fx-inner); overflow: hidden; }

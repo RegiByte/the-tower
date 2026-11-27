@@ -452,7 +452,7 @@ dialog.palette[open] { display: flex; flex-direction: column; max-height: min(56
 .shells-split .view-host { margin: 0 var(--main-pad) min(var(--sp-m), var(--main-pad)); }
 .dock { position: relative; display: flex; flex-direction: column; background: var(--dock-surface); border-top: 1px solid var(--line); border-radius: 0 0 var(--main-radius) var(--main-radius); }
 .shell-pane { display: none; position: relative; flex: 1; min-height: 0; padding: var(--sp-m) var(--sp-l); margin: 0 var(--main-pad) var(--main-pad); background: var(--enamel);
-  --edge: min(var(--radius-card), var(--main-pad)); --corner: max(var(--edge), calc(var(--main-radius) - var(--main-pad))); border-radius: var(--edge) var(--edge) var(--corner) var(--corner);
+  border-radius: var(--fit-inner) var(--fit-inner) var(--fit-outer) var(--fit-outer);
   box-shadow: inset 0 3px 0 var(--p, var(--deco)); }
 .main.shell-open .shell-pane { display: block; }
 .shell-pane .term { width: 100%; height: 100%; }
@@ -520,7 +520,7 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, [data-view="tow
   <div class="view-host" id="view-host" data-region="board.main"></div>
   <div class="dock">
     <div class="strip"><div class="tabs" id="tabs"></div><div class="tip" id="tip"></div></div><div class="shell-pick" id="shell-pick" popover aria-label="new shell in"></div>
-    <div class="shell-pane" id="shell-pane"><div class="term" id="s-screen"></div><span id="s-mode"></span></div>
+    <div class="shell-pane tower-fit" id="shell-pane"><div class="term" id="s-screen"></div><span id="s-mode"></span></div>
   </div>
   </tower-split>
 </main>

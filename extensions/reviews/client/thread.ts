@@ -11,8 +11,8 @@ import { type ThreadPlace, cardReviews, cardThread, floorThread, floorThreadsOf,
 import { THE_USER, sendText, unseenBy, type AnchorStates, type AppendInput, type Appended, type ReviewThread } from './reviews.ts'
 
 /**
- * `reviews/thread`: a worker's checkout's review thread in its tabs; `reviews/checkout-thread`: a checkout's thread
- * where no worker's view is, read as the worker on duty there. Each is read once per version of its file, its notes'
+ * `reviews/thread`: a worker's checkout's review thread in its tabs, the card's frame around it; `reviews/checkout-thread`:
+ * a checkout's thread where no worker's view is, read as the worker on duty there, fitted to the pane on its own. Each is read once per version of its file, its notes'
  * quotes marked as they stand among its reader's changes against its default branch (`anchors/<project>`); a note
  * written, answered and resolved by the user, the notes sent to a worker, and a note's lines shown (`display` of a
  * `lines` subject) while a worker reads it.
@@ -21,7 +21,8 @@ import { THE_USER, sendText, unseenBy, type AnchorStates, type AppendInput, type
 const CSS = `:where([data-view="reviews/thread"], [data-view="reviews/checkout-thread"]) {
   position: absolute; inset: 0;
   & > .reviews { position: absolute; inset: 0; overflow: auto; padding: 0 var(--sp-xl) 48px; background: var(--panel); color: var(--ink); scrollbar-gutter: stable; }
-}`
+}
+:where([data-view="reviews/checkout-thread"]) > .reviews { border: var(--fit-hair) solid var(--line); border-radius: var(--fit-outer) var(--fit-outer) var(--fit-inner) var(--fit-inner); }`
 
 /**
  * The note being written on each checkout, by `<project>/<checkout>`, and the worker picked to send its notes to: this

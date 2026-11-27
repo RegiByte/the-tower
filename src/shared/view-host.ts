@@ -238,12 +238,13 @@ export function viewHost(deps: HostDeps) {
   })
 
   /**
-   * A view mounted into `el` on `subject`: its kit lends the renderer's terminals and regions, each closed with it, and
+   * A view mounted into `el` on `subject`, `el` fitting the pane it sits in (`.tower-fit`): its kit lends the renderer's terminals and regions, each closed with it, and
    * `showing`; `show` handed before the mount settles waits for it; new options are handed to its `options`, else it is
    * mounted afresh.
    */
   function mountView(view: View, el: HTMLElement, subject: Subject, { scale, options, showing, args }: Placed) {
     el.dataset.view = view.id
+    el.classList.add('tower-fit')
     const scope = `v${++mounts}`
     el.dataset.scope = scope
     const own = new Set<TermViewHandle>()
