@@ -1544,6 +1544,9 @@
           "since": "2.0",
           "stability": "provisional"
         },
+        "passEscapeOut": {
+          "since": "2.41"
+        },
         "placeOnOpen": {
           "since": "2.0"
         },
