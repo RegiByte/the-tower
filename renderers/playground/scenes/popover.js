@@ -3,9 +3,9 @@ import { fail } from '../checks.js'
 /**
  * `<tower-popover>` beside a button redrawn through the morph every 100 ms once started, its body redrawn with it: opened
  * by Enter and by a click, below its button, the button's marks kept through each redraw; closed by Escape (focus back
- * on the button), a second press on its button, a press into a frame that runs no script, and a press outside. The
- * button, the frame and an empty spot sit where `POINTS` says, so a driver's click lands on each without reading the
- * frame first.
+ * on the button), a second press on its button, a press into a frame that runs no script, and a press outside; drawn
+ * anew, its new button bound in the old one's place. The button, the frame and an empty spot sit where `POINTS` says,
+ * so a driver's click lands on each without reading the frame first.
  */
 
 /** Where the button opens it from. */
@@ -71,6 +71,21 @@ export const scene = {
         render()
         if (button() !== before) fail('the redraw replaced the button: the morph should keep it', { before: before.outerHTML, after: button().outerHTML })
         return button().textContent
+      },
+      /**
+       * Draws the view anew, not through the morph: its button is a new node, so the old one's trigger unregisters from
+       * the popover and the new one's registers, both through `<tower-popover>`'s hand-off to the SDK's root.
+       */
+      drawAnew: () => {
+        const old = button()
+        root.innerHTML = view()
+        return old !== button()
+      },
+      /** The button drawn anew is the popover's trigger, and nothing threw on the way (a register or unregister the SDK lacks would). */
+      bound: () => {
+        const seen = { haspopup: button().getAttribute('aria-haspopup'), expanded: button().getAttribute('aria-expanded'), errors }
+        if (seen.haspopup !== 'dialog' || seen.expanded !== 'false' || errors.length) fail("the button drawn anew is not the popover's trigger", seen)
+        return seen
       },
       /** Opens it beside its button from code, as a driver that can't press in every frame does. */
       open: () => (pop.openFrom(button()), true),

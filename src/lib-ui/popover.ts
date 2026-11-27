@@ -48,7 +48,11 @@ const parts = (id: string) =>
 /** A part of the SDK's popover, as its trigger registers with the popover that owns it: the element it binds. */
 type Part = { el: Element }
 
-/** The SDK root inside a `<tower-popover>`, where its buttons' parts register. */
+/**
+ * The SDK root inside a `<tower-popover>`, where its buttons' parts register. `register` and `unregister` are the SDK's
+ * internals, not its documented API, and an SDK bump may rename them: `tool:lib-ui` then fails in the popover scene, at
+ * its first `opened` step for `register` (no button binds) and at `bound`, after `drawAnew`, for `unregister`.
+ */
 type Registry = { register(part: Part): void; unregister(part: Part): void }
 
 const OWNED = 'attributes'
