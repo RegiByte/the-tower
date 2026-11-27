@@ -2,7 +2,7 @@ import { attending, attendNext, watchedIn } from '/lib/attend.js'
 import { boardSubject, callOf, can, cardSubject, noLongerOffered, offeredCall, parentOf, projectOfKey, runVerb, sentHome, shownSubject, subjectAt } from '/lib/board.js'
 import { briefCss } from '/lib/brief.js'
 import { CAPABILITIES } from '/lib/capabilities.js'
-import { addedTidyOf, ATTENTION_MEANS, ATTENTION_NAME, attentionOrder, boardErrorTitle, untestedHtml, discardAsk, discardedLine, DISMISS_TITLE, heededAsks, heededWaits, heldActions, HOST_ATTENTION, HOST_MEANS, HOST_NAME, hostState, isAsk, keptLine, killShellAsk, letGoAsk, letGoneLine, loudest, neighboursIn, nextAttended, ON_DUTY_MEANS, reapAsk, resumeAllAsk, resumeStranded, sendHomeAsk, shownKey, SOUNDS, strandedOf, tidiedLine, tidyAllAsk, verbLabel, WAITING_MEANS, WAITING_NAME, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME } from '/lib/cards.js'
+import { addedTidyOf, ATTENTION_MEANS, ATTENTION_NAME, attentionOrder, boardErrorTitle, untestedHtml, discardAsk, discardedLine, DISMISS_TITLE, heededAsks, heededWaits, heldActions, HOST_ATTENTION, HOST_MEANS, HOST_NAME, hostState, isAsk, keptLine, killShellAsk, letGoAsk, letGoneLine, loudest, neighboursIn, nextAttended, offDutyVerb, ON_DUTY_MEANS, reapAsk, resumeAllAsk, resumeStranded, sendHomeAsk, shownKey, SOUNDS, strandedOf, tidiedLine, tidyAllAsk, verbLabel, WAITING_MEANS, WAITING_NAME, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME } from '/lib/cards.js'
 import { ask, asking, closePopoversOnFramePress, toastsCss, watchTips } from '/lib/chrome.js'
 import { addedCommandOf, commandOf, COMMANDS, DEFAULT_KEYS, frameCommandOf, isAddedId, MOVE_COMMAND, PANES, panesOf } from '/lib/keys.js'
 import { actionId, actionWords, addedActions, busOf, declaredLayout, displayed, offeredIn, drawnEntry, isOnScreen, exemptionsOf, fill, headRanked, isCommand, isFresh, layoutKey, layoutOf, lineId, offeredIds, openable, overflowOf, rankedActions, rankedBadges, rankedLines, runCommandWith, usableConfigLayout, viewOn, viewsOf } from '/lib/layout.js'
@@ -1939,16 +1939,21 @@ function run(id, e) {
   if (id === 'shell-here') return e.repeat || shellHere()
   if (id === 'home' && !isHome(view())) return (goHome(), true)
   if (id === 'spawn') return spawnIn(focusedSubject())
-  if (id === 'send-home') return e.repeat || sendHomeSelected()
+  if (id === 'send-home') return e.repeat || offDutySelected()
   return false
 }
 
-/** Sends the selected worker home, asked first, as its Send home button does; a worker that doesn't offer it is said so. */
-function sendHomeSelected() {
+/**
+ * Takes the selected worker off duty, asked first, as its Send home button does, or its Let go one when it is stranded
+ * (`offDutyVerb`); a worker that offers neither is said so.
+ */
+function offDutySelected() {
   const c = selected() && findCard(selected())
   if (!c) return false
-  if (!can(c, 'send-home')) return (toast(noLongerOffered(c.callsign, 'send-home')), true)
-  return (void sendHome({ key: `send-home ${c.id}`, marks: '[data-send-home]' }, c), true)
+  const verb = offDutyVerb(c)
+  if (verb === 'let-go') return (void letGo({ key: `let-go ${c.id}`, marks: `[data-let-go=""], [data-let-go="${CSS.escape(c.id)}"]` }, c), true)
+  if (verb === 'send-home') return (void sendHome({ key: `send-home ${c.id}`, marks: '[data-send-home]' }, c), true)
+  return (toast(noLongerOffered(c.callsign, 'send-home')), true)
 }
 
 /**

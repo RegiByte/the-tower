@@ -1,5 +1,5 @@
 import { type Board, callOf, can, type Card, type Floor, noLongerOffered, offeredCall, sentHome, type Subject } from '/lib/board.js'
-import { BLOCKED_TEXT, type DaemonVerb, detailsOf, gistLine, lampOf, LET_GO_MEANS, letGoAsk, letGoneLine, reapAsk, resumesRow, sendHomeAsk, statusName, statusTitle, verbHint, verbLabel, whereLineOf, whyNot } from '/lib/cards.js'
+import { BLOCKED_TEXT, type DaemonVerb, detailsOf, gistLine, lampOf, LET_GO_MEANS, letGoAsk, letGoneLine, offDutyVerb, reapAsk, resumesRow, sendHomeAsk, statusName, statusTitle, verbHint, verbLabel, whereLineOf, whyNot } from '/lib/cards.js'
 import { ICON, keyedTip, morphPanel, type Mount, PANE_FIT, pressing, viewLayer, withIcons } from '/lib/view.js'
 import { domId } from '/lib/morph.js'
 import { keysHint, keyshortcuts } from '/lib/keys.js'
@@ -207,13 +207,20 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
   /** A head button's id: the mount's scope first, since one worker's head can be mounted in several views at once. */
   const verbId = (name: string) => domId(`${scope}/verb`, name)
 
-  /** What Send home ends, with its chords when the keymap binds any. */
+  /** What Send home ends. */
   const sendHomeTitle = (c: Card) => {
     const sent = sentHome(cards(), c)
-    const what = sent.length === 1 ? `end ${c.callsign}; it can be resumed` : `end ${sent.map((h) => h.callsign).join(', ')}: ${c.callsign} and everyone under it that runs; each can be resumed`
-    const hint = keysHint(board.keys, 'send-home')
-    return hint ? `${what} (${hint})` : what
+    return sent.length === 1 ? `end ${c.callsign}; it can be resumed` : `end ${sent.map((h) => h.callsign).join(', ')}: ${c.callsign} and everyone under it that runs; each can be resumed`
   }
+
+  /** Whether the `send-home` command's chords do `verb` to the worker now (`offDutyVerb`), and the keymap binds any. */
+  const keyedNow = (verb: 'send-home' | 'let-go') => offDutyVerb(card) === verb && Boolean(keysHint(board.keys, 'send-home'))
+
+  /** The button's `aria-keyshortcuts` while its chords do `verb`. */
+  const keyed = (verb: 'send-home' | 'let-go') => (keyedNow(verb) ? ` aria-keyshortcuts="${keyshortcuts(board.keys, 'send-home')}"` : '')
+
+  /** A tip with the chords, while they do `verb`. */
+  const offDutyTip = (tip: string, verb: 'send-home' | 'let-go') => (keyedNow(verb) ? `${tip} (${keysHint(board.keys, 'send-home')})` : tip)
 
   const cards = () => board.floors.flatMap((f) => f.cards)
 
@@ -285,8 +292,8 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
     morphPanel(
       $('.own'),
       `${can(c, 'resume') ? verbHtml({ verb: 'resume', mark: 'data-resume', icon: ICON.resume, tip: verbHint('card', 'resume', c), tuck: 3, tone: 'primary' }) : ''}
-    ${can(c, 'let-go') ? verbHtml({ verb: 'let-go', mark: 'data-let-go', icon: ICON.letGo, tip: `let ${c.callsign} go: ${LET_GO_MEANS}`, tuck: 2, tone: '' }) : ''}
-    ${can(c, 'send-home') ? verbHtml({ verb: 'send-home', mark: `data-send-home${keysHint(board.keys, 'send-home') ? ` aria-keyshortcuts="${keyshortcuts(board.keys, 'send-home')}"` : ''}`, icon: ICON.sendHome, tip: sendHomeTitle(c), tuck: 4, tone: 'danger' }) : ''}
+    ${can(c, 'let-go') ? verbHtml({ verb: 'let-go', mark: `data-let-go${keyed('let-go')}`, icon: ICON.letGo, tip: offDutyTip(`let ${c.callsign} go: ${LET_GO_MEANS}`, 'let-go'), tuck: 2, tone: '' }) : ''}
+    ${can(c, 'send-home') ? verbHtml({ verb: 'send-home', mark: `data-send-home${keyed('send-home')}`, icon: ICON.sendHome, tip: offDutyTip(sendHomeTitle(c), 'send-home'), tuck: 4, tone: 'danger' }) : ''}
     ${scale !== 'cell' ? `<button class="icon-btn" id="${esc(verbId('home'))}" data-home aria-label="back to the skyline" ${keyedTip(board.keys, 'back to the skyline', 'home')}>${ICON.close}</button>` : ''}`,
     )
     morphPanel(details, detailsHtml(c))

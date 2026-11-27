@@ -4,7 +4,8 @@
  * by its subject and its name, `<subject>/<verb>` (`card/send-home`, `worktree/recut`): one name means different
  * things on different subjects. `api` is the renderer API's verb its call makes, whose description and input schema in
  * `VERBS` (`/schema`, `tower api`) are its agent facet; moves within a renderer have none. `command` is the keymap
- * command (`keymap.ts`) that does the same for the selected worker.
+ * command (`keymap.ts`) that does the same for the selected worker: `send-home` for both ways off duty, doing whichever
+ * `offDutyVerb` picks.
  */
 import type { Card } from '../bridge/board.ts'
 import type { BranchVerb, CardVerb, ConversationVerb, FloorVerb, ResourceVerb, WorktreeVerb } from '../bridge/verbs.ts'
@@ -41,7 +42,7 @@ export const VERB_WORDS: Record<VerbId, VerbWords> = {
   'card/brief': { label: 'Brief', hint: 'Its last prompts and answers, read as a chat.', command: 'pane-brief' },
   'card/reap': { label: 'End all', hint: 'End every process it left running.', destructive: true, api: 'reap' },
   'card/kill': { label: 'Kill', hint: 'End its session; its conversation can be resumed.', destructive: true, api: 'kill' },
-  'card/let-go': { label: 'Let go', hint: 'Take it off duty without resuming it; its conversation stays in the archive.', destructive: true, api: 'let-go' },
+  'card/let-go': { label: 'Let go', hint: 'Take it off duty without resuming it; its conversation stays in the archive.', destructive: true, api: 'let-go', command: 'send-home' },
   'card/send-home': { label: 'Send home', hint: 'End it and every worker under it that runs; each can be resumed.', destructive: true, api: 'kill', command: 'send-home' },
   'floor/spawn': { label: 'New worker', hint: 'Start a worker on this floor, from the new-worker form.', api: 'spawn' },
   'floor/cut': { label: 'New worker in a worktree', hint: 'Start a worker in a new worktree of every repo of the floor.', api: 'spawn' },
