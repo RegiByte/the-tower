@@ -11,7 +11,7 @@
 @layer tower.design {
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; overscroll-behavior: none; }
-body { display: grid; grid-template-columns: clamp(min(20rem, 38vw), 22vw, 28rem) minmax(0, 1fr); background: var(--wall); color: var(--ink); font: var(--fs-l)/var(--body-leading) var(--ui);
+body { display: grid; grid-template-columns: minmax(0, 1fr); --side-w: clamp(min(20rem, 38vw), 22vw, 28rem); background: var(--wall); color: var(--ink); font: var(--fs-l)/var(--body-leading) var(--ui);
   letter-spacing: var(--body-tracking); -webkit-font-smoothing: antialiased; overflow: hidden; }
 button { font: inherit; font-weight: 700; font-size: var(--fs-m); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line);
   border-radius: var(--radius-control); padding: var(--button-pad); cursor: pointer; transition: border-color .15s ease-out, background .15s ease-out; }
@@ -273,15 +273,18 @@ body:has(.crew-group.dragged) .tower-tip { visibility: hidden; }
 .side-renderers a { color: var(--muted); text-decoration: none; }
 .side-renderers a:hover { color: var(--ink); }
 .side-foot code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--fs-xs) var(--mono); direction: rtl; text-align: left; }
-.main { grid-column: 2; }
+.side-split:not(:defined) { display: grid; grid-template-columns: var(--side-w) minmax(0, 1fr); }
 .rail { display: none; flex-direction: column; align-items: center; gap: var(--sp-l); padding: var(--sp-l) 0; overflow-y: auto; scrollbar-width: none; }
 @media (min-width: 901px) {
-  body.collapsed { grid-template-columns: 44px minmax(0, 1fr); }
+  body.collapsed { --side-w: 44px; }
+  body.collapsed .side { width: 44px; }
   body.collapsed .side > :not(.rail) { display: none; }
   body.collapsed .rail { display: flex; }
 }
 @media (max-width: 900px) {
-  body { grid-template-columns: 44px minmax(0, 1fr); }
+  body { --side-w: 44px; }
+  .side { width: 44px; }
+  body.drawer .main { margin-inline-start: calc(44px + var(--main-inset, 0px)); }
   body:not(.drawer) .side > :not(.rail) { display: none; }
   body:not(.drawer) .rail { display: flex; }
   body.drawer .side { position: fixed; z-index: 15; inset: 0 auto 0 0; width: min(20rem, calc(100vw - 44px)); box-shadow: var(--shadow-pop); }
@@ -495,6 +498,7 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, [data-view="tow
 </style>
 </head>
 <body>
+<tower-split class="side-split" id="side-split" data-owned="children" label="sidebar width" default-size="var(--side-w)" min="20rem" max="min(40rem, calc(100% - 480px))">
 <aside class="side" aria-label="sidebar">
   <div class="brand"><h1 id="home" data-tip="back to the skyline">The Tower</h1><button class="version" id="version" hidden></button><span class="host" id="host"></span>
     <button class="icon-btn" id="settings-open" popovertarget="settings" aria-label="settings" data-tip="settings: alerts, sound and theme"></button><div id="settings" class="settings-pop" popover></div>
@@ -520,6 +524,7 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, [data-view="tow
   </div>
   </tower-split>
 </main>
+</tower-split>
 <dialog id="spawn" class="spawn" aria-label="New worker"></dialog>
 <dialog id="keys" class="sheet" aria-labelledby="keys-title">
   <form method="dialog">

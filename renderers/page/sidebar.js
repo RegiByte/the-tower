@@ -681,13 +681,32 @@ export async function sidebar(deps) {
     document.body.classList.remove('drawer')
   }
 
+  /** The sidebar's split resizes it only at its full width: a rail or a drawer keeps its own. */
+  const fitSplit = () => $('side-split').toggleAttribute('disabled', narrow.matches || document.body.classList.contains('collapsed'))
+  narrow.addEventListener('change', fitSplit)
+
   const COLLAPSED_KEY = 'side.collapsed'
   function toggleSide() {
     if (narrow.matches) return document.body.classList.toggle('drawer')
     document.body.classList.toggle('collapsed')
+    fitSplit()
     tower.store.set(COLLAPSED_KEY, document.body.classList.contains('collapsed'))
   }
   document.body.classList.toggle('collapsed', (await tower.store.get(COLLAPSED_KEY)) === true)
+  fitSplit()
+
+  /** The sidebar's width in px, as this viewer last dragged it: kept in `tower.store`, absent until they do. */
+  const WIDTH_KEY = 'side.width'
+  /** @param {number | null} px */
+  const holdWidth = (px) => (px === null ? $('side-split').removeAttribute('size') : $('side-split').setAttribute('size', `${px}px`))
+  const keptWidth = await tower.store.get(WIDTH_KEY)
+  if (typeof keptWidth === 'number') holdWidth(keptWidth)
+  $('side-split').addEventListener('sizecommit', (e) => {
+    if (e.target !== e.currentTarget) return
+    const px = /** @type {CustomEvent<{ value: number | null }>} */ (e).detail.value
+    tower.store.set(WIDTH_KEY, px)
+    holdWidth(px)
+  })
 
   $('keys-open').innerHTML = ICON.help
   $('side-hide').innerHTML = ICON.sidebar
