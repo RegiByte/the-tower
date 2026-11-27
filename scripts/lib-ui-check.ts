@@ -5,7 +5,8 @@
  * while open and passed on while closed, one named by a label drawn apart (`labelledby`), one taking text typed
  * (`custom`) by Enter alone; `<tower-menu>` opened by a right-click on a `<tower-menu-area>` and by Enter on a
  * `<tower-menu-button>`, its submenu, its action, its focus coming back and its subject said again on an opening for
- * the same one, each checked as it happens by the scene's own steps (`playground.act`); a check failing fails the run.
+ * the same one; `<tower-split>` stepped by its keys, its size written back and held as it narrows and widens, its grip
+ * naming its sized pane; each checked as it happens by the scene's own steps (`playground.act`); a check failing fails the run.
  * Run it on every bump of the UI SDK, in both engines:
  *
  *   npm run tool:lib-ui -- chrome [--shots <dir>]    headless Chrome (`scripts/drive.ts`)
@@ -16,7 +17,7 @@
  * This script serves the playground itself, with no tower behind it (`?alone`): the scenes in the default look only,
  * which the page says. Every theme the page is offered is drawn on a tower, the sandbox's at `/r/playground/`.
  *
- * `--shots` saves a PNG of the open combobox, the menu with its submenu, and the menu a button opened, as
+ * `--shots` saves a PNG of the open combobox, the menu with its submenu, the menu a button opened, and the split, as
  * `<dir>/<engine>-<name>.png`. The menu scene places its rows exactly (`rowPoint`), and `?bare` puts its frame at the
  * window's top left, so a right-click lands on a row in either engine without reading the page first.
  */
@@ -186,8 +187,40 @@ const MENU = (shots: (name: string) => Step[]): Step[] => {
   ]
 }
 
+const SPLIT = (shots: (name: string) => Step[]): Step[] => {
+  const s = (step: string, ...args: unknown[]) => act('split', step, ...args)
+  return [
+    READY,
+    s('start'),
+    { wait: 300 },
+    s('sized', 'files', 160, []),
+    s('sized', 'log', 60, []),
+    s('focus', 'files'),
+    { key: 'ArrowRight' },
+    { wait: 500 },
+    s('sized', 'files', 184, [184]),
+    { key: 'Shift+ArrowRight' },
+    { wait: 500 },
+    s('sized', 'files', 298, [184, 298]),
+    s('focus', 'log'),
+    { key: 'ArrowUp' },
+    { wait: 500 },
+    s('sized', 'log', 84, [84]),
+    s('width', 360),
+    { wait: 500 },
+    s('sized', 'files', 238, [184, 298]),
+    s('width', 420),
+    { wait: 500 },
+    s('sized', 'files', 298, [184, 298]),
+    ...shots('split'),
+    s('stop'),
+    s('ownAttributes'),
+    s('errors'),
+  ]
+}
+
 /** The scenes checked, each on a page of its own, with its steps. */
-const RUNS = { combobox: COMBOBOX, menu: MENU }
+const RUNS = { combobox: COMBOBOX, menu: MENU, split: SPLIT }
 
 /** Serves the playground, the design and every module it reaches. */
 async function serve() {

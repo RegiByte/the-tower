@@ -100,7 +100,7 @@ playground ([`renderers/playground`](ref:hub/renderers/playground/scenes.js#SCEN
 the tower that draws every element and shared behavior from fixtures in each theme and scheme the page is offered, with
 a door for agents (`window.playground`); a sandbox serves it at `/r/playground/`, no user's tower does. It passes the
 morph proof: [`tool:lib-ui`](ref:hub/scripts/lib-ui-check.ts) serves the playground alone (the default look, no tower)
-and runs its menu and combobox scenes' steps, the page redrawn every 100 ms while typing and while open, in Chrome and
+and runs its menu, combobox and split scenes' steps, the page redrawn every 100 ms while typing and while open, in Chrome and
 WebKit, on every SDK bump, which is its own commit with the pins exact.
 
 The SDK's own docs and skill ship in `node_modules` at the pinned version (AGENTS.md says where); their rules on
