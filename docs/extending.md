@@ -657,7 +657,8 @@ lets a script open one and act on it (`renderers/playground/playground.js` says 
   resolved again as the split resizes, so `max="calc(100% - 480px)"` keeps 480px for the other pane and a
   `default-size` in `vw` follows the window until the viewer drags. Keep `sizecommit`'s px as the viewer's, in
   `tower.store`, and write it back as `size`; on a `null`, a double-click that returned to `default-size`, forget it.
-  Nested splits' events bubble through each other: check `e.target`. `disabled` takes the grip away for a layout
+  Its grip, named by `label`, says the sized pane's px to a screen reader. Nested splits' events bubble through
+  each other: check `e.target`. `disabled` takes the grip away for a layout
   that sizes the pane itself (a rail, a closed dock): the sized pane then takes its content's size. While a grip is
   dragged, frames in the page let the pointer through.
 

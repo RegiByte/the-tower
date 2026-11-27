@@ -60,7 +60,9 @@ menu to copy, and its `checkedchange`, which doesn't bubble, is fired again on t
   the new bounds. Only a viewer's changes (`drag`, `step-key`) fire `sizechange` and `sizecommit`; a double-click
   returns to `default-size` and commits `null`. `disabled` hides the grip and gives the sized pane its content's size
   over the SDK's inline flex, for layouts that size it themselves. The SDK makes every frame pointer-transparent while
-  a grip is dragged and keeps the separator's ARIA, its `aria-valuenow` in percent. It has no string builder: the page
+  a grip is dragged. Its separator's ARIA describes the panel before the grip, in percent, so the element writes over
+  it, after the SDK has, for the sized pane: `aria-controls` names it and `aria-valuenow`, `-min` and `-max` are its px,
+  so a split sized `last` (the shells) reads as the shells, growing as they do. It has no string builder: the page
   writes it once in its html, and since the morph leaves an owned element's children, a view redraws each pane by its
   id. WebKit's check covers its keys only: the harness's synthetic mouse holds no button
   (`buttons` 0), and the SDK ends a drag on such a move.
