@@ -42,7 +42,7 @@ export function shells(deps) {
   /** @param {Board['shells'][number]} sh */
   const shellFloor = (sh) => board().floors.find((f) => f.id === sh.project)
 
-  const shellAddHtml = () => shellPlaces(board().floors).length ? `<tower-popover-button for="shell-pick"><button class="tab-add" aria-label="new shell" data-tip="new shell: pick a directory">${ICON.plus}</button></tower-popover-button>` : ''
+  const shellAddHtml = () => shellPlaces(board().floors).length ? `<tower-popover-button for="shell-pick"><button class="tab-add" data-owned="attributes" aria-label="new shell" data-tip="new shell: pick a directory">${ICON.plus}</button></tower-popover-button>` : ''
 
   /** The directories a new shell can start in, the floor in view first, each floor under its name. */
   function shellPickHtml() {

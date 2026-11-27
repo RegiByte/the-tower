@@ -284,10 +284,10 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
       `<span class="stats">
       ${ctx === undefined ? '' : `<span class="meter" data-tip="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${fillOf(ctx, 80)}"><i style="width:${ctx}%"></i><span class="sr-only">context window, ${esc(modelName(c.model))}:</span></span><b>${ctx}%</b>`}
       ${c.costUsd != null ? `<b>$${c.costUsd.toFixed(2)}</b>` : ''}
-      ${can(c, 'reap') ? popoverButtonHtml(`${pop}-left`, `<button class="ports ${orphan ? 'orphan' : ''}" data-tip="processes left running: click to see them and end them">${c.resources.length}▪ ${ports}</button>`) : ''}
+      ${can(c, 'reap') ? popoverButtonHtml(`${pop}-left`, `<button class="ports ${orphan ? 'orphan' : ''}" data-owned="attributes" data-tip="processes left running: click to see them and end them">${c.resources.length}▪ ${ports}</button>`) : ''}
     </span>`,
     )
-    morphPanel($('.details-part'), popoverButtonHtml(`${pop}-details`, `<button class="icon-btn" id="${esc(verbId('details'))}" aria-label="details" data-tip="everything else about ${c.callsign}" data-tuck="1">${ICON.info}</button>`))
+    morphPanel($('.details-part'), popoverButtonHtml(`${pop}-details`, `<button class="icon-btn" id="${esc(verbId('details'))}" data-owned="attributes" aria-label="details" data-tip="everything else about ${c.callsign}" data-tuck="1">${ICON.info}</button>`))
     morphPanel(
       $('.own'),
       `${can(c, 'resume') ? verbHtml({ verb: 'resume', mark: 'data-resume', icon: ICON.resume, tip: verbHint('card', 'resume', c), tuck: 3, tone: 'primary' }) : ''}

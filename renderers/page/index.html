@@ -38,7 +38,7 @@ dialog h2 { margin: 0 0 var(--sp-l); color: var(--heading); font: var(--display-
 .host-state.quiet { padding: 1px var(--sp-2xs); font-weight: 400; color: var(--faint); }
 .host-state.working, .host-state.broken { background: var(--c); color: var(--on); }
 .host-state.working .lamp, .host-state.broken .lamp { background: var(--on); }
-.brand tower-popover-button:state(open) .icon-btn { color: var(--ink); }
+.brand tower-popover-button > .icon-btn[aria-expanded="true"] { color: var(--ink); }
 #settings [data-tower-popover="body"] { width: min(18.75rem, calc(100vw - 16px)); padding: 0; white-space: normal; }
 .side-notes { margin-top: calc(-1 * var(--sp-xs)); padding: 0 var(--sp-xl) var(--sp-l); color: var(--muted); font-size: var(--fs-s); overflow-wrap: anywhere; }
 .side-notes:empty { display: none; }
@@ -484,12 +484,12 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, [data-view="tow
 <tower-split class="side-split" id="side-split" data-owned="children" label="sidebar width" tip="drag, or ← and →, to resize the sidebar · double-click for its usual width" default-size="var(--side-w)" min="20rem" max="min(40rem, calc(100% - 480px))">
 <aside class="side" aria-label="sidebar">
   <div class="brand"><h1 id="home" data-tip="back to the skyline">The Tower</h1><button class="version" id="version" hidden></button><span class="host" id="host"></span>
-    <tower-popover-button for="settings"><button class="icon-btn" id="settings-open" aria-label="settings" data-tip="settings: alerts, sound and theme"></button></tower-popover-button><tower-popover id="settings" label="settings" align="start" data-owned="children"></tower-popover>
+    <tower-popover-button for="settings"><button class="icon-btn" id="settings-open" data-owned="attributes" aria-label="settings" data-tip="settings: alerts, sound and theme"></button></tower-popover-button><tower-popover id="settings" label="settings" align="start" data-owned="children"></tower-popover>
     <button class="icon-btn" id="keys-open" data-keys aria-label="shortcuts"></button><button class="icon-btn side-toggle" id="side-hide" data-toggle-side aria-label="hide the sidebar"></button></div>
   <div class="side-strip" id="strip"></div>
   <div class="side-notes" id="notes"></div>
   <div class="tally" id="tally"></div>
-  <div class="limits-bar" id="limits-bar"><tower-popover-button for="limits"><button class="chip" id="limits-open"></button></tower-popover-button><tower-popover class="limits" id="limits" label="rate limits" align="start" data-owned="children"></tower-popover></div>
+  <div class="limits-bar" id="limits-bar"><tower-popover-button for="limits"><button class="chip" id="limits-open" data-owned="attributes"></button></tower-popover-button><tower-popover class="limits" id="limits" label="rate limits" align="start" data-owned="children"></tower-popover></div>
   <div class="side-sections" id="sections"></div>
   <div class="side-views"><nav class="side-nav" id="nav" aria-label="the sidebar's entries"><span class="nav-entries" id="nav-entries"></span><tower-menu-button for="nav-more" data-owned="children"><button type="button" class="eyebrow" data-nav-more hidden>More…</button></tower-menu-button><tower-menu id="nav-more" data-owned="children"></tower-menu></nav><span class="board-sign" id="board-sign"></span></div>
   <nav class="floors" id="floors" aria-label="floors"></nav>
