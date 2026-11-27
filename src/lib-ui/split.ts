@@ -7,6 +7,7 @@
  * `data-owned="children"`: at connect it moves the panes into the parts it builds, and they stay the page's.
  */
 import type { UiResizableElement } from '@ui-sdk/web'
+import './sdk.ts'
 import type { ElementContract } from './sdk.ts'
 
 /** What the element takes, fires and shows. */
@@ -77,8 +78,7 @@ class TowerSplit extends HTMLElement {
     this.#probe = probe
     this.#held = this.getAttribute('size')
     this.#sync()
-    const space = this.#space()
-    if (space) this.#panels[this.#sizedIndex()].setAttribute('default-size', String((this.#want() / space) * 100))
+    this.#panels[this.#sizedIndex()].setAttribute('default-size', `${this.#want()}px`)
     group.addEventListener('layoutchange', this.#onChange)
     group.addEventListener('layoutcommit', this.#onCommit)
     handle.addEventListener('dblclick', this.#onReset)
