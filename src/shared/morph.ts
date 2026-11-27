@@ -8,7 +8,12 @@
  * an id. A node marked `data-owned`
  * belongs to someone other than the html (a mounted view, a framed document, a terminal, a custom element keeping its
  * own state): the morph leaves it whole, and with `data-owned="children"` it updates the node's attributes and leaves
- * its children. Ids below an owned node take no part in matching. An owned node is matched by its id, or, having none,
+ * its children. With `data-owned="attributes"` it is the inverse: the morph sets the attributes the html names and
+ * keeps the ones it doesn't, which another piece of code wrote (the UI SDK's ARIA and CSS anchor on a trigger it
+ * binds, an id included, which doesn't stop the node matching html that names none), and morphs the children as
+ * usual; an attribute the html stops naming is kept too, so a view writes such a
+ * node's changing attributes with a value each time rather than leaving them out. Ids below a node owned whole or by
+ * its children take no part in matching. An owned node is matched by its id, or, having none,
  * only by a new node marked owned too. A mark of any other value, in the old content or the new, is refused before
  * anything changes. An id repeated in either content is matched by position, as if it were absent.
  *
@@ -45,8 +50,11 @@
  *   PERFORMANCE OF THIS SOFTWARE.
  */
 
-/** The attribute that marks a node as owned: empty for the node whole, `children` for its children only. */
+/** The attribute that marks a node as owned: empty for the node whole, `children` for its children only, `attributes` for the attributes the html doesn't name. */
 const OWNED = 'data-owned'
+
+/** The marks that keep the morph out of a node's subtree. */
+const OWNS_SUBTREE = `[${OWNED}]:not([${OWNED}="attributes"])`
 
 /** One morph's working state: which ids persist from the old content into the new, and which subtrees hold them. */
 type Morph = {
@@ -91,17 +99,17 @@ const elementId = (el: Element): string => el.getAttribute('id') ?? ''
 const isElement = (node: Node): node is Element => node.nodeType === Node.ELEMENT_NODE
 
 /** Whether `el` is owned: the node whole, its children only, or not at all. */
-function ownershipOf(el: Element): 'whole' | 'children' | undefined {
+function ownershipOf(el: Element): 'whole' | 'children' | 'attributes' | undefined {
   const mark = el.getAttribute(OWNED)
   if (mark === null) return undefined
   if (mark === '') return 'whole'
-  if (mark === 'children') return 'children'
-  throw new Error(`${OWNED}="${mark}" on <${el.localName}>: an owned node is marked ${OWNED} (the node whole) or ${OWNED}="children"`)
+  if (mark === 'children' || mark === 'attributes') return mark
+  throw new Error(`${OWNED}="${mark}" on <${el.localName}>: an owned node is marked ${OWNED} (the node whole), ${OWNED}="children" or ${OWNED}="attributes"`)
 }
 
 /** Whether an owned node between `el` and `root` keeps `el` out of the morph. */
 function isBelowOwned(el: Element, root: Node): boolean {
-  const owner = el.parentElement?.closest(`[${OWNED}]`)
+  const owner = el.parentElement?.closest(OWNS_SUBTREE)
   return !!owner && owner !== root && root.contains(owner)
 }
 
@@ -298,7 +306,8 @@ function findBestMatch(ctx: Morph, node: Node, startPoint: Node): Node | null {
 
 /**
  * Whether `oldNode` may take `newNode`'s place: the same kind of node and tag, and an id on the old element only when
- * the new one has the same. An anonymous new element can take an old one's place, since a new node holds no state to
+ * the new one has the same, or, on an element owned by its attributes, when the new one names no id, since that id is
+ * one another piece of code gave it and the morph keeps. An anonymous new element can take an old one's place, since a new node holds no state to
  * lose. An owned element without an id is taken only by a new element marked owned too.
  */
 function isSoftMatch(oldNode: Node, newNode: Node): boolean {
@@ -307,7 +316,7 @@ function isSoftMatch(oldNode: Node, newNode: Node): boolean {
   const newElement = newNode as Element
   if (oldNode.tagName !== newElement.tagName) return false
   const id = elementId(oldNode)
-  if (id) return id === elementId(newElement)
+  if (id) return id === elementId(newElement) || (!newElement.hasAttribute('id') && oldNode.getAttribute(OWNED) === 'attributes')
   return !oldNode.hasAttribute(OWNED) || newElement.hasAttribute(OWNED)
 }
 
@@ -324,7 +333,8 @@ function morphNode(ctx: Morph, oldNode: Node, newNode: Node) {
     const ownership = ownershipOf(oldNode)
     if (ownership === 'whole') return
     syncFormState(oldNode, newElement)
-    syncAttributes(oldNode, newElement)
+    if (ownership === 'attributes') setAttributes(oldNode, newElement)
+    else syncAttributes(oldNode, newElement)
     if (ownership === 'children') return
     if (oldNode instanceof HTMLTemplateElement && newElement instanceof HTMLTemplateElement) {
       oldNode.innerHTML = newElement.innerHTML
@@ -360,10 +370,15 @@ function syncFlag<K extends 'checked' | 'disabled' | 'selected'>(oldElement: Ele
 }
 
 /** Copies each attribute as a node, which keeps its namespace and takes names `setAttribute` rejects (`@click`). */
-function syncAttributes(oldElement: Element, newElement: Element) {
+function setAttributes(oldElement: Element, newElement: Element) {
   for (const attribute of newElement.attributes) {
     if (oldElement.getAttribute(attribute.name) !== attribute.value) oldElement.setAttributeNode(attribute.cloneNode() as Attr)
   }
+}
+
+/** Makes `oldElement`'s attributes exactly `newElement`'s. */
+function syncAttributes(oldElement: Element, newElement: Element) {
+  setAttributes(oldElement, newElement)
   for (const attribute of [...oldElement.attributes]) {
     if (!newElement.hasAttribute(attribute.name)) oldElement.removeAttributeNode(attribute)
   }

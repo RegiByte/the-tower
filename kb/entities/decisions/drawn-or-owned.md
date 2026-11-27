@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "An attribute on a drawn node is drawn into its html, or its node is owned",
-  "summary": "The morph makes a kept node's attributes what the new html says, so an attribute that script writes onto a node a view draws is lost on the next redraw: the view renders it into its html, or the node is marked data-owned and given an id. A writer that serves every renderer and can do neither, as pressing's aria-busy and a shown tip's aria-describedby, puts its attribute back after each redraw, only where it is missing.",
+  "summary": "The morph makes a kept node's attributes what the new html says, so an attribute that script writes onto a node a view draws is lost on the next redraw: the view renders it into its html, or the node is marked data-owned and given an id, or, for a node whose attributes another piece of code writes while the view draws its children (a UI SDK trigger), data-owned=\"attributes\", which keeps the attributes the html doesn't name. A writer that serves every renderer and can do neither, as pressing's aria-busy and a shown tip's aria-describedby, puts its attribute back after each redraw, only where it is missing.",
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-11-18",
@@ -35,6 +35,12 @@ neither, so the morph and the writer take turns overwriting each other. Extensio
 - **Or own the node.** A node script marks or fills at mount is `data-owned` (whole, or `"children"` when the html
   still writes its attributes) and carries an id ([`domId`](ref:hub/src/shared/dom-id.ts#domId)): an owned node with
   no id matches only a new owned node, so a sibling coming or going would cost it its state.
+- **Or own its attributes.** A node the view draws, children and attributes, on which another piece of code writes
+  attributes of its own is marked `data-owned="attributes"`: the morph sets the attributes the html names and keeps
+  the rest, and morphs its children. The UI SDK binds a trigger by writing its ARIA and a CSS `anchor-name` in its
+  `style`, so the page's buttons a popover opens from carry it. The cost is the alternative rejected below, taken on
+  by that node alone: an attribute the html stops naming stays, so such a node draws its changing attributes with a
+  value every time and leaves out what the other code writes.
 - **A writer of every renderer re-asserts.** One that serves every renderer and knows no view's html can do neither,
   so it watches the attribute and puts it back after a redraw, only where it is missing, so its own write ends its next
   pass: [`pressingAs`](ref:hub/src/shared/press.ts#pressingAs) keeps `aria-busy` on every control a press marks, and
@@ -52,7 +58,8 @@ class is already added again on every draw, and so are the tab row's scroller's 
 
 **Alternatives considered.**
 - *A morph that keeps attributes it didn't draw*: it can't tell an attribute script wrote from one the html dropped
-  on purpose, so a state the view stopped drawing would stay forever.
+  on purpose, so a state the view stopped drawing would stay forever. Rejected as the morph's rule; taken as a mark a
+  node opts into (`data-owned="attributes"`), where the view drawing it accepts that cost for that node.
 - *An allowlist of attributes the morph leaves alone*: every writer's attribute becomes the morph's knowledge, and an
   extension's own would need a way in. The writer knows its attribute; the morph shouldn't.
 - *Every writer re-asserting*: right for the writers of every renderer, but a view that draws the html can say the
