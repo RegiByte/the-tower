@@ -498,7 +498,7 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, [data-view="tow
 </style>
 </head>
 <body>
-<tower-split class="side-split" id="side-split" data-owned="children" label="sidebar width" default-size="var(--side-w)" min="20rem" max="min(40rem, calc(100% - 480px))">
+<tower-split class="side-split" id="side-split" data-owned="children" label="sidebar width" tip="drag, or ← and →, to resize the sidebar · double-click for its usual width" default-size="var(--side-w)" min="20rem" max="min(40rem, calc(100% - 480px))">
 <aside class="side" aria-label="sidebar">
   <div class="brand"><h1 id="home" data-tip="back to the skyline">The Tower</h1><button class="version" id="version" hidden></button><span class="host" id="host"></span>
     <button class="icon-btn" id="settings-open" popovertarget="settings" aria-label="settings" data-tip="settings: alerts, sound and theme"></button><div id="settings" class="settings-pop" popover></div>
@@ -516,7 +516,7 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, [data-view="tow
   <div class="rail" id="rail"></div>
 </aside>
 <main class="main viewing" id="main">
-  <tower-split class="shells-split" id="shells-split" data-owned="children" orientation="vertical" sized="last" label="shells height" max="calc(100% - 160px)" disabled>
+  <tower-split class="shells-split" id="shells-split" data-owned="children" orientation="vertical" sized="last" label="shells height" tip="drag, or ↑ and ↓, to resize the shells · double-click for their usual height" max="calc(100% - 160px)" disabled>
   <div class="view-host" id="view-host" data-region="board.main"></div>
   <div class="dock">
     <div class="strip"><div class="tabs" id="tabs"></div><div class="tip" id="tip"></div></div><div class="shell-pick" id="shell-pick" popover aria-label="new shell in"></div>

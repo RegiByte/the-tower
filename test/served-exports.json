@@ -3052,6 +3052,9 @@
           },
           "step": {
             "since": "2.41"
+          },
+          "tip": {
+            "since": "2.41"
           }
         },
         "properties": {},

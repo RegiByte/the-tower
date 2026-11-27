@@ -387,22 +387,34 @@
     grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   }
 
-  /* The grip takes no room: a line drawn over the panes' edge, its hit area the SDK's. */
+  /*
+   * The grip takes no room: an 8px box over the panes' edge, its margins taking back its size, so a pointer over it is
+   * over the grip (its tip shows), and a line drawn in its middle.
+   */
   tower-split [data-slot="resizable-handle"] {
     position: relative;
     z-index: 2;
-    flex-basis: 0;
     outline: none;
+
+    &[data-orientation="horizontal"] {
+      width: 8px;
+      margin-inline: -4px;
+    }
+
+    &[data-orientation="vertical"] {
+      height: 8px;
+      margin-block: -4px;
+    }
 
     &::after {
       content: "";
       position: absolute;
-      inset: 0 -1px;
+      inset: 0 3px;
       transition: background-color 0.15s ease-out;
     }
 
     &[data-orientation="vertical"]::after {
-      inset: -1px 0;
+      inset: 3px 0;
     }
 
     &:is([data-hovering], [data-dragging])::after {
@@ -411,11 +423,11 @@
 
     &:focus-visible::after {
       background: var(--accent);
-      inset: 0 -2px;
+      inset: 0 2px;
     }
 
     &[data-orientation="vertical"]:focus-visible::after {
-      inset: -2px 0;
+      inset: 2px 0;
     }
   }
 
