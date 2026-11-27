@@ -6,7 +6,7 @@
  */
 
 @layer tower.design {
-  :where(tower-menu, tower-menu-button, tower-combobox, tower-dialog) {
+  :where(tower-menu, tower-menu-button, tower-combobox, tower-dialog, tower-popover) {
     --ui-background: var(--panel);
     --ui-foreground: var(--ink);
     --ui-muted: var(--panel-2);
@@ -42,7 +42,7 @@
     -webkit-touch-callout: none;
   }
 
-  :is(tower-menu, tower-menu-button, tower-combobox, tower-dialog) [data-slot][hidden]:not([hidden="until-found"]) {
+  :is(tower-menu, tower-menu-button, tower-combobox, tower-dialog, tower-popover) [data-slot][hidden]:not([hidden="until-found"]) {
     display: none;
   }
 
@@ -366,5 +366,41 @@
       outline: 2px solid var(--ui-ring);
       outline-offset: 1px;
     }
+  }
+
+  /* Like a menu, its content opens in the top layer, so the host takes no place in the page. */
+  :where(tower-popover) {
+    position: fixed;
+  }
+
+  /* Its own button's box: the page's button inside lays out as if the host weren't there. */
+  :where(tower-popover-button) {
+    display: contents;
+  }
+
+  /* Beside its button, never past the window: its body scrolls inside when its content is taller than the room. */
+  tower-popover [data-slot="popover-content"] {
+    box-sizing: border-box;
+    max-width: min(40rem, calc(100vw - 16px));
+    max-height: var(--available-height);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--radius-card);
+    background: var(--ui-background);
+    box-shadow: var(--ui-shadow);
+    color: var(--ui-foreground);
+    font-size: var(--ui-font-size);
+    outline: none;
+  }
+
+  tower-popover [data-tower-popover="body"] {
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: var(--sp-l);
   }
 }

@@ -2,17 +2,18 @@
 {
   "type": "library",
   "name": "The tower's elements (/lib-ui/)",
-  "summary": "The tower-* custom elements a page or an extension's client draws as tags, served at /lib-ui/<module>.js: each builds the UI SDK's ui-* parts inside itself, so menus, comboboxes and the dialog get the SDK's keyboard, focus, placement and dismissal while views keep drawing html as strings through the morph.",
+  "summary": "The tower-* custom elements a page or an extension's client draws as tags, served at /lib-ui/<module>.js: each builds the UI SDK's ui-* parts inside itself, so menus, comboboxes, the dialog and popovers get the SDK's keyboard, focus, placement and dismissal while views keep drawing html as strings through the morph.",
   "in": "tower-core",
-  "reviewed": "2026-11-25",
-  "refs": ["hub/src/lib-ui/menu.ts#elements", "hub/src/lib-ui/combobox.ts#elements", "hub/src/lib-ui/dialog.ts#elements", "hub/src/lib-ui/sdk.ts#relay", "hub/src/lib-ui/sdk.ts#ElementContract", "hub/src/lib-ui/look.css", "hub/src/tower/served.ts#uiSdkModule", "hub/src/tower/served.ts#servedModule", "hub/src/tower/served.ts#libUiUrls", "hub/src/shared/elements.ts#subjectHtml", "hub/src/shared/elements.ts#comboboxHtml", "hub/src/shared/elements.ts#subjectAreaHtml", "hub/src/shared/elements.ts#subjectButtonHtml", "hub/src/shared/dom-id.ts#domId", "hub/src/lib/elements.ts", "hub/test/lib-ui.test.ts", "hub/test/library.ts#elementsOf", "hub/scripts/lib-ui-check.ts", "hub/docs/extending.md"]
+  "reviewed": "2026-11-27",
+  "refs": ["hub/src/lib-ui/menu.ts#elements", "hub/src/lib-ui/combobox.ts#elements", "hub/src/lib-ui/dialog.ts#elements", "hub/src/lib-ui/popover.ts#elements", "hub/src/lib-ui/sdk.ts#relay", "hub/src/lib-ui/sdk.ts#ElementContract", "hub/src/lib-ui/look.css", "hub/src/tower/served.ts#uiSdkModule", "hub/src/tower/served.ts#servedModule", "hub/src/tower/served.ts#libUiUrls", "hub/src/shared/elements.ts#subjectHtml", "hub/src/shared/elements.ts#comboboxHtml", "hub/src/shared/elements.ts#subjectAreaHtml", "hub/src/shared/elements.ts#subjectButtonHtml", "hub/src/shared/elements.ts#popoverHtml", "hub/src/shared/elements.ts#popoverButtonHtml", "hub/src/shared/elements.ts#menuHtml", "hub/src/shared/dom-id.ts#domId", "hub/src/lib/elements.ts", "hub/test/lib-ui.test.ts", "hub/test/library.ts#elementsOf", "hub/scripts/lib-ui-check.ts", "hub/docs/extending.md"]
 }
 ---
 Each module of `src/lib-ui/` is served at `/lib-ui/<module>.js`
 ([`servedModule`](ref:hub/src/tower/served.ts#servedModule)); importing it defines its elements:
 [`/lib-ui/menu.js`](ref:hub/src/lib-ui/menu.ts#elements) `<tower-menu>`, `<tower-menu-button>` and
 `<tower-menu-area>`, [`/lib-ui/combobox.js`](ref:hub/src/lib-ui/combobox.ts#elements) `<tower-combobox>`,
-[`/lib-ui/dialog.js`](ref:hub/src/lib-ui/dialog.ts#elements) `<tower-dialog>`. Why they
+[`/lib-ui/dialog.js`](ref:hub/src/lib-ui/dialog.ts#elements) `<tower-dialog>`,
+[`/lib-ui/popover.js`](ref:hub/src/lib-ui/popover.ts#elements) `<tower-popover>` and `<tower-popover-button>`. Why they
 wrap the SDK this way is [[tower-elements-wrap-the-sdk]].
 
 - **The outer tag is the contract.** Its attributes, properties, events and custom states, each listed with what it
@@ -50,6 +51,16 @@ menu to copy, and its `checkedchange`, which doesn't bubble, is fired again on t
   name; a close button after its body closes it. The page puts what it shows in its `body` property, which scrolls
   inside a box sized for reading beside an index and never past the window; `open` opens and closes it, and its
   `openchange` is fired again on it. The page's `board.dialog` region draws in it ([[ui-model]]).
+- **A popover beside the page's own button.** `<tower-popover>` holds the SDK's non-modal popover, its content kept in
+  the page while closed so the page fills its `body` on every draw. `<tower-popover-button>` wraps a button the page
+  draws and redraws itself, so it is the one element that writes on what isn't its own: no SDK trigger binds the
+  button, since the SDK writes its marks and its CSS anchor on the element it binds, which a redraw rewrites. The element
+  opens the popover through the SDK's controller instead, anchored to a box that reads the button's place
+  ([`boxOf`](ref:hub/src/lib-ui/popover.ts#boxOf)), writes `aria-haspopup`, `aria-expanded` and `aria-controls` on the
+  button and again after each redraw, keeps it open for the press and the focus its own button takes (or the press's
+  click would reopen it), and gives focus back to the button itself, since the web part takes `final-focus` as a selector
+  only. Escape, a press outside, focus leaving and a press into a frame, one running no script too (the SDK's own
+  window-blur check, reported as `focus-out`), are the SDK's.
 - **A combobox named from outside.** `labelledby` names a label the form draws itself (an eyebrow, an optional mark, a
   hint): the element then draws no label part and points its input's `aria-labelledby` at it. A `<label>` around it
   would take a press in its list for one on the box.
@@ -62,7 +73,9 @@ menu to copy, and its `checkedchange`, which doesn't bubble, is fired again on t
   exactly the text; leaving still restores what was chosen, the element refusing the value the SDK's `allow-custom-value` would take as the list closes: a choice is
   always made on purpose.
 - **Strings for core views.** A core view draws an element through `/lib/elements.js`
-  ([`comboboxHtml`](ref:hub/src/shared/elements.ts#comboboxHtml), [`subjectHtml`](ref:hub/src/shared/elements.ts#subjectHtml)),
+  ([`comboboxHtml`](ref:hub/src/shared/elements.ts#comboboxHtml), [`subjectHtml`](ref:hub/src/shared/elements.ts#subjectHtml),
+  [`popoverHtml`](ref:hub/src/shared/elements.ts#popoverHtml), [`popoverButtonHtml`](ref:hub/src/shared/elements.ts#popoverButtonHtml),
+  [`menuHtml`](ref:hub/src/shared/elements.ts#menuHtml) for a menu of a view's own),
   which imports nothing of `/lib-ui/`. Each builder takes a place and a key and derives its ids by the id rule,
   [`domId`](ref:hub/src/shared/dom-id.ts#domId) of `/lib/morph.js`: `<place>:<key>`, the place words of `[a-z0-9-]`
   named by the code, the key from data with whitespace and `%` percent-encoded, a part in the place

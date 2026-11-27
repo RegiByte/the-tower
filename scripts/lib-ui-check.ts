@@ -27,7 +27,7 @@ const ENGINES = ['chrome', 'webkit'] as const
 type Engine = (typeof ENGINES)[number]
 
 /** One step of the run, as both drivers take it. */
-type Step = { eval: string } | { rclick: [number, number] } | { key: string } | { wait: number } | { shot: string }
+type Step = { eval: string } | { click: [number, number] } | { rclick: [number, number] } | { key: string } | { wait: number } | { shot: string }
 
 const SUBJECTS = [
   { id: 'floor:the-tower', name: 'the-tower', kind: 'floor' },
@@ -39,6 +39,13 @@ const SUBJECTS = [
 /** Where the rows sit, in CSS pixels: the page's stylesheet places them exactly here. */
 const ROWS = { left: 24, top: 160, width: 360, height: 32 }
 const rowPoint = (i: number): [number, number] => [ROWS.left + 120, ROWS.top + i * ROWS.height + ROWS.height / 2]
+
+/** Where the popover's button, the frame with no script and an empty spot of the page sit, in CSS pixels. */
+const POP = { left: 480, top: 24 }
+const POP_BUTTON: [number, number] = [POP.left + 20, POP.top + 12]
+const FRAME = { left: 480, top: 340, width: 360, height: 200 }
+const FRAME_POINT: [number, number] = [FRAME.left + 180, FRAME.top + 100]
+const EMPTY_POINT: [number, number] = [860, 300]
 
 const PAGE = `<!doctype html>
 <html lang="en">
@@ -58,15 +65,21 @@ const PAGE = `<!doctype html>
   tower-menu-area:state(open) { background: var(--panel-2); box-shadow: var(--selected); }
   tower-menu-area .name { flex: 1; }
   tower-menu-area .age { color: var(--muted); font-variant-numeric: tabular-nums; }
+  #view .pops { position: fixed; left: ${POP.left}px; top: ${POP.top}px; }
+  #view .pops button { height: 24px; }
+  #view tower-popover-button:state(open) button { box-shadow: var(--selected); }
+  .frame { position: fixed; left: ${FRAME.left}px; top: ${FRAME.top}px; width: ${FRAME.width}px; height: ${FRAME.height}px; border: 1px solid var(--line); }
 </style>
 </head>
 <body>
 <div id="view"></div>
+<iframe class="frame" title="a frame with no script" sandbox="" srcdoc="<p>A frame with no script: a press here closes the popover.</p>"></iframe>
 <script type="module">
 import { morph } from '/lib/morph.js'
 import { comboboxHtml, subjectHtml, subjectMenuHtml } from '/lib/elements.js'
 import '/lib-ui/menu.js'
 import '/lib-ui/combobox.js'
+import '/lib-ui/popover.js'
 
 const subjects = ${JSON.stringify(SUBJECTS)}
 const fruits = ['Apple', 'Apricot', 'Banana', 'Cherry', 'Peach', 'Pear', 'Plum'].map((label) => ({ value: label.toLowerCase(), label }))
@@ -81,10 +94,17 @@ const view = () => \`<div class="head">render \${tick}</div>
 <div class="named"><span id="check/label:size">Size <small>optional</small></span>
 \${comboboxHtml({ place: 'check', name: 'size', labelledby: 'check/label:size', options: [{ value: 's', label: 'Small' }, { value: 'l', label: 'Large' }] })}</div>
 <div class="typed">\${comboboxHtml({ place: 'check', name: 'model', label: 'Model', custom: true, value: model, options: [{ value: 'claude-a', label: 'claude-a' }, { value: 'claude-b', label: 'claude-b' }] })}</div>
+<div class="pops"><tower-popover-button for="check-pop"><button type="button" class="pop-open">details \${tick % 60}</button></tower-popover-button></div>
+<tower-popover id="check-pop" label="Details" align="start" data-owned="children"></tower-popover>
 \${subjectMenuHtml()}\`
 
 const root = document.getElementById('view')
-const render = () => (tick++, morph(root, view()))
+const popBody = () => \`<p>Everything else, as of render \${tick}.</p><button type="button" class="inside">Act</button>\`
+const render = () => {
+  tick++
+  morph(root, view())
+  morph(document.getElementById('check-pop').body, popBody())
+}
 render()
 
 const itemsOf = (id) => {
@@ -119,9 +139,13 @@ const shown = (el) => !!el && el.getClientRects().length > 0
 const labels = (el) => [...(el?.querySelectorAll('[role^="menuitem"]') ?? [])].filter((i) => i.closest('[data-slot="menu-content"]') === el).map((i) => i.textContent.trim())
 const marked = () => [...document.querySelectorAll('tower-menu-area')].filter((a) => a.matches(':state(open)')).map((a) => a.getAttribute('payload'))
 const area = (i) => document.querySelectorAll('tower-menu-area')[i]
+const pop = () => document.getElementById('check-pop')
+const popButton = () => document.querySelector('.pop-open')
+const popContent = () => pop().querySelector('[data-slot="popover-content"]')
+const popLog = () => log.filter((l) => l[0] === 'tower-popover')
 
 window.check = {
-  ready: async () => { await Promise.all(['tower-menu', 'tower-combobox', 'ui-menu', 'ui-combobox'].map((t) => customElements.whenDefined(t))); return true },
+  ready: async () => { await Promise.all(['tower-menu', 'tower-combobox', 'tower-popover', 'ui-menu', 'ui-combobox', 'ui-popover'].map((t) => customElements.whenDefined(t))); return true },
   start: () => { window.check.timer = setInterval(render, 100); return true },
   stop: () => { clearInterval(window.check.timer); return tick },
   focusCombobox: () => { combo.querySelector('input').focus(); return document.activeElement.localName },
@@ -203,9 +227,30 @@ window.check = {
     if (seen.open || !seen.focused || seen.marked.length) fail('Escape should close the menu and give focus back to its button', seen)
     return seen
   },
+  focusPop: () => { popButton().focus(); return document.activeElement === popButton() },
+  popOpen: (reason) => {
+    const b = popButton().getBoundingClientRect()
+    const r = popContent().getBoundingClientRect()
+    const seen = { open: pop().open, button: [Math.round(b.x), Math.round(b.bottom)], at: [Math.round(r.x), Math.round(r.y)], shown: shown(popContent()),
+      expanded: popButton().getAttribute('aria-expanded'), haspopup: popButton().getAttribute('aria-haspopup'), controls: popButton().getAttribute('aria-controls'),
+      state: document.querySelector('tower-popover-button').matches(':state(open)'), last: popLog().at(-1), body: pop().body.textContent.match(/render (\\d+)/)?.[1] }
+    if (!seen.open || !seen.shown || !near(r.x, b.x) || r.y < b.bottom || r.y > b.bottom + 16) fail('the popover is not open below its button', seen)
+    if (seen.expanded !== 'true' || seen.haspopup !== 'dialog' || seen.controls !== popContent().id || !seen.state) fail('the button lost its marks through a redraw', seen)
+    if (seen.last?.[2] !== true || seen.last?.[3] !== reason) fail(\`the popover should have opened by \${reason}\`, seen)
+    return seen
+  },
+  popClosed: (reasons, focusBack) => {
+    const seen = { open: pop().open, shown: shown(popContent()), expanded: popButton().getAttribute('aria-expanded'), state: document.querySelector('tower-popover-button').matches(':state(open)'),
+      last: popLog().at(-1), focused: document.activeElement === popButton(), active: document.activeElement?.localName, opens: popLog().filter((l) => l[2]).length, log: popLog().slice(-4).map((l) => l.slice(2)) }
+    if (seen.open || seen.shown || seen.expanded !== 'false' || seen.state) fail('the popover should be closed, its button marked so', seen)
+    if (seen.last?.[2] !== false || !reasons.includes(seen.last?.[3])) fail(\`the popover should have closed by \${reasons}\`, seen)
+    if (focusBack && !seen.focused) fail('focus should be back on the button of the popover', seen)
+    return seen
+  },
   ownAttributes: () => {
     const written = { 'tower-combobox': ['id', 'name', 'label', 'labelledby', 'placeholder', 'empty', 'value', 'options', 'custom', 'data-owned'], 'tower-menu': ['id', 'data-owned'],
-      'tower-menu-area': ['id', 'for', 'payload'], 'tower-menu-button': ['id', 'for', 'payload', 'label', 'data-owned'] }
+      'tower-menu-area': ['id', 'for', 'payload'], 'tower-menu-button': ['id', 'for', 'payload', 'label', 'data-owned'],
+      'tower-popover': ['id', 'label', 'align', 'data-owned'], 'tower-popover-button': ['for'] }
     const extra = Object.entries(written).flatMap(([tag, names]) => [...document.querySelectorAll(tag)].flatMap((el) => [...el.attributes].map((a) => a.name).filter((n) => !names.includes(n)).map((n) => \`\${tag} \${n}\`)))
     if (extra.length) fail('an element wrote an attribute on itself', extra)
     return tick
@@ -338,6 +383,33 @@ const STEPS = (shots: (name: string) => Step[]): Step[] => [
   { eval: `check.saidAgain('${SUBJECTS[1]!.id}')` },
   { key: 'Escape' },
   { wait: 300 },
+  { eval: 'check.blur()' },
+  { eval: 'check.focusPop()' },
+  { key: 'Enter' },
+  { wait: 500 },
+  { eval: `check.popOpen('trigger-press')` },
+  ...shots('popover'),
+  { key: 'Escape' },
+  { wait: 500 },
+  { eval: `check.popClosed(['escape-key'], true)` },
+  { click: POP_BUTTON },
+  { wait: 500 },
+  { eval: `check.popOpen('trigger-press')` },
+  { click: POP_BUTTON },
+  { wait: 500 },
+  { eval: `check.popClosed(['trigger-press'], true)` },
+  { click: POP_BUTTON },
+  { wait: 500 },
+  { eval: `check.popOpen('trigger-press')` },
+  { click: FRAME_POINT },
+  { wait: 500 },
+  { eval: `check.popClosed(['window-blur', 'focus-out'], false)` },
+  { click: POP_BUTTON },
+  { wait: 500 },
+  { eval: `check.popOpen('trigger-press')` },
+  { click: EMPTY_POINT },
+  { wait: 500 },
+  { eval: `check.popClosed(['outside-press'], false)` },
   { eval: 'check.stop()' },
   { eval: 'check.ownAttributes()' },
   { eval: 'check.errors()' },
@@ -369,7 +441,11 @@ async function inChrome(url: string, steps: Step[]) {
   await withPage(url, { width: 900, height: 600, scale: 2 }, async (page) => {
     for (const step of steps) {
       if ('eval' in step) console.log(`✔ ${step.eval}  ${JSON.stringify(await page.eval(step.eval))}`)
-      else if ('rclick' in step) {
+      else if ('click' in step) {
+        await page.mouse(...step.click)
+        await page.press('left', true)
+        await page.press('left', false)
+      } else if ('rclick' in step) {
         await page.mouse(...step.rclick)
         await page.press('right', true)
         await page.press('right', false)
@@ -385,6 +461,7 @@ async function inChrome(url: string, steps: Step[]) {
 async function inWebKit(url: string, steps: Step[]) {
   const args = steps.flatMap((step) =>
     'eval' in step ? ['--eval', step.eval]
+    : 'click' in step ? ['--click', step.click.join(',')]
     : 'rclick' in step ? ['--rclick', step.rclick.join(',')]
     : 'key' in step ? ['--key', step.key]
     : 'wait' in step ? ['--wait', String(step.wait)]
