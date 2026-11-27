@@ -27,7 +27,7 @@ import { $, byStart, toast, told } from './kit.js'
 
 /**
  * The shells docked under the main pane: a tab for each the terms daemon runs, the one open in its own terminal
- * (`/lib/terminal.js`), new ones started in a floor's directory, and the grip that sets their height.
+ * (`/lib/terminal.js`), new ones started in a floor's directory, and their height, set by the split above the dock and kept per viewer.
  * @param {ShellsDeps} deps
  */
 export function shells(deps) {
@@ -36,6 +36,9 @@ export function shells(deps) {
   /** The shell open in the dock: its id and terminal view. @type {{ id: string, view: TermViewHandle } | undefined} */
   let shell
   const SHELL_SCROLLBACK = 2000
+  /** An open shell's pane, under the dock's tabs: its least height, and its height until the viewer drags. */
+  const SHELL_MIN_PX = 120
+  const SHELL_DEFAULT = '38vh'
 
   /** @param {Board['shells'][number]} sh */
   const shellFloor = (sh) => board().floors.find((f) => f.id === sh.project)
@@ -68,6 +71,10 @@ export function shells(deps) {
     closeShell()
     $('shell-pane').style.cssText = paint(board().shells.find((sh) => sh.id === id)?.project)
     $('main').classList.add('shell-open')
+    const chrome = /** @type {HTMLElement} */ ($('shell-pane').parentElement).offsetHeight - $('shell-pane').offsetHeight
+    split.setAttribute('min', `${SHELL_MIN_PX + chrome}px`)
+    split.setAttribute('default-size', `calc(${SHELL_DEFAULT} + ${chrome}px)`)
+    split.removeAttribute('disabled')
     const view = mountTermView($('s-screen'), { Terminal, FitAddon: FitAddon.FitAddon, WebLinksAddon: WebLinksAddon.WebLinksAddon, UnicodeGraphemesAddon: UnicodeGraphemesAddon.UnicodeGraphemesAddon }, {
       watch: (on) => tower.watch(`shell/${id}`, (msg) => on(/** @type {ShellStream} */ (msg))),
       resize: (size) => tower.call('shell/resize', { id, ...size }),
@@ -110,6 +117,7 @@ export function shells(deps) {
     shell = undefined
     $('s-mode').textContent = ''
     $('main').classList.remove('shell-open')
+    split.setAttribute('disabled', '')
     renderDock()
   }
 
@@ -127,34 +135,17 @@ export function shells(deps) {
     return spawnShell(button, project, cwd)
   }
 
-  /** The grip's reading of the shells' height, which stays between 120px and all but 160px of the window. */
-  /** @param {number} h */
-  const markGrip = (h) => {
-    $('grip').setAttribute('aria-valuenow', String(h))
-    $('grip').setAttribute('aria-valuemax', String(innerHeight - 160))
-  }
-  /** @param {number} px */
-  const resizeShells = (px) => {
-    const h = Math.round(Math.max(120, Math.min(innerHeight - 160, px)))
-    $('main').style.setProperty('--shell-h', `${h}px`)
-    markGrip(h)
-  }
-  const SHELLS_STEP_PX = 24
-
-  $('grip').addEventListener('pointerdown', (e) => {
-    $('grip').setPointerCapture(e.pointerId)
-    const bottom = $('shell-pane').getBoundingClientRect().bottom
-    const tabs = $('tabs').offsetHeight
-    $('grip').onpointermove = (ev) => resizeShells(bottom - tabs - ev.clientY)
-    $('grip').onpointerup = () => ($('grip').onpointermove = null)
-  })
-  $('grip').addEventListener('focus', () => markGrip($('shell-pane').offsetHeight))
-  $('grip').addEventListener('keydown', (e) => {
-    const step = { ArrowUp: SHELLS_STEP_PX, ArrowDown: -SHELLS_STEP_PX }[e.key]
-    if (!step || e.altKey || e.metaKey || e.ctrlKey || e.shiftKey) return
-    e.preventDefault()
-    e.stopPropagation()
-    resizeShells($('shell-pane').offsetHeight + step)
+  /** The shells' height, the dock's in px, as this viewer last dragged it: kept in `tower.store`, absent until they do. */
+  const HEIGHT_KEY = 'shells.height'
+  const split = $('shells-split')
+  /** @param {number | null} px */
+  const holdHeight = (px) => (px === null ? split.removeAttribute('size') : split.setAttribute('size', `${px}px`))
+  tower.store.get(HEIGHT_KEY).then((px) => typeof px === 'number' && holdHeight(px))
+  split.addEventListener('sizecommit', (e) => {
+    if (e.target !== e.currentTarget) return
+    const px = /** @type {CustomEvent<{ value: number | null }>} */ (e).detail.value
+    tower.store.set(HEIGHT_KEY, px)
+    holdHeight(px)
   })
 
   return { shellFloor, renderDock, refontShell, reschemeShell, toggleShell, spawnShell, spawnShellAt, focusShell, focusedShell, openShellId, closeShell }

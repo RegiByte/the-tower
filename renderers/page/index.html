@@ -444,15 +444,15 @@ dialog.palette[open] { display: flex; flex-direction: column; max-height: min(56
 #s-mode:empty, #s-mode.owner { display: none; }
 .view-failed { margin: auto; padding: var(--sp-m); color: var(--broken-text); font-size: var(--fs-s); }
 
-.dock { position: relative; flex: none; margin: 0 calc(-1 * var(--main-pad)); background: var(--dock-surface); border-top: 1px solid var(--line); border-radius: 0 0 var(--main-radius) var(--main-radius); }
-.shell-pane { display: none; position: relative; height: var(--shell-h, 38vh); padding: var(--sp-m) var(--sp-l); margin: 0 var(--main-pad) var(--main-pad); background: var(--enamel);
+.shells-split:not(:defined) { display: flex; flex-direction: column; }
+.shells-split { flex: 1; margin: 0 calc(-1 * var(--main-pad)); }
+.shells-split .view-host { margin: 0 var(--main-pad) min(var(--sp-m), var(--main-pad)); }
+.dock { position: relative; display: flex; flex-direction: column; background: var(--dock-surface); border-top: 1px solid var(--line); border-radius: 0 0 var(--main-radius) var(--main-radius); }
+.shell-pane { display: none; position: relative; flex: 1; min-height: 0; padding: var(--sp-m) var(--sp-l); margin: 0 var(--main-pad) var(--main-pad); background: var(--enamel);
   --edge: min(var(--radius-card), var(--main-pad)); --corner: max(var(--edge), calc(var(--main-radius) - var(--main-pad))); border-radius: var(--edge) var(--edge) var(--corner) var(--corner);
   box-shadow: inset 0 3px 0 var(--p, var(--deco)); }
 .main.shell-open .shell-pane { display: block; }
 .shell-pane .term { width: 100%; height: 100%; }
-.grip { display: none; position: absolute; top: -4px; left: 0; right: 0; height: 8px; cursor: row-resize; z-index: 2; }
-.main.shell-open .grip { display: block; }
-.grip:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
 .strip { display: flex; align-items: center; }
 .tabs { display: flex; flex: 0 1 auto; min-width: 0; align-items: center; gap: var(--sp-s); padding: var(--sp-s) var(--sp-xl); overflow-x: auto; scrollbar-width: none; font-size: var(--fs-s); color: var(--faint); }
 .tabs > span { white-space: nowrap; }
@@ -512,12 +512,13 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, [data-view="tow
   <div class="rail" id="rail"></div>
 </aside>
 <main class="main viewing" id="main">
+  <tower-split class="shells-split" id="shells-split" data-owned="children" orientation="vertical" sized="last" label="shells height" max="calc(100% - 160px)" disabled>
   <div class="view-host" id="view-host" data-region="board.main"></div>
   <div class="dock">
-    <div class="grip" id="grip" role="separator" aria-orientation="horizontal" aria-controls="shell-pane" aria-label="shells height" aria-valuemin="120" tabindex="0" data-tip="drag, or ↑ and ↓, to resize the shells"></div>
     <div class="strip"><div class="tabs" id="tabs"></div><div class="tip" id="tip"></div></div><div class="shell-pick" id="shell-pick" popover aria-label="new shell in"></div>
     <div class="shell-pane" id="shell-pane"><div class="term" id="s-screen"></div><span id="s-mode"></span></div>
   </div>
+  </tower-split>
 </main>
 <dialog id="spawn" class="spawn" aria-label="New worker"></dialog>
 <dialog id="keys" class="sheet" aria-labelledby="keys-title">
