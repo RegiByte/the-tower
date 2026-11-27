@@ -9,6 +9,7 @@ import type { Capability } from './capabilities.ts'
 import { actionWords, addedActions, boardSubject, cardSubject, floorSubject, gistLine, itemSubject, heededWaits, offersReap, reapLine, unboundCommands, type Heed } from './cards.ts'
 import type { Action, Added, Words } from './extensions.ts'
 import type { Subject } from './subjects.ts'
+import { offDutyVerb } from './duty.ts'
 import { chordsOf, COMMANDS, panesOf } from './keymap.ts'
 import { earlierLabel, VERB_WORDS, verbHint, verbId, type VerbId } from './verb-words.ts'
 
@@ -126,7 +127,7 @@ const UNLISTED: ReadonlySet<VerbId> = new Set(['card/submit', 'card/prompt', 'ca
 
 /**
  * Global commands another entry runs, so the palette doesn't list them as commands: the palette's own, `spawn` by each
- * floor's entry, `send-home` by the selected worker's own entry while it offers it.
+ * floor's entry, `send-home` by the selected worker's own Send home or Let go while it offers one.
  */
 const RUN_ELSEWHERE: ReadonlySet<string> = new Set(['palette', 'spawn', 'send-home'])
 
@@ -144,23 +145,25 @@ const commandHint = (capabilities: readonly Capability[], id: string, otherwise:
 const cardOf = (board: Board, id: string | undefined): Card | undefined => (id === undefined ? undefined : board.floors.flatMap((f) => f.cards).find((c) => c.id === id))
 
 /**
- * The selected worker's verbs: those a keymap command does run as that command, with its chords. Its processes are one
+ * The selected worker's verbs: those a keymap command does run as that command, with its chords; of Send home and Let go,
+ * the one `send-home` does now (`offDutyVerb`), the other as itself. Its processes are one
  * entry, `End 3 processes…`, found by their pids and ports too; none while it works (`offersReap`).
  */
 const cardEntries = (board: Board, capabilities: readonly Capability[], c: Card): Entry[] => {
   const verbs = c.actions.filter((a) => !UNLISTED.has(verbId('card', a.verb)) && (a.verb !== 'reap' || offersReap(c))).map((a): Entry => {
     const words = VERB_WORDS[verbId('card', a.verb)]
+    const command = words.command === 'send-home' && offDutyVerb(c) !== a.verb ? undefined : words.command
     return {
       id: verbId('card', a.verb),
       group: c.callsign,
       label: a.verb === 'reap' ? reapLine(c) : words.label,
-      hint: words.command ? commandHint(capabilities, words.command, words.hint) : verbHint('card', a.verb, c),
+      hint: command ? commandHint(capabilities, command, words.hint) : verbHint('card', a.verb, c),
       keywords: [c.callsign, a.verb, ...(a.verb === 'reap' ? c.resources.flatMap((r) => [String(r.pid), ...r.ports.map(String)]) : [])],
-      chords: words.command && chordsOf(board.keys, words.command),
+      chords: command && chordsOf(board.keys, command),
       destructive: words.destructive,
       card: c.id,
       project: c.project,
-      does: words.command ? { t: 'command', id: words.command } : { t: 'action', subject: 'card', verb: a.verb, id: c.id },
+      does: command ? { t: 'command', id: command } : { t: 'action', subject: 'card', verb: a.verb, id: c.id },
     }
   })
   const latest = c.conversations.at(-1)

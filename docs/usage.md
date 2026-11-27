@@ -174,8 +174,8 @@ held (after each `/clear`, and across resumes), without scrolling its terminal. 
 Every session's log is kept, so a worker that ended (killed, sent home, its terminal closed) can be **resumed**: a
 new session continuing the same Claude conversation. A floor's past workers are in its archive, by crew, each
 resumable. When the host stops while workers are mid-turn (a restart, a crash), they show as stranded (stopped mid-turn, on
-hover) and offer **carry on**: a resume with a prompt to pick up where they were, or **let go**: off duty without
-resuming, still resumable from the archive (`tower let-go <CALLSIGN>`).
+hover) and offer **carry on**: a resume with a prompt to pick up where they were, or **let go** (⌥W for the selected
+one, as Send home): off duty without resuming, still resumable from the archive (`tower let-go <CALLSIGN>`).
 
 > "Resume ODIN-07 and ask it to finish the migration."
 

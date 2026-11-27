@@ -9,6 +9,7 @@ export {
   LET_GO_MEANS,
   letGoAsk,
   letGoneLine,
+  offDutyVerb,
   resumeAllAsk,
   resumeStranded,
   sendHomeAsk,

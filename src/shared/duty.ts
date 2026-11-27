@@ -13,6 +13,13 @@ import { KILL_COST } from './tidy.ts'
 /** A floor's stranded workers, waiting to be resumed or let go, the first started first. */
 export const strandedOf = (f: Floor) => f.cards.filter((c) => can(c, 'let-go') && can(c, 'resume')).sort((a, b) => a.startedAt - b.startedAt)
 
+/**
+ * What the `send-home` command does to the selected worker: its Send home while it offers one, else its Let go, so one
+ * chord takes any worker off duty. A stranded worker with someone under it still running offers both, and is sent home.
+ * @since 2.42
+ */
+export const offDutyVerb = (c: Card): 'send-home' | 'let-go' | undefined => (can(c, 'send-home') ? 'send-home' : can(c, 'let-go') ? 'let-go' : undefined)
+
 /** What letting a stranded worker go means, said before it is done. */
 export const LET_GO_MEANS = "off duty, its desk freed: it moves to the floor's archive, where its conversation can still be resumed"
 
