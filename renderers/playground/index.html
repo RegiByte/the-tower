@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Playground</title>
+<link rel="stylesheet" href="/design.css">
+<style>
+  @layer tower.page {
+    body { margin: 0; padding: var(--sp-l); background: var(--wall); color: var(--ink); font: var(--fs-s)/1.4 var(--ui); }
+    header { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-m); margin-bottom: var(--sp-l); }
+    header h1 { margin: 0; color: var(--heading); font: var(--display-weight) var(--fs-l)/1.2 var(--display); }
+    header .mode { color: var(--muted); }
+    nav.filters { display: flex; flex-wrap: wrap; gap: var(--sp-xs); width: 100%; }
+    nav.filters a { padding: 2px var(--sp-s); border-radius: var(--radius-pill); color: var(--muted); text-decoration: none; }
+    nav.filters a[aria-current] { background: var(--panel-2); color: var(--ink); }
+    section.scene { margin-bottom: var(--sp-2xl); }
+    section.scene h2 { margin: 0 0 var(--sp-s); color: var(--heading); font: var(--display-weight) var(--fs-m)/1.3 var(--display); }
+    section.scene > p { margin: 0 0 var(--sp-m); color: var(--muted); max-width: 72ch; }
+    .cells { display: flex; flex-wrap: wrap; gap: var(--sp-l); }
+    figure { margin: 0; }
+    figcaption { color: var(--muted); font-size: var(--fs-xs); margin-bottom: var(--sp-2xs); }
+    figure iframe { display: block; border: 1px solid var(--line); border-radius: var(--radius-card); }
+    .failed { color: var(--broken-text); }
+    body.bare { padding: 0; overflow: hidden; }
+    body.bare iframe { position: fixed; inset: 0; width: 100vw; height: 100vh; border: 0; border-radius: 0; }
+  }
+</style>
+</head>
+<body>
+<main id="grid"></main>
+<script type="module" src="playground.js"></script>
+</body>
+</html>

@@ -90,6 +90,9 @@ also says how to act as a worker there).
 - curl: every `POST` needs `-H "origin: $TOWER_URL"`; `/board` and `/screen/<id>` are SSE, so read one event
   (`curl -sN -m 2 … | grep -m1 '^data:'`).
 - `npm run drive -- <url> --eval … --shot …` drives headless Chrome; look at every shot.
+- The sandbox serves the playground at `/r/playground/`: every `tower-*` element and shared behavior as a scene from
+  fixtures, in each theme and scheme, with a door for agents (`window.playground`, `renderers/playground/playground.js`).
+  A new element or behavior adds its scene there.
 - A page change touching frames, focus or events also gets a WebKit run: `npm run tool:webkit -- <url> --click x,y …`
   (Safari and Tower.app call no listener inside a frame where nothing runs; Chrome does). The tower page opens a
   session at `/#<id>`; Tower 3D has a door for agents (`window.tower3d`, `renderers/tower3d/src/door.ts`).

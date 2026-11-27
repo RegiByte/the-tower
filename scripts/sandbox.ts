@@ -10,9 +10,10 @@
  *   npm run sandbox -- up [--port <n>]   write the config when the sandbox has none, mend the `tower` floor's clone, start
  *                                        the host, terms, jobs and tower, and print how to reach it; an existing config
  *                                        stays as it is (hand-edit it: `hiring`, more projects), but for the `tower`
- *                                        floor's hub; only --port is written into it, and a later `up` without --port
- *                                        keeps the port. A config from an older script keeps its old shape otherwise:
- *                                        delete the root to get the current one. `up` refuses a port another tower holds,
+ *                                        floor's hub and the playground (`renderers.playground`, this checkout's
+ *                                        `renderers/playground`, at /r/playground/); only --port is written into it,
+ *                                        and a later `up` without --port keeps the port. A config from an older script
+ *                                        keeps its old shape otherwise: delete the root to get the current one. `up` refuses a port another tower holds,
  *                                        and a root inside a git repository
  *   npm run sandbox -- down              stop this sandbox's three, and no other's, then remove the `tower` floor's clone
  *   npm run -s sandbox -- run <cmd…>     run a command against the sandbox: TOWER_CONFIG names its config, so `tower`
@@ -213,7 +214,7 @@ function freshConfig(port: number) {
     runtimes: { claude: { argv: ['bash', '-c', SESSION, 'session'] } },
     port,
     projects: {
-      tower: { name: 'tower', color: '#c792ea', hub: FLOOR_HUB, repos: [] },
+      tower: { name: 'tower', color: '#c792ea', hub: FLOOR_HUB, repos: [], shelf: [{ label: 'Playground', renderer: 'playground' }] },
       lab: { name: 'lab', color: '#7fb069', hub: lab, repos: [labApi], collections: { notes: { label: 'Notes', description: 'Notes the lab keeps on its experiments.' } } },
     },
     collections: {
@@ -231,6 +232,8 @@ async function prepareConfig(port: number | undefined) {
   if (config.projects.tower) config.projects.tower.hub = FLOOR_HUB
   /** A sandbox's quota probe would read the real account: it is turned on by hand to try it. */
   config.extensions = { quota: { off: true }, ...config.extensions }
+  /** The playground (`renderers/playground`), for the people and agents developing the tower: served from this checkout, on no user's tower. */
+  config.renderers = { ...config.renderers, playground: { root: path.join(REPO, 'renderers', 'playground') } }
   writeFileSync(CONFIG, JSON.stringify(config, null, 2))
 }
 

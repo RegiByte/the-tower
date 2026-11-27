@@ -1,0 +1,4 @@
+{
+  "extends": "../../tsconfig.client.json",
+  "include": ["../../src/tower/client.d.ts", "../../src/lib-ui/css.d.ts", "globals.d.ts", "*.js", "scenes/*.js"]
+}
