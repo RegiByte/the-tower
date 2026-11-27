@@ -3027,48 +3027,48 @@
       "tower-split": {
         "attributes": {
           "default-size": {
-            "since": "2.41"
+            "since": "2.42"
           },
           "disabled": {
-            "since": "2.41"
+            "since": "2.42"
           },
           "label": {
-            "since": "2.41"
+            "since": "2.42"
           },
           "max": {
-            "since": "2.41"
+            "since": "2.42"
           },
           "min": {
-            "since": "2.41"
+            "since": "2.42"
           },
           "orientation": {
-            "since": "2.41"
+            "since": "2.42"
           },
           "size": {
-            "since": "2.41"
+            "since": "2.42"
           },
           "sized": {
-            "since": "2.41"
+            "since": "2.42"
           },
           "step": {
-            "since": "2.41"
+            "since": "2.42"
           },
           "tip": {
-            "since": "2.41"
+            "since": "2.42"
           }
         },
         "properties": {},
         "events": {
           "sizechange": {
-            "since": "2.41"
+            "since": "2.42"
           },
           "sizecommit": {
-            "since": "2.41"
+            "since": "2.42"
           }
         },
         "states": {
           "dragging": {
-            "since": "2.41"
+            "since": "2.42"
           }
         }
       }
