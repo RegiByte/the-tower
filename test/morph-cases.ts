@@ -295,6 +295,42 @@ const CASES: Case[] = [
     },
   },
   {
+    name: 'sets the attributes the html names on a node owned by its attributes, keeps the rest and morphs its children',
+    run(work) {
+      work.innerHTML = '<button id="t" data-owned="attributes" class="a" title="1"><span id="n">1</span> ports</button>'
+      const owned = one<HTMLElement>(work, '#t')
+      owned.setAttribute('aria-expanded', 'true')
+      owned.style.setProperty('anchor-name', '--x')
+      const count = one(work, '#n')
+      morph(work, '<button id="t" data-owned="attributes" class="b"><span id="n">2</span> ports</button>')
+      check(work.firstElementChild === owned, 'the owned node was replaced')
+      check(owned.className === 'b', `its class is "${owned.className}"`)
+      check(owned.getAttribute('aria-expanded') === 'true', 'an attribute the html does not name was removed')
+      check(owned.style.getPropertyValue('anchor-name') === '--x', 'its style was removed')
+      check(owned.getAttribute('title') === '1', 'an attribute the html stopped naming was removed')
+      check(one(work, '#n') === count && count.textContent === '2', `its children are ${owned.innerHTML}`)
+    },
+  },
+  {
+    name: 'keeps a node owned by its attributes that another piece of code gave an id the html names not',
+    run(work) {
+      work.innerHTML = '<p>head</p><button data-owned="attributes">1</button>'
+      const owned = work.lastElementChild!
+      owned.id = 'given'
+      morph(work, '<p>head</p><button data-owned="attributes">2</button>')
+      check(work.lastElementChild === owned && owned.id === 'given' && owned.textContent === '2', `the node was replaced: ${work.innerHTML}`)
+    },
+  },
+  {
+    name: 'matches ids below a node owned by its attributes',
+    run(work) {
+      work.innerHTML = '<div data-owned="attributes"><p id="a">a</p><p id="b">b</p></div>'
+      const [a, b] = childrenOf(work.firstElementChild!)
+      morph(work, '<div data-owned="attributes"><p id="b">b</p><p id="a">a</p></div>')
+      check(childrenOf(work.firstElementChild!).join() === [b, a].join() && work.querySelector('#a') === a, 'its children were not kept by id')
+    },
+  },
+  {
     name: 'keeps ids below an owned node out of matching',
     run(work) {
       work.innerHTML = '<div id="t" data-owned><span id="s">mine</span></div>'

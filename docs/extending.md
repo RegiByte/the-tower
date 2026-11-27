@@ -591,15 +591,20 @@ a caret, a selection, focus and scroll survive. Nodes are matched by id, then by
 node that must stay itself while its siblings come, go or move. Mark a node another piece of code fills (a region you
 mount, a frame, a terminal, an element with its own state) `data-owned` to have the morph leave it whole, its
 attributes and the mark itself included, or
-`data-owned="children"` to have it update the node's attributes and leave its children; ids inside an owned node take
-no part in matching. The mark is plain html, so a pure function drawing the view can emit it. A view that redraws one
+`data-owned="children"` to have it update the node's attributes and leave its children; ids inside those take no part
+in matching. `data-owned="attributes"` is the inverse, for a node your html draws that another piece of code writes
+attributes on (a button the UI SDK binds as a trigger writes its ARIA and a CSS anchor in its `style`): the morph sets
+the attributes the html names, keeps the ones it doesn't (an id the SDK gave it too, which doesn't stop the node
+matching html that names none), and morphs the children as usual. It keeps an attribute your
+html stops naming too, so draw such a node's changing attributes with a value every time (`aria-disabled="true"` and
+`"false"`, not present and absent), and leave out what the other code writes (no `style` on an SDK trigger). The mark is plain html, so a pure function drawing the view can emit it. A view that redraws one
 element from a pure render on every board can call `morphPanel(el, html)` of `/lib/view.js` (provisional, since 2.19)
 instead: it morphs only when the html differs from what it last put there, and gives focus back by identity to a
 control the morph had to make anew.
 
 The morph makes a kept node's attributes what the new html says, so an attribute your script writes onto a node the
-html draws is gone on the next redraw. Render that state into the html instead, or mark the node `data-owned` and give
-it an id: an owned node without an id matches only a new owned node (decision `drawn-or-owned`). The library's own
+html draws is gone on the next redraw. Render that state into the html instead, mark it `data-owned="attributes"`, or
+mark the node `data-owned` and give it an id: an owned node without an id matches only a new owned node (decision `drawn-or-owned`). The library's own
 writers already hold: a control `pressing` marks stays `aria-busy`, and a shown tip stays its control's
 `aria-describedby`.
 
