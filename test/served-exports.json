@@ -1235,6 +1235,9 @@
         "nextAttended": {
           "since": "2.0"
         },
+        "offDutyVerb": {
+          "since": "2.42"
+        },
         "onDisk": {
           "since": "2.0"
         },
