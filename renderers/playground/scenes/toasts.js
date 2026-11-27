@@ -1,13 +1,14 @@
 /**
  * Toasts (`toaster`): what the tower says in passing, stacked at the foot of the window, one told again counted, one
- * with an action held longer.
+ * with an action held longer. The action's button is drawn as the page draws a button: `toastsCss` places it, and nothing
+ * served gives it its look.
  */
 
 /** @type {import('../scenes.js').Scene} */
 export const scene = {
   id: 'toasts',
   title: 'Toasts',
-  about: 'Toasts stack at the foot of the window: one told twice is counted, one with an action is held longer; each closes by itself.',
+  about: 'Toasts stack at the foot of the window: one told twice is counted, one with an action is held longer; each closes by itself. The action\'s button takes its look from the page\'s own sheet, not /design.css or toastsCss: a renderer of one\'s own draws it in the browser\'s defaults.',
   size: [420, 260],
   html: () => '<div id="toasts"></div>',
   async wire(doc) {
