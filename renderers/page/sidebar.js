@@ -384,7 +384,7 @@ export async function sidebar(deps) {
 
   /** The page's own buttons beside a floor's directory (`floor.dirs`): a new shell, the editor, the repository on the web. @param {Floor} f @param {string} dir */
   const dirButtonsHtml = (f, dir) => `${shellButtonHtml(f, dir, base(dir))}
-    ${can(f, 'editor') ? `<button class="icon-btn" data-open="${esc(dir)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(base(dir))} in your editor" data-tip="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
+    ${can(f, 'editor') ? `<button class="icon-btn" data-open-dir="${esc(dir)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(base(dir))} in your editor" data-tip="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
     ${origins[dir] ? `<a class="icon-btn" href="${esc(origins[dir])}" target="_blank" rel="noreferrer" aria-label="${esc(base(dir))} on the web" data-tip="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}`
 
   /**
@@ -413,7 +413,7 @@ export async function sidebar(deps) {
     ${!resumable ? '' : heldWhy('resume') ? heldHtml('resume', `resume ${resumable.callsign}`, ICON.resume, 'icon-btn') : `<button class="icon-btn" data-resume="${esc(JSON.stringify(callOf(resumable, 'resume')))}" aria-label="resume ${resumable.callsign}" data-tip="resume ${resumable.callsign}, its last worker">${ICON.resume}</button>`}
     ${w.actions.map((a) => wtVerbHtml(w.name, a)).join('')}
     ${w.state === 'lost' ? '' : shellButtonHtml(f, where, w.name)}
-    ${w.state !== 'lost' && can(f, 'editor') ? `<button class="icon-btn" data-open="${esc(where)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(w.name)} in your editor" data-tip="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}
+    ${w.state !== 'lost' && can(f, 'editor') ? `<button class="icon-btn" data-open-dir="${esc(where)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(w.name)} in your editor" data-tip="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}
     ${workers.length ? `<span class="who-line">${workers.map((c) => `<a class="who" href="#${c.id}" data-tip="${esc(`${c.callsign} · ${statusName(c)}`)}">${c.callsign}</a> <span>${esc(statusName(c))}</span>`).join(' · ')}</span>` : ''}
   </div>`
   }
@@ -659,7 +659,7 @@ export async function sidebar(deps) {
   /** The collapsed sidebar: a way back, the waiting count, and a lamp per session on duty, each by its card's id. */
   /** @param {number} waiting */
   const railHtml = (waiting) =>
-    `<button class="icon-btn" data-side aria-label="show the sidebar" ${keyedTip(board().keys, 'show the sidebar', 'sidebar')}>${ICON.sidebar}</button>
+    `<button class="icon-btn" data-toggle-side aria-label="show the sidebar" ${keyedTip(board().keys, 'show the sidebar', 'sidebar')}>${ICON.sidebar}</button>
   ${waiting ? `<span class="count" data-tip="waiting on you">${waiting}<span class="sr-only"> waiting on you</span></span>` : ''}
   ${dutyOrderIn(board(), viewer().crewsOrder).map((c) => {
       const title = esc(callsign(c.id) + ' · ' + statusName(c) + (gistLine(c) ? ' · ' + gistLine(c) : ''))
