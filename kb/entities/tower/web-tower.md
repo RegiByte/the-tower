@@ -59,10 +59,12 @@ choices (from, runtime, command, model, effort, an extension's field with option
 through `labelledby`; a field left to its default is empty, its placeholder saying what the default is. Tower 3D draws
 the same form. A
 worker whose command never started its runtime says why in its gist, as every renderer draws it (`card.startFailure`). A floor's policy offers sit above its workers as its
-other asks do ([[policies]], [[attention-list]]). The shell dock starts a shell in any directory of a floor. An
-open shell's height is a `<tower-split>` at the dock's top ([[tower-elements]]): at least 120px, the view above it
-keeping 160px, the viewer's once dragged (`shells.height` in `tower.store`) and forgotten on a double-click, 38vh until
-then. A closed dock turns the split off.
+other asks do ([[policies]], [[attention-list]]). The shell dock starts a shell in any directory of a floor. The
+sidebar and the shell dock are each a `<tower-split>` ([[tower-elements]]): the sidebar's width (20rem to
+min(40rem, all but 480px), at its edge) and an open shell's height (at least 120px, the view above it keeping 160px, at the dock's
+top) are the viewer's, kept in `tower.store` (`side.width`, `shells.height`) once dragged and forgotten on a
+double-click; until then the sidebar is its clamp of the window's width and a shell 38vh. The rail, the drawer and a
+closed dock turn the split off.
 
 **The main pane** shows one value, a `MainView` ([`view.js`](ref:hub/renderers/page/view.js)): a view mounted at a
 location, a worker's (`tower/card`) among them, or a worker the page started until the board carries it, drawn as the
