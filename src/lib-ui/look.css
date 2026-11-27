@@ -444,9 +444,13 @@
     flex: 1 1 0 !important;
   }
 
-  /* Like a menu, its content opens in the top layer, so the host takes no place in the page. */
+  /*
+   * Like a menu, its content opens in the top layer, so the host takes no place in the page. Its `align` attribute is
+   * also the browser's old presentational hint for text-align, which any rule overrides.
+   */
   :where(tower-popover) {
     position: fixed;
+    text-align: start;
   }
 
   /* Its own button's box: the page's button inside lays out as if the host weren't there. */
