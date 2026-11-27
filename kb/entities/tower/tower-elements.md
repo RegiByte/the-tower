@@ -2,17 +2,18 @@
 {
   "type": "library",
   "name": "The tower's elements (/lib-ui/)",
-  "summary": "The tower-* custom elements a page or an extension's client draws as tags, served at /lib-ui/<module>.js: each builds the UI SDK's ui-* parts inside itself, so menus, comboboxes and the dialog get the SDK's keyboard, focus, placement and dismissal while views keep drawing html as strings through the morph.",
+  "summary": "The tower-* custom elements a page or an extension's client draws as tags, served at /lib-ui/<module>.js: each builds the UI SDK's ui-* parts inside itself, so menus, comboboxes, the dialog and the split get the SDK's keyboard, focus, placement and dismissal while views keep drawing html as strings through the morph.",
   "in": "tower-core",
   "reviewed": "2026-11-27",
-  "refs": ["hub/src/lib-ui/menu.ts#elements", "hub/src/lib-ui/combobox.ts#elements", "hub/src/lib-ui/dialog.ts#elements", "hub/src/lib-ui/sdk.ts#relay", "hub/src/lib-ui/sdk.ts#ElementContract", "hub/src/lib-ui/look.css", "hub/src/tower/served.ts#uiSdkModule", "hub/src/tower/served.ts#servedModule", "hub/src/tower/served.ts#libUiUrls", "hub/src/shared/elements.ts#subjectHtml", "hub/src/shared/elements.ts#comboboxHtml", "hub/src/shared/elements.ts#subjectAreaHtml", "hub/src/shared/elements.ts#subjectButtonHtml", "hub/src/shared/dom-id.ts#domId", "hub/src/lib/elements.ts", "hub/test/lib-ui.test.ts", "hub/test/library.ts#elementsOf", "hub/scripts/lib-ui-check.ts", "hub/renderers/playground/scenes.js#SCENES", "hub/renderers/playground/playground.js", "hub/docs/extending.md"]
+  "refs": ["hub/src/lib-ui/menu.ts#elements", "hub/src/lib-ui/combobox.ts#elements", "hub/src/lib-ui/dialog.ts#elements", "hub/src/lib-ui/split.ts#elements", "hub/src/lib-ui/sdk.ts#relay", "hub/src/lib-ui/sdk.ts#ElementContract", "hub/src/lib-ui/look.css", "hub/src/tower/served.ts#uiSdkModule", "hub/src/tower/served.ts#servedModule", "hub/src/tower/served.ts#libUiUrls", "hub/src/shared/elements.ts#subjectHtml", "hub/src/shared/elements.ts#comboboxHtml", "hub/src/shared/elements.ts#subjectAreaHtml", "hub/src/shared/elements.ts#subjectButtonHtml", "hub/src/shared/dom-id.ts#domId", "hub/src/lib/elements.ts", "hub/test/lib-ui.test.ts", "hub/test/library.ts#elementsOf", "hub/scripts/lib-ui-check.ts", "hub/renderers/playground/scenes.js#SCENES", "hub/renderers/playground/playground.js", "hub/docs/extending.md"]
 }
 ---
 Each module of `src/lib-ui/` is served at `/lib-ui/<module>.js`
 ([`servedModule`](ref:hub/src/tower/served.ts#servedModule)); importing it defines its elements:
 [`/lib-ui/menu.js`](ref:hub/src/lib-ui/menu.ts#elements) `<tower-menu>`, `<tower-menu-button>` and
 `<tower-menu-area>`, [`/lib-ui/combobox.js`](ref:hub/src/lib-ui/combobox.ts#elements) `<tower-combobox>`,
-[`/lib-ui/dialog.js`](ref:hub/src/lib-ui/dialog.ts#elements) `<tower-dialog>`. Why they
+[`/lib-ui/dialog.js`](ref:hub/src/lib-ui/dialog.ts#elements) `<tower-dialog>`,
+[`/lib-ui/split.js`](ref:hub/src/lib-ui/split.ts#elements) `<tower-split>`. Why they
 wrap the SDK this way is [[tower-elements-wrap-the-sdk]].
 
 - **The outer tag is the contract.** Its attributes, properties, events and custom states, each listed with what it
@@ -50,6 +51,19 @@ menu to copy, and its `checkedchange`, which doesn't bubble, is fired again on t
   name; a close button after its body closes it. The page puts what it shows in its `body` property, which scrolls
   inside a box sized for reading beside an index and never past the window; `open` opens and closes it, and its
   `openchange` is fired again on it. The page's `board.dialog` region draws in it ([[ui-model]]).
+- **A split that holds pixels.** `<tower-split>` moves its two element children into the SDK's resizable group at
+  connect, one of them sized. The SDK's model is percent of the space the panels share, so the element keeps px as its
+  contract: `size`, `default-size`, `min` and `max` are CSS lengths, resolved by an inline-styled probe inside it (its
+  `%` of the whole split), and on every resize of the group, before the frame is painted, it hands the SDK the bounds,
+  the arrow keys' step (24px, Shift ten) and the layout, all in percent of the space measured then: the SDK converts px
+  with the space it measured last, which can be a frame old. The layout is set in a microtask, after the SDK has taken
+  the new bounds. Only a viewer's changes (`drag`, `step-key`) fire `sizechange` and `sizecommit`; a double-click
+  returns to `default-size` and commits `null`. `disabled` hides the grip and gives the sized pane its content's size
+  over the SDK's inline flex, for layouts that size it themselves. The SDK makes every frame pointer-transparent while
+  a grip is dragged and keeps the separator's ARIA, its `aria-valuenow` in percent. It has no string builder: the page
+  writes it once in its html, and since the morph leaves an owned element's children, a view redraws each pane by its
+  id. WebKit's check covers its keys only: the harness's synthetic mouse holds no button
+  (`buttons` 0), and the SDK ends a drag on such a move.
 - **A combobox named from outside.** `labelledby` names a label the form draws itself (an eyebrow, an optional mark, a
   hint): the element then draws no label part and points its input's `aria-labelledby` at it. A `<label>` around it
   would take a press in its list for one on the box.

@@ -3022,6 +3022,53 @@
           }
         }
       }
+    },
+    "/lib-ui/split.js": {
+      "tower-split": {
+        "attributes": {
+          "default-size": {
+            "since": "2.41"
+          },
+          "disabled": {
+            "since": "2.41"
+          },
+          "label": {
+            "since": "2.41"
+          },
+          "max": {
+            "since": "2.41"
+          },
+          "min": {
+            "since": "2.41"
+          },
+          "orientation": {
+            "since": "2.41"
+          },
+          "size": {
+            "since": "2.41"
+          },
+          "sized": {
+            "since": "2.41"
+          },
+          "step": {
+            "since": "2.41"
+          }
+        },
+        "properties": {},
+        "events": {
+          "sizechange": {
+            "since": "2.41"
+          },
+          "sizecommit": {
+            "since": "2.41"
+          }
+        },
+        "states": {
+          "dragging": {
+            "since": "2.41"
+          }
+        }
+      }
     }
   }
 }
