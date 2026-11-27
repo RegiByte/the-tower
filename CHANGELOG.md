@@ -12,6 +12,33 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.20.0
+
+The tower's elements grow from the UI SDK, and a playground shows each of them in every theme (the components pass:
+#739–#747). API 2.44. Nothing to restart beyond the tower (`tower update` does it).
+
+- **A resizable sidebar.** Drag the line at the sidebar's edge, or focus it and use the arrow keys; a double-click
+  returns it to its default width. Your width is kept for this screen, and so is the shells' height, which reset on
+  reload before. The sidebar stays between 20rem and what leaves the main pane 480px.
+- **The sidebar's entries stay one line.** Entries that don't fit beside the row's buttons go behind More…, at any
+  width and however many extensions add; pin the ones you want always in place.
+- **Popovers and menus on the UI SDK.** The card's details and "left running", the settings, limits and new-shell
+  popovers, the tabs' "+n" and the sidebar's More… are now the tower's own elements, with the SDK's keyboard, focus
+  and dismissal: a press into a shown document or a terminal closes them, Escape gives focus back to the button. The
+  page's hand-built menu is gone.
+- **For extension and renderer authors.** New elements in `/lib-ui/`: `<tower-split>` (two panes and a grip, sized in
+  px and kept per viewer) and `<tower-popover>`; `<tower-menu-button>` can make a button of your own the menu's
+  trigger. In `/lib/`: `passEscapeOut` (an Escape pressed in a frame reaches the dialog holding it), `.tower-fit`
+  (the pane fit as a class; every mounted view gets it), and the morph's `data-owned="attributes"` mark, which lets a
+  view's redrawn button carry what the SDK writes on it. `docs/extending.md` has each.
+- **The playground**, for people and agents developing the tower: every `tower-*` element and shared behavior as a
+  scene, from fixture data, in each theme and scheme, with a door for agents (`window.playground`). Add it as a
+  renderer from your checkout's `renderers/playground` (`docs/extending.md`); the sandbox adds it on `up`.
+  `tool:lib-ui` runs its scenes' checks in Chrome and WebKit on every SDK bump.
+- **Fixes.** A layout's pins now come first in the four action regions that ignored them. The reviews thread shown on
+  its own fits the pane like every other view. A git read the tower's own stop cuts off no longer logs a scary
+  "git reader exited". The UI SDK is at 0.1.0-beta.18.
+
 ## v2.19.0
 
 Pick the page's theme from the page, live, and the two new themes get the room they were designed for (the theme pass:
