@@ -4,6 +4,7 @@ import { ICON, keyedTip, morphPanel, type Mount, PANE_FIT, pressing, viewLayer, 
 import { domId } from '/lib/morph.js'
 import { keysHint, keyshortcuts } from '/lib/keys.js'
 import { esc, modelName, when } from '/lib/words.js'
+import { menuHtml, popoverButtonHtml, popoverHtml } from '/lib/elements.js'
 
 /**
  * A worker: its head (who and where, a glance at its context, cost and leftovers, its details, what extensions add to
@@ -88,8 +89,7 @@ const CSS = `:where([data-view="${ID}"]) {
     & .pill .status-word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
     & .pill { gap: var(--sp-xs); padding-inline: var(--sp-s); }
   }
-  & .bar-details, & .bar-left { margin: 0; inset: 100px 20px auto auto; width: min(620px, 90vw); max-height: 70vh; overflow: auto; padding: var(--sp-l) var(--sp-xl) var(--sp-xl); background: var(--panel); color: var(--ink);
-    border: 1px solid var(--line); border-radius: var(--radius-card); box-shadow: var(--shadow-pop); scrollbar-gutter: stable; }
+  & :is(.bar-details, .bar-left) [data-tower-popover="body"] { box-sizing: border-box; width: min(620px, calc(100vw - 16px)); max-height: 70vh; padding: var(--sp-l) var(--sp-xl) var(--sp-xl); scrollbar-gutter: stable; }
   & .bar-details h3, & .bar-left h3 { margin: 0 0 var(--sp-l); font: var(--name-weight) var(--fs-l)/1 var(--display); letter-spacing: var(--name-tracking); }
   & .bar-left .proc { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: var(--sp-xs) var(--sp-l); padding: var(--sp-s) 0; border-top: 1px solid var(--line); font-size: var(--fs-s); }
   & .bar-left .proc code { font-family: var(--mono); }
@@ -121,14 +121,6 @@ const CSS = `:where([data-view="${ID}"]) {
   &.cell.bare .bar-line { grid-column: 2; grid-row: 1; margin: 0; min-width: 0; overflow: hidden; }
   &.cell .pick { min-height: 0; padding: 0 2px; background: none; border: 0; color: var(--muted); }
   &.cell .pick svg { width: 12px; height: 12px; }
-  &.cell .bar-pick { margin: 0; position: fixed; inset: auto; height: auto; width: max-content; min-width: 14rem; max-height: 60vh; overflow: auto; padding: var(--sp-xs) 0;
-    background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius-card); box-shadow: var(--shadow-pop); font-size: var(--fs-s); }
-  &.cell .bar-pick h3 { margin: 0; padding: var(--sp-xs) var(--sp-m); color: var(--faint); font: var(--label-weight) var(--fs-xs)/1.45 var(--display); text-transform: var(--label-case); letter-spacing: var(--label-tracking); }
-  &.cell .bar-pick button { display: flex; align-items: center; gap: var(--sp-s); width: 100%; min-height: 0; padding: var(--sp-xs) var(--sp-m); border: 0; border-radius: 0; background: none;
-    color: var(--ink); font-weight: 400; text-align: left; }
-  &.cell .bar-pick button:hover, &.cell .bar-pick button:focus-visible { background: var(--hover); }
-  &.cell .bar-pick small { margin-left: auto; padding-left: var(--sp-l); color: var(--muted); }
-  &.cell .bar-pick .none { padding: var(--sp-xs) var(--sp-m); color: var(--muted); }
   &.cell .screen { border-radius: 0; }
 }`
 
@@ -137,6 +129,15 @@ const toolHtml = (tool: string) => {
   const [name, ...target] = tool.split(' ')
   return `<span class="tool"><b>${esc(name)}</b> ${esc(target.join(' '))}</span>`
 }
+
+/** A `<tower-popover>` (`/lib-ui/popover.js`), as the card fills it. */
+type Popover = HTMLElement & { body: HTMLElement }
+
+/** An item of a `<tower-menu>` (`/lib-ui/menu.js`), as the card fills it. */
+type PickItem = { value: string; label: string; hint?: string; disabled?: boolean }
+
+/** A `<tower-menu>` (`/lib-ui/menu.js`), as the card opens it. */
+type PickMenu = HTMLElement & { items: { type: 'group'; label: string; items: PickItem[] }[]; openAt(payload: string, anchor: Element): Promise<unknown> }
 
 /** A meter's fill: ink, broken past `hot`. */
 const fillOf = (pct: number, hot: number) => (pct > hot ? 'var(--broken)' : 'var(--ink)')
@@ -158,7 +159,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
         <div class="bar-actions"><span class="part details-part"></span><span data-holds="actions" id="${esc(domId(`${scope}/card.head`, subject.key))}" data-owned></span><span class="part own"></span></div></div>
       <div class="bar-sub"><span class="part where-part"></span><span data-holds="lines"></span></div></div>
     <div class="tab-row bar-line" data-holds="tabs"></div>${cell ? '<span class="acts"></span>' : ''}</div>
-  <div class="bar-details" id="${pop}-details" popover></div><div class="bar-left" id="${pop}-left" popover></div>${cell ? `<div class="bar-pick" id="${pop}-pick" popover></div>` : ''}
+  ${popoverHtml(`${pop}-details`, 'details', { align: 'end' }, 'bar-details')}${popoverHtml(`${pop}-left`, 'left running', { align: 'start' }, 'bar-left')}${cell ? menuHtml(`${pop}-pick`, 'bar-pick') : ''}
   <div class="ask"></div>
   <div class="screen" data-holds="views"></div>`
   host.classList.toggle('cell', cell)
@@ -169,24 +170,30 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
    * the tabs on the one row of a cell with no head.
    */
   const placeActs = () => cell && (head ? top : $('.bar-line')).after($('.acts'))
-  const details = $('.bar-details')
-  const left = $('.bar-left')
+  const details = $<Popover>('.bar-details')
+  const left = $<Popover>('.bar-left')
   /** What the head leaves out: nothing at pane scale. */
   const omitted = () => ({ omit: cell ? (opts.omit ?? []) : [] })
   let headRegion = head ? kit.region(top, 'card.head', subject, omitted()) : undefined
   const panes = kit.region(host, 'card.panes', subject)
 
-  /** The menu opens under the callsign that opened it, the one drawn now. */
-  const picker = cell ? $('.bar-pick') : undefined
-  picker?.addEventListener('beforetoggle', (e) => {
-    if ((e as ToggleEvent).newState !== 'open') return
-    const pick = [...host.querySelectorAll<HTMLElement>('.pick')].find((b) => b.offsetParent)
-    const at = pick?.getBoundingClientRect()
-    if (at) Object.assign(picker.style, { top: `${at.bottom + 4}px`, left: `${pick!.previousElementSibling!.getBoundingClientRect().left}px` })
+  /**
+   * The menu of workers to pick opens under the ▾ pressed, filled as the board stands then; a choice is the view's to
+   * act on. Focus goes back to the ▾ once it closes.
+   */
+  const picker = cell ? $<PickMenu>('.bar-pick') : undefined
+  picker?.addEventListener('action', (e) => {
+    e.stopPropagation()
+    host.dispatchEvent(new CustomEvent('pick', { bubbles: true, detail: { id: (e as CustomEvent<{ value: string }>).detail.value } }))
   })
-
-  /** The details open over the top of the panes, clear of the head that opened them. */
-  details.addEventListener('beforetoggle', (e) => (e as ToggleEvent).newState === 'open' && (details.style.top = `${$('.screen').getBoundingClientRect().top + 6}px`))
+  picker?.addEventListener('openchange', (e) => e.stopPropagation())
+  picker?.addEventListener('payloadchange', (e) => e.stopPropagation())
+  async function openPicker(button: HTMLElement) {
+    if (!picker || !opts.pick) return
+    picker.items = pickItems(opts.pick)
+    await picker.openAt('pick', button)
+    if (!host.contains(document.activeElement) || document.activeElement === document.body) button.focus()
+  }
 
   const floor = () => board.floors.find((f) => f.id === card.project)
 
@@ -233,16 +240,16 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
   }
 
   /** The ▾ that opens the menu of workers to pick, where the view holding the card gives one. */
-  const pickHtml = () => (opts.pick ? `<button class="pick" popovertarget="${pop}-pick" aria-label="${esc(opts.pick.label)}" data-tip="${esc(opts.pick.tip ?? opts.pick.label)}">${ICON.caret}</button>` : '')
+  const pickHtml = () => (opts.pick ? `<button class="pick" data-pick-open aria-haspopup="menu" aria-label="${esc(opts.pick.label)}" data-tip="${esc(opts.pick.tip ?? opts.pick.label)}">${ICON.caret}</button>` : '')
 
-  /** The menu of workers to pick: each by its lamp and callsign, with its note, else its status. */
-  function pickMenuHtml(p: CardPick) {
+  /** The menu of workers to pick: each by its callsign, with its note, else its status, under the pick's label. */
+  function pickItems(p: CardPick): PickMenu['items'] {
     const all = cards()
-    const rows = p.choices.flatMap(({ id, note }) => {
+    const items = p.choices.flatMap(({ id, note }) => {
       const c = all.find((d) => d.id === id)
-      return c ? [`<button data-pick="${esc(id)}"><span class="lamp ${lampOf(c)}"></span>${c.callsign}<small>${esc(note ?? statusName(c))}</small></button>`] : []
+      return c ? [{ value: id, label: c.callsign, hint: note ?? statusName(c) } satisfies PickItem] : []
     })
-    return `<h3>${esc(p.label)}</h3>${rows.join('') || '<div class="none">no other worker to pick</div>'}`
+    return [{ type: 'group', label: p.label, items: items.length ? items : [{ value: '', label: 'no other worker to pick', disabled: true }] }]
   }
 
   /** The cell's own row parts: the lamp and callsign while the head is hidden, and the acts of the view holding it. */
@@ -258,7 +265,6 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
         )
         .join(''),
     )
-    if (opts.pick) morphPanel($('.bar-pick'), pickMenuHtml(opts.pick))
   }
 
   function draw() {
@@ -278,10 +284,10 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
       `<span class="stats">
       ${ctx === undefined ? '' : `<span class="meter" data-tip="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${fillOf(ctx, 80)}"><i style="width:${ctx}%"></i><span class="sr-only">context window, ${esc(modelName(c.model))}:</span></span><b>${ctx}%</b>`}
       ${c.costUsd != null ? `<b>$${c.costUsd.toFixed(2)}</b>` : ''}
-      ${can(c, 'reap') ? `<button class="ports ${orphan ? 'orphan' : ''}" popovertarget="${pop}-left" data-tip="processes left running: click to see them and end them">${c.resources.length}▪ ${ports}</button>` : ''}
+      ${can(c, 'reap') ? popoverButtonHtml(`${pop}-left`, `<button class="ports ${orphan ? 'orphan' : ''}" data-tip="processes left running: click to see them and end them">${c.resources.length}▪ ${ports}</button>`) : ''}
     </span>`,
     )
-    morphPanel($('.details-part'), `<button class="icon-btn" id="${esc(verbId('details'))}" popovertarget="${pop}-details" aria-label="details" data-tip="everything else about ${c.callsign}" data-tuck="1">${ICON.info}</button>`)
+    morphPanel($('.details-part'), popoverButtonHtml(`${pop}-details`, `<button class="icon-btn" id="${esc(verbId('details'))}" aria-label="details" data-tip="everything else about ${c.callsign}" data-tuck="1">${ICON.info}</button>`))
     morphPanel(
       $('.own'),
       `${can(c, 'resume') ? verbHtml({ verb: 'resume', mark: 'data-resume', icon: ICON.resume, tip: verbHint('card', 'resume', c), tuck: 3, tone: 'primary' }) : ''}
@@ -289,8 +295,8 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
     ${can(c, 'send-home') ? verbHtml({ verb: 'send-home', mark: `data-send-home${keysHint(board.keys, 'send-home') ? ` aria-keyshortcuts="${keyshortcuts(board.keys, 'send-home')}"` : ''}`, icon: ICON.sendHome, tip: sendHomeTitle(c), tuck: 4, tone: 'danger' }) : ''}
     ${scale !== 'cell' ? `<button class="icon-btn" id="${esc(verbId('home'))}" data-home aria-label="back to the skyline" ${keyedTip(board.keys, 'back to the skyline', 'home')}>${ICON.close}</button>` : ''}`,
     )
-    morphPanel(details, detailsHtml(c))
-    morphPanel(left, leftHtml(c))
+    morphPanel(details.body, detailsHtml(c))
+    morphPanel(left.body, leftHtml(c))
     host.classList.toggle('asking', head && (c.status === 'needs_input' || c.status === 'blocked'))
     morphPanel(
       $('.ask'),
@@ -336,10 +342,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
     const c = card
     if (button.matches('[data-home]')) return kit.display('board')
     if (button.matches('[data-act]')) return void host.dispatchEvent(new CustomEvent('act', { bubbles: true, detail: { id: button.dataset.act } }))
-    if (button.matches('[data-pick]')) {
-      picker?.hidePopover()
-      return void host.dispatchEvent(new CustomEvent('pick', { bubbles: true, detail: { id: button.dataset.pick } }))
-    }
+    if (button.matches('[data-pick-open]')) return void openPicker(button)
     if (button.matches('[data-drive]')) return void kit.run('pane-terminal', subject)
     if (button.matches('[data-resume]')) {
       const call = callOf(c, 'resume')
