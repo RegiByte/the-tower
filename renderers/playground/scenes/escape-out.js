@@ -1,3 +1,5 @@
+import { fail } from '../checks.js'
+
 /**
  * An Escape passed out of a frame (`passEscapeOut`): a `<tower-dialog>` holding a frame of the page's origin closes on
  * an Escape pressed inside the frame, as it does with focus anywhere else in it.
@@ -39,6 +41,21 @@ export const scene = {
       /** An Escape as a key pressed in the frame's field. */
       escapeInFrame: () => (input().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true, cancelable: true })), true),
       state: () => ({ open: dialog.open }),
+      /**
+       * The dialog is open, the page's focus in the frame and the frame's in its field, as `open` leaves them: with the
+       * page's focus anywhere else, an Escape would close the dialog without passing through the frame.
+       */
+      opened: () => {
+        const seen = { open: dialog.open, frameFocused: doc.activeElement === frame, focused: frame.contentDocument?.activeElement?.id }
+        if (!seen.open || !seen.frameFocused || seen.focused !== 'typed') fail('the dialog should be open with focus in the frame', seen)
+        return seen
+      },
+      /** An Escape pressed in the frame closed the dialog. */
+      closed: () => {
+        const seen = { open: dialog.open }
+        if (seen.open) fail('an Escape pressed in the frame should close the dialog holding it', seen)
+        return seen
+      },
     }
   },
 }

@@ -6,7 +6,9 @@
  * (`custom`) by Enter alone; `<tower-menu>` opened by a right-click on a `<tower-menu-area>` and by Enter on a
  * `<tower-menu-button>`, its submenu, its action, its focus coming back and its subject said again on an opening for
  * the same one; `<tower-split>` stepped by its keys, its size written back and held as it narrows and widens, its grip
- * naming its sized pane; each checked as it happens by the scene's own steps (`playground.act`); a check failing fails the run.
+ * naming its sized pane; and `<tower-dialog>` holding a frame, closed by an Escape pressed inside the frame
+ * (`passEscapeOut`); each checked as it happens by the scene's own steps (`playground.act`); a check failing fails
+ * the run.
  * Run it on every bump of the UI SDK, in both engines:
  *
  *   npm run tool:lib-ui -- chrome [--shots <dir>]    headless Chrome (`scripts/drive.ts`)
@@ -17,9 +19,10 @@
  * This script serves the playground itself, with no tower behind it (`?alone`): the scenes in the default look only,
  * which the page says. Every theme the page is offered is drawn on a tower, the sandbox's at `/r/playground/`.
  *
- * `--shots` saves a PNG of the open combobox, the menu with its submenu, the menu a button opened, and the split, as
- * `<dir>/<engine>-<name>.png`. The menu scene places its rows exactly (`rowPoint`), and `?bare` puts its frame at the
- * window's top left, so a right-click lands on a row in either engine without reading the page first.
+ * `--shots` saves a PNG of the open combobox, the menu with its submenu, the menu a button opened, the split, and the
+ * dialog holding a frame, as `<dir>/<engine>-<name>.png`. The menu scene places its rows exactly (`rowPoint`), and
+ * `?bare` puts its frame at the window's top left, so a right-click lands on a row in either engine without reading
+ * the page first.
  */
 import { spawn } from 'node:child_process'
 import { existsSync, readFileSync, statSync } from 'node:fs'
@@ -219,8 +222,13 @@ const SPLIT = (shots: (name: string) => Step[]): Step[] => {
   ]
 }
 
+const ESCAPE_OUT = (shots: (name: string) => Step[]): Step[] => {
+  const e = (step: string, ...args: unknown[]) => act('escape-out', step, ...args)
+  return [READY, e('open'), { wait: 300 }, e('opened'), ...shots('escape-out'), { key: 'Escape' }, { wait: 500 }, e('closed')]
+}
+
 /** The scenes checked, each on a page of its own, with its steps. */
-const RUNS = { combobox: COMBOBOX, menu: MENU, split: SPLIT }
+const RUNS = { combobox: COMBOBOX, menu: MENU, split: SPLIT, 'escape-out': ESCAPE_OUT }
 
 /** Serves the playground, the design and every module it reaches. */
 async function serve() {
