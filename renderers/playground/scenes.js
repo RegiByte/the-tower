@@ -6,6 +6,7 @@ import { scene as fit } from './scenes/fit.js'
 import { scene as framePress } from './scenes/frame-press.js'
 import { scene as menu } from './scenes/menu.js'
 import { scene as split } from './scenes/split.js'
+import { scene as popover } from './scenes/popover.js'
 import { scene as tips } from './scenes/tips.js'
 import { scene as toasts } from './scenes/toasts.js'
 
@@ -22,4 +23,4 @@ import { scene as toasts } from './scenes/toasts.js'
  */
 
 /** Every scene, in the playground's order: the elements, then the behaviors. @type {Scene[]} */
-export const SCENES = [menu, combobox, dialog, split, tips, toasts, ask, fit, framePress, escapeOut]
+export const SCENES = [menu, combobox, dialog, split, popover, tips, toasts, ask, fit, framePress, escapeOut]
