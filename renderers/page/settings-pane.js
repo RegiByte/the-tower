@@ -1,5 +1,4 @@
 import { SOUNDS } from '/lib/cards.js'
-import { placeOnOpen } from '/lib/chrome.js'
 import { alertsSection, changesSection, faceInstalled, markdownSection, keepingTyped, prefSections, screenSection, settingsHtml, sidebarSection, soundSection, tipsSection, wirePrefs } from '/lib/settings.js'
 import { ICON, morphPanel } from '/lib/view.js'
 import { $ } from './kit.js'
@@ -37,18 +36,16 @@ export function settingsPane(deps) {
     drawSettings()
   }
 
-  const drawSettings = () => $('settings').matches(':popover-open') && paintSettings()
+  const drawSettings = () => $('settings').open && paintSettings()
 
   function paintSettings() {
     const html = settingsHtml([alertsSection(Notification.permission), soundSection(page.state().attending.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(viewer().briefMarkdown), changesSection(viewer().changesTree), sidebarSection(sections()), screenSection(screens()), tipsSection(viewer().tips, viewer().tipsDismissed.length)])
-    keepingTyped($('settings'), () => morphPanel($('settings'), html))
+    keepingTyped($('settings').body, () => morphPanel($('settings').body, html))
   }
 
   $('settings-open').innerHTML = ICON.settings
 
-  placeOnOpen($('settings'), () => $('settings-open'))
-
-  $('settings').addEventListener('beforetoggle', (e) => e.newState === 'open' && paintSettings())
+  $('settings').addEventListener('openchange', (e) => /** @type {CustomEvent<{ value: boolean }>} */ (e).detail.value && paintSettings())
 
   $('settings').addEventListener('click', async (e) => {
     const el = /** @type {Element} */ (e.target).closest('[data-alerts-ask], [data-ring-choice], [data-sound-play], [data-on-screen], [data-section-state]')

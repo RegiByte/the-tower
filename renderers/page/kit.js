@@ -17,7 +17,9 @@ import { esc, when } from '/lib/words.js'
  *   spawn: HTMLDialogElement, transfer: HTMLDialogElement, landing: HTMLDialogElement, keys: HTMLDialogElement, palette: HTMLDialogElement, patterns: HTMLDialogElement,
  *   'item-doc': HTMLIFrameElement,
  *   orb: HTMLElement | null, clock: HTMLElement | null,
+ *   settings: TowerPopover, limits: TowerPopover, 'shell-pick': TowerPopover,
  * }} PageElements
+ * @typedef {HTMLElement & { open: boolean, body: HTMLElement }} TowerPopover A `<tower-popover>` (`/lib-ui/popover.js`).
  */
 
 /** @param {Card} c */
