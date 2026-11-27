@@ -24,8 +24,8 @@ import { SCENES } from './scenes.js'
  *                                         Only one frame holds focus at a time: a step reading focus is read true in the
  *                                         last frame it ran in, so read focus with the query narrowed to one frame
  *
- * A scene that can't be drawn (its module missing or failing, a `?bare` matching more than one frame) fails `ready()`
- * and every member that waits on it, and says why on the page.
+ * A scene that can't be drawn (its module missing or failing, a query matching no frame, or a `?bare` matching more
+ * than one) fails `ready()` and every member that waits on it, and says why on the page.
  *
  * @import { Scene, Steps } from './scenes.js'
  */
@@ -138,6 +138,7 @@ async function draw() {
   const drawnThemes = themes.filter((t) => !wanted.themes || wanted.themes.includes(themeKey(t)))
   const schemes = /** @type {const} */ (['light', 'dark']).filter((s) => !wanted.schemes || wanted.schemes.includes(s))
   const count = scenes.length * drawnThemes.length * schemes.length
+  if (count === 0) throw new Error('The query matches no frame: the filters on the page list the scenes, themes and schemes drawn here')
   if (bare && count !== 1) throw new Error(`?bare draws one frame, and the query matches ${count}: narrow it to one scene, theme and scheme`)
   await checkFiles(scenes)
 
