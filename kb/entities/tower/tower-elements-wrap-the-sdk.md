@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-11-18",
-  "reviewed": "2026-11-23",
+  "reviewed": "2026-11-27",
   "refs": ["hub/src/lib-ui/menu.ts", "hub/src/lib-ui/combobox.ts", "hub/src/lib-ui/sdk.ts", "hub/src/tower/served.ts#uiSdkModule", "hub/package.json"]
 }
 ---
@@ -26,7 +26,7 @@ keyboard, focus, placement, dismissal and ARIA by hand for each is where such wi
 - **Eager, one core.** The SDK entries in use are bundled once into `/lib-ui/sdk.js` and imported statically, so a
   page's import map and preloads cover them and the elements upgrade before first paint. Two cores on a page can't
   share the layer stack popups use.
-- **Pinned exactly** (`0.1.0-beta.16`, no caret): a bump is its own commit and re-runs `tool:lib-ui` in both engines.
+- **Pinned exactly** (`0.1.0-beta.18`, no caret): a bump is its own commit and re-runs `tool:lib-ui` in both engines.
 
 **Alternatives considered.**
 - Registering `tower-*` parts directly with the SDK's `createParts`: it works for a flat menu and combobox, but the
