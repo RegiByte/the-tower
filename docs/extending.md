@@ -546,7 +546,7 @@ joins as a minor the day something uses it.
 | `/lib/attend.js` | browser | renderers | what a viewer is told about waits |
 | `/lib/settings.js` | browser | renderers | the settings popover |
 | `/lib/palette.js` | browser | renderers | the command palette |
-| `/lib/chrome.js` | browser | renderers | toasts, tooltips, the confirm dialog and popovers closed by a press in a frame |
+| `/lib/chrome.js` | browser | renderers | toasts, tooltips, the confirm dialog, popovers closed by a press in a frame and an Escape passed out of one |
 | `/lib/viewer.js` | browser | renderers | what a viewer keeps, and their appearance |
 | `/lib/capabilities.js` | generic | renderers | what the tower can teach, as tips |
 | `/lib/client.js` | browser | renderers | window.tower's types, the /tower.js client |
@@ -579,6 +579,11 @@ clipboard API is undefined there, and `copyText` falls back to the document's co
 A renderer that draws any of the library's views installs the shared tooltip once, `watchTips(document)` from
 `/lib/chrome.js`: the views explain their controls with `data-tip` (the Stats bars their readouts), and the settings
 popover stays hidden until it is placed.
+
+A key pressed in a frame never reaches the page around it. A view that holds a frame of the tower's origin in a dialog
+or popover calls `passEscapeOut(frame)` from `/lib/chrome.js` once per frame: an Escape pressed inside it is passed on
+from the frame's element, so what holds the frame closes as it does with focus anywhere else in it. It follows the
+frame across loads and returns a stop; a frame of another origin passes nothing. The Theme dialog's frames use it.
 
 To redraw a view from html without losing what the viewer holds in it, use `morph(el, html)` of `/lib/morph.js`
 (provisional): it makes `el`'s children what `html` describes and keeps every node that still matches, so text typed,

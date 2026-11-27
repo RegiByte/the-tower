@@ -1,5 +1,6 @@
 import type { Board } from '/lib/board.js'
 import type { ThemePick } from '/lib/client.js'
+import { passEscapeOut } from '/lib/chrome.js'
 import { type Mount, paintOnce, viewCss } from '/lib/view.js'
 import { esc } from '/lib/words.js'
 
@@ -99,9 +100,9 @@ export const mount: Mount = async (host, { tower, board: first, kit }) => {
 
   /**
    * A theme's card is its frame: its name, the parts it draws (inert) and its two buttons, all in the theme. The frame
-   * is this page's origin, so its buttons' presses are heard here, and an Escape pressed in it is passed on from the
-   * frame's element, so the dialog holding it closes as it does with focus anywhere else in it. The sample's menu takes
-   * every Escape to stay open, so the frame passes Escape on whether or not it was taken.
+   * is this page's origin, so its buttons' presses are heard here, and an Escape pressed in it is passed on
+   * (`passEscapeOut`), so the dialog holding it closes as it does with focus anywhere else in it, though the sample's
+   * menu takes every Escape to stay open.
    */
   const cardHtml = ({ pick, title }: Choice) => `<iframe class="theme" data-pick="${esc(JSON.stringify(pick))}" title="${esc(title)}"></iframe>`
 
@@ -115,9 +116,9 @@ export const mount: Mount = async (host, { tower, board: first, kit }) => {
       frame.addEventListener('load', () => {
         const doc = frame.contentDocument!
         doc.addEventListener('click', clicked)
-        doc.addEventListener('keydown', (k) => k.key === 'Escape' && frame.dispatchEvent(new KeyboardEvent('keydown', { key: k.key, code: k.code, bubbles: true, cancelable: true, composed: true })))
         marks()
       })
+      passEscapeOut(frame)
       frame.srcdoc = frameDoc(all[i], sample)
     })
     marks()
