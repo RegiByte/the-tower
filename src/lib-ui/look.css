@@ -367,4 +367,68 @@
       outline-offset: 1px;
     }
   }
+
+  :where(tower-split) {
+    position: relative;
+    display: grid;
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+    min-width: 0;
+    min-height: 0;
+  }
+
+  tower-split > [data-slot="resizable"] {
+    min-width: 0;
+    min-height: 0;
+  }
+
+  /* A pane fills its panel, which the SDK sizes. */
+  tower-split [data-slot="resizable-panel"] {
+    display: grid;
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  }
+
+  /* The grip takes no room: a line drawn over the panes' edge, its hit area the SDK's. */
+  tower-split [data-slot="resizable-handle"] {
+    position: relative;
+    z-index: 2;
+    flex-basis: 0;
+    outline: none;
+
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0 -1px;
+      transition: background-color 0.15s ease-out;
+    }
+
+    &[data-orientation="vertical"]::after {
+      inset: -1px 0;
+    }
+
+    &:is([data-hovering], [data-dragging])::after {
+      background: var(--line-strong);
+    }
+
+    &:focus-visible::after {
+      background: var(--accent);
+      inset: 0 -2px;
+    }
+
+    &[data-orientation="vertical"]:focus-visible::after {
+      inset: -2px 0;
+    }
+  }
+
+  /* Off, the sized pane takes its content's size over the SDK's inline one, and the grip is gone. */
+  tower-split[disabled] [data-slot="resizable-handle"] {
+    display: none;
+  }
+
+  tower-split[disabled] [data-tower-split="sized"] {
+    flex: 0 0 auto !important;
+  }
+
+  tower-split[disabled] [data-tower-split="rest"] {
+    flex: 1 1 0 !important;
+  }
 }
