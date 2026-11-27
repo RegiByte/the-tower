@@ -99,7 +99,7 @@ a region that holds what extensions contribute takes:
 | `unpinned` | Ids the renderer's own layout pins that this layer drops. The viewer's `unpinned`, set from the page, drops a pin made here. |
 | `overflow` | The form the region is drawn in when full, one of the forms its `renderer.json` lists in `overflows`: `menu`, `count`, `wrap` or `scroll`. |
 | `lines`, `badges`, `actions` | How many of each a `menu` region draws in place at most, or a `count` region exactly; pins and the region's own controls don't count. `0` under `menu` is pins only. |
-| `views` | In a region that opens its views elsewhere (`board.nav`): how many entries a `menu` region draws in place, after its pins; the rest behind More…. `pinned` there names views by id. |
+| `views` | In a region that opens its views elsewhere (`board.nav`): how many entries a `menu` region draws in place, after its pins, at most (the tower page keeps fewer when its row is too narrow); the rest behind More…. `pinned` there names views by id. |
 | `folded` | In a region of arity `all` (`board.sections`): the views drawn folded to their heading and tally, by view id. The highest layer's list is taken whole, so a viewer who folds or opens a section on their screen replaces the config's. Another region refuses it; an id no view has is a warning. |
 | `onScreen` | `false`: the region's buttons are in the menu only: its pinned actions and lines drawn and no others, in any form, its badges kept, since they are information; the subject's menu and the palette still reach every one. Only a region its `renderer.json` gives a `label` takes it; one labelled and holding nothing draws the renderer's own buttons, and takes `onScreen` alone. |
 

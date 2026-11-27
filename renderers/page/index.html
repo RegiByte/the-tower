@@ -79,10 +79,12 @@ dialog h2 { margin: 0 0 var(--sp-l); color: var(--heading); font: var(--display-
 .side-section[data-folded] { padding-block: calc(var(--sp-s) / 2); }
 .side-section[data-folded] .section-body { display: none; }
 .section-body { max-height: 12.5rem; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
-.side-views { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--sp-xs); padding: var(--sp-m) var(--sp-xl); border-bottom: 1px solid var(--line); }
-.side-nav { display: flex; flex-wrap: wrap; gap: var(--sp-xs); min-width: 0; }
-.nav-entries { display: contents; }
-.side-nav button { min-height: var(--control); padding: 0 var(--sp-m); border-color: transparent; background: none; color: var(--muted); }
+.side-views { display: flex; align-items: flex-start; gap: var(--sp-xs); padding: var(--sp-m) var(--sp-xl); border-bottom: 1px solid var(--line); }
+.side-views[data-overflow='wrap'] { flex-wrap: wrap; }
+.side-nav { display: flex; gap: var(--sp-xs); min-width: 0; }
+.side-views[data-overflow='wrap'] .side-nav { flex-wrap: wrap; }
+.nav-entries, .side-nav tower-menu-button { display: contents; }
+.side-nav button { flex-shrink: 0; min-height: var(--control); padding: 0 var(--sp-m); border-color: transparent; background: none; color: var(--muted); white-space: nowrap; }
 .side-views .board-sign { margin-left: auto; display: flex; gap: var(--sp-xs); }
 .side-views .board-sign:empty { display: none; }
 .nav-tally { margin-left: var(--sp-xs); padding: 0 var(--sp-s); border-radius: var(--radius-pill); background: var(--panel-2); color: var(--ink); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }

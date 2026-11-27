@@ -1056,6 +1056,8 @@ export function regions(deps) {
     return {
       /** The entries in place and those behind the region's menu. */
       placed: () => placedEntries({ board: board(), views: views(), regions: declared(), layout: layout(), kit: deps.kit, main: region() }, region()),
+      /** The form the row is drawn in: `menu`, what doesn't fit behind More…, or `wrap`. @returns {Overflow} */
+      form: () => overflowOf(/** @type {Region & { overflows: Overflow[] }} */ (region()), layout()[id]),
       /** `drawn` as entries, the one `current` names marked. @param {View[]} drawn @param {string | undefined} current */
       html: (drawn, current) => drawn.map((v) => entryHtml(v, v.id === current)).join(''),
       /** `view` as its menu's item, valued `key`, its tally as the hint. @param {View} view @param {string} key @returns {MenuItem} */
