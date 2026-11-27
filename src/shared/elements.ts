@@ -61,3 +61,19 @@ export const subjectButtonHtml = (place: string, key: string, label: string): st
 /** A subject's markup, `row`, as an area at `place` with its ⋯ button, named `label`, drawn at its end. */
 export const subjectHtml = (place: string, key: string, label: string, row: string): string =>
   subjectAreaHtml(place, key, row + subjectButtonHtml(place, key, label))
+
+/** Where a `<tower-popover>` opens beside its button: the side, then how it lines up along it. */
+export type PopoverPlace = { side?: 'top' | 'right' | 'bottom' | 'left'; align?: 'start' | 'center' | 'end' }
+
+/**
+ * A `<tower-popover>` with the id `id`, named `label`, opening beside its button at `place`; fill its `body` once it is
+ * in the page. `cls` is a class for the page's own selectors.
+ */
+export const popoverHtml = (id: string, label: string, place: PopoverPlace = {}, cls?: string): string =>
+  `<tower-popover${attribute('id', id)}${attribute('class', cls)}${attribute('label', label)}${attribute('side', place.side)}${attribute('align', place.align)} data-owned="children"></tower-popover>`
+
+/** The page's own `button` html made the button that opens the `<tower-popover>` with the id `id`. */
+export const popoverButtonHtml = (id: string, button: string): string => `<tower-popover-button${attribute('for', id)}>${button}</tower-popover-button>`
+
+/** A `<tower-menu>` of its own, with the id `id`, which its owner fills and opens with `openAt`. */
+export const menuHtml = (id: string, cls?: string): string => `<tower-menu${attribute('id', id)}${attribute('class', cls)} data-owned="children"></tower-menu>`

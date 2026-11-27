@@ -1665,6 +1665,15 @@
         "comboboxHtml": {
           "since": "2.15"
         },
+        "menuHtml": {
+          "since": "2.41"
+        },
+        "popoverButtonHtml": {
+          "since": "2.41"
+        },
+        "popoverHtml": {
+          "since": "2.41"
+        },
         "subjectAreaHtml": {
           "since": "2.16"
         },
@@ -1684,6 +1693,9 @@
         },
         "ComboboxOption": {
           "since": "2.15"
+        },
+        "PopoverPlace": {
+          "since": "2.41"
         }
       }
     },
@@ -3031,52 +3043,101 @@
         }
       }
     },
+    "/lib-ui/popover.js": {
+      "tower-popover": {
+        "attributes": {
+          "align": {
+            "since": "2.41"
+          },
+          "id": {
+            "since": "2.41"
+          },
+          "label": {
+            "since": "2.41"
+          },
+          "side": {
+            "since": "2.41"
+          }
+        },
+        "properties": {
+          "body": {
+            "since": "2.41"
+          },
+          "open": {
+            "since": "2.41"
+          },
+          "openFrom": {
+            "since": "2.41"
+          }
+        },
+        "events": {
+          "openchange": {
+            "since": "2.41"
+          }
+        },
+        "states": {}
+      },
+      "tower-popover-button": {
+        "attributes": {
+          "for": {
+            "since": "2.41"
+          }
+        },
+        "properties": {},
+        "events": {},
+        "states": {
+          "open": {
+            "since": "2.41"
+          }
+        }
+      }
+    },
     "/lib-ui/split.js": {
       "tower-split": {
         "attributes": {
           "default-size": {
-            "since": "2.42"
+            "since": "2.43"
           },
           "disabled": {
-            "since": "2.42"
+            "since": "2.43"
           },
           "label": {
-            "since": "2.42"
+            "since": "2.43"
           },
           "max": {
-            "since": "2.42"
+            "since": "2.43"
           },
           "min": {
-            "since": "2.42"
+            "since": "2.43"
           },
           "orientation": {
-            "since": "2.42"
+            "since": "2.43"
           },
           "size": {
-            "since": "2.42"
+            "since": "2.43"
           },
           "sized": {
-            "since": "2.42"
+            "since": "2.43"
           },
           "step": {
-            "since": "2.42"
+            "since": "2.43"
           },
           "tip": {
-            "since": "2.42"
+            "since": "2.43"
           }
         },
         "properties": {},
         "events": {
           "sizechange": {
-            "since": "2.42"
+            "since": "2.43"
           },
           "sizecommit": {
-            "since": "2.42"
+            "since": "2.43"
           }
         },
         "states": {
           "dragging": {
-            "since": "2.42"
+            "since": "2.43"
           }
         }
       }
