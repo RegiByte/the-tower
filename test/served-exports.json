@@ -1666,13 +1666,13 @@
           "since": "2.15"
         },
         "menuHtml": {
-          "since": "2.41"
+          "since": "2.44"
         },
         "popoverButtonHtml": {
-          "since": "2.41"
+          "since": "2.44"
         },
         "popoverHtml": {
-          "since": "2.41"
+          "since": "2.44"
         },
         "subjectAreaHtml": {
           "since": "2.16"
@@ -1695,7 +1695,7 @@
           "since": "2.15"
         },
         "PopoverPlace": {
-          "since": "2.41"
+          "since": "2.44"
         }
       }
     },
@@ -3047,32 +3047,32 @@
       "tower-popover": {
         "attributes": {
           "align": {
-            "since": "2.41"
+            "since": "2.44"
           },
           "id": {
-            "since": "2.41"
+            "since": "2.44"
           },
           "label": {
-            "since": "2.41"
+            "since": "2.44"
           },
           "side": {
-            "since": "2.41"
+            "since": "2.44"
           }
         },
         "properties": {
           "body": {
-            "since": "2.41"
+            "since": "2.44"
           },
           "open": {
-            "since": "2.41"
+            "since": "2.44"
           },
           "openFrom": {
-            "since": "2.41"
+            "since": "2.44"
           }
         },
         "events": {
           "openchange": {
-            "since": "2.41"
+            "since": "2.44"
           }
         },
         "states": {}
@@ -3080,7 +3080,7 @@
       "tower-popover-button": {
         "attributes": {
           "for": {
-            "since": "2.41"
+            "since": "2.44"
           }
         },
         "properties": {},
@@ -3092,48 +3092,48 @@
       "tower-split": {
         "attributes": {
           "default-size": {
-            "since": "2.43"
+            "since": "2.42"
           },
           "disabled": {
-            "since": "2.43"
+            "since": "2.42"
           },
           "label": {
-            "since": "2.43"
+            "since": "2.42"
           },
           "max": {
-            "since": "2.43"
+            "since": "2.42"
           },
           "min": {
-            "since": "2.43"
+            "since": "2.42"
           },
           "orientation": {
-            "since": "2.43"
+            "since": "2.42"
           },
           "size": {
-            "since": "2.43"
+            "since": "2.42"
           },
           "sized": {
-            "since": "2.43"
+            "since": "2.42"
           },
           "step": {
-            "since": "2.43"
+            "since": "2.42"
           },
           "tip": {
-            "since": "2.43"
+            "since": "2.42"
           }
         },
         "properties": {},
         "events": {
           "sizechange": {
-            "since": "2.43"
+            "since": "2.42"
           },
           "sizecommit": {
-            "since": "2.43"
+            "since": "2.42"
           }
         },
         "states": {
           "dragging": {
-            "since": "2.43"
+            "since": "2.42"
           }
         }
       }
