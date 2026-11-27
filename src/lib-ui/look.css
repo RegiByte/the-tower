@@ -260,7 +260,8 @@
     color: var(--ui-muted-foreground);
   }
 
-  tower-menu-button button {
+  /* Its own ⋯; a button of the page's inside it keeps the page's look. */
+  tower-menu-button button[data-tower-menu="dots"] {
     display: inline-grid;
     place-items: center;
     min-width: var(--control);

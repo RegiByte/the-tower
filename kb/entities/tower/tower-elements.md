@@ -40,6 +40,9 @@ wrap the SDK this way is [[tower-elements-wrap-the-sdk]].
   the subject it is open for, however it opened. An area is no tab stop of its own: the keyboard reaches the subject
 by its ⋯. A checkbox item is drawn with its check at its end, from a `<template>` the menu holds for the SDK's data
 menu to copy, and its `checkedchange`, which doesn't bubble, is fired again on the menu with the item's value.
+- **A menu from the page's own button.** A `<tower-menu-button>` drawn with a `<button>` inside binds that button as the
+  SDK's trigger instead of drawing its ⋯: the SDK writes its marks and anchor on it, its look and text stay the page's
+  (the ⋯ look is scoped to the element's own button), and the page leaves it out of any redraw.
 - **One SDK core.** `/lib-ui/sdk.js` is internal: the SDK entries in use bundled once, packages inlined, minified
   ([`uiSdkModule`](ref:hub/src/tower/served.ts#uiSdkModule)), never through `/vendor/`, since popups on two cores
   can't share a layer stack. It adopts [`look.css`](ref:hub/src/lib-ui/look.css), the tower's look for the parts,
