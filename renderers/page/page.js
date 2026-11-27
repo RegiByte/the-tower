@@ -1838,7 +1838,7 @@ document.addEventListener('click', async (e) => {
   if (resumeButton) return resume(pressOf(resumeButton), JSON.parse(/** @type {string} */ (resumeButton.dataset.resume)))
   const fold = target.closest('[data-fold-section]')
   if (fold) return foldIn('board.sections', /** @type {string} */ (fold.dataset.foldSection), fold.getAttribute('aria-expanded') === 'true')
-  if (target.closest('[data-side]')) return toggleSide()
+  if (target.closest('[data-toggle-side]')) return toggleSide()
   if (target.closest('[data-nav-home]')) return goHome()
   const navTo = target.closest('[data-nav-view]')?.dataset.navView
   if (navTo) return display('board', { view: navTo })
@@ -1856,8 +1856,8 @@ document.addEventListener('click', async (e) => {
   if (worker) return select(worker)
   const unshowKey = target.closest('[data-unshow]')?.dataset.unshow
   if (unshowKey) return unshow(unshowKey)
-  const open = target.closest('[data-open]')
-  if (open) return openInEditor(pressOf(open), /** @type {Floor} */ (floorOf(/** @type {string} */ (open.dataset.openProject))), /** @type {string} */ (open.dataset.open))
+  const open = target.closest('[data-open-dir]')
+  if (open) return openInEditor(pressOf(open), /** @type {Floor} */ (floorOf(/** @type {string} */ (open.dataset.openProject))), /** @type {string} */ (open.dataset.openDir))
   const shelved = target.closest('[data-shelf]')
   if (shelved) return openShelf(/** @type {string} */ (shelved.dataset.shelf), Number(shelved.dataset.n))
   const newShell = target.closest('[data-shell-dir]')
