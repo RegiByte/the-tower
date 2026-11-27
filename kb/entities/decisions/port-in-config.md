@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-11-25",
+  "reviewed": "2026-11-27",
   "refs": ["hub/src/shared/model.ts#towerPort", "hub/src/shared/model.ts#towerUrl", "hub/src/machine.ts#daemons", "hub/src/machine.ts#startedPid", "hub/src/tower/http.ts#PORT", "hub/src/directory.ts#towerAt", "hub/src/doctor.ts#running", "hub/src/init.ts#initialConfig", "hub/scripts/sandbox.ts", "hub/scripts/sandbox-root.ts"]
 }
 ---
@@ -36,7 +36,7 @@ on, kept in each one's environment, is two copies that drift.
 - The sandbox keeps its port in its own config: `npm run sandbox -- up --port <n>` writes it into the config (for a new
   sandbox, 4399 at the shared `/tmp/tower-sandbox` and a free port at any other root, a worker's own
   `/tmp/tower-<callsign>` among them; the one already there otherwise; the rest of an existing config is left as it
-  is, but for the hub of its `tower` floor, [[sandbox-floor-clone]]), and `down`, `run`, `tool:frames` and `tool:tour` read it from the config under the sandbox's root
+  is, but for the hub of its `tower` floor and the playground's root, [[sandbox-floor-clone]]), and `down`, `run`, `tool:frames` and `tool:tour` read it from the config under the sandbox's root
   ([`sandbox-root.ts`](ref:hub/scripts/sandbox-root.ts)).
 
 **Alternatives considered.**

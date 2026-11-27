@@ -4,8 +4,8 @@
   "name": "The tower's elements (/lib-ui/)",
   "summary": "The tower-* custom elements a page or an extension's client draws as tags, served at /lib-ui/<module>.js: each builds the UI SDK's ui-* parts inside itself, so menus, comboboxes and the dialog get the SDK's keyboard, focus, placement and dismissal while views keep drawing html as strings through the morph.",
   "in": "tower-core",
-  "reviewed": "2026-11-25",
-  "refs": ["hub/src/lib-ui/menu.ts#elements", "hub/src/lib-ui/combobox.ts#elements", "hub/src/lib-ui/dialog.ts#elements", "hub/src/lib-ui/sdk.ts#relay", "hub/src/lib-ui/sdk.ts#ElementContract", "hub/src/lib-ui/look.css", "hub/src/tower/served.ts#uiSdkModule", "hub/src/tower/served.ts#servedModule", "hub/src/tower/served.ts#libUiUrls", "hub/src/shared/elements.ts#subjectHtml", "hub/src/shared/elements.ts#comboboxHtml", "hub/src/shared/elements.ts#subjectAreaHtml", "hub/src/shared/elements.ts#subjectButtonHtml", "hub/src/shared/dom-id.ts#domId", "hub/src/lib/elements.ts", "hub/test/lib-ui.test.ts", "hub/test/library.ts#elementsOf", "hub/scripts/lib-ui-check.ts", "hub/docs/extending.md"]
+  "reviewed": "2026-11-27",
+  "refs": ["hub/src/lib-ui/menu.ts#elements", "hub/src/lib-ui/combobox.ts#elements", "hub/src/lib-ui/dialog.ts#elements", "hub/src/lib-ui/sdk.ts#relay", "hub/src/lib-ui/sdk.ts#ElementContract", "hub/src/lib-ui/look.css", "hub/src/tower/served.ts#uiSdkModule", "hub/src/tower/served.ts#servedModule", "hub/src/tower/served.ts#libUiUrls", "hub/src/shared/elements.ts#subjectHtml", "hub/src/shared/elements.ts#comboboxHtml", "hub/src/shared/elements.ts#subjectAreaHtml", "hub/src/shared/elements.ts#subjectButtonHtml", "hub/src/shared/dom-id.ts#domId", "hub/src/lib/elements.ts", "hub/test/lib-ui.test.ts", "hub/test/library.ts#elementsOf", "hub/scripts/lib-ui-check.ts", "hub/renderers/playground/scenes.js#SCENES", "hub/renderers/playground/playground.js", "hub/docs/extending.md"]
 }
 ---
 Each module of `src/lib-ui/` is served at `/lib-ui/<module>.js`
@@ -78,9 +78,13 @@ at connect, writes no attribute on itself (states through `ElementInternals`), a
 promises; its SDK entry is added to `sdk.ts` and its parts' look to `look.css`, on tokens alone. Every input is an
 attribute a pure render can write; properties only for what no render holds. Pages mark it `data-owned="children"`,
 and a string builder in `/lib/` serves core views. Its `elements` data says every name with its meaning,
-`served:update` lists it, and its `--ui-*` variables join the list in `docs/extending.md`. It passes the morph proof:
-[`tool:lib-ui`](ref:hub/scripts/lib-ui-check.ts) redraws the page every 100 ms while typing and while open, in Chrome
-and WebKit, and is run on every SDK bump, which is its own commit with the pins exact.
+`served:update` lists it, and its `--ui-*` variables join the list in `docs/extending.md`. It gets a scene in the
+playground ([`renderers/playground`](ref:hub/renderers/playground/scenes.js#SCENES)), a renderer for the people and agents developing
+the tower that draws every element and shared behavior from fixtures in each theme and scheme the page is offered, with
+a door for agents (`window.playground`); a sandbox serves it at `/r/playground/`, no user's tower does. It passes the
+morph proof: [`tool:lib-ui`](ref:hub/scripts/lib-ui-check.ts) serves the playground alone (the default look, no tower)
+and runs its menu and combobox scenes' steps, the page redrawn every 100 ms while typing and while open, in Chrome and
+WebKit, on every SDK bump, which is its own commit with the pins exact.
 
 The SDK's own docs and skill ship in `node_modules` at the pinned version (AGENTS.md says where); their rules on
 tests, JSDoc and agent-readiness yield to PRINCIPLES.md. Not yet tried: a touch device's long press, VoiceOver, the

@@ -620,6 +620,10 @@ host.innerHTML = comboboxHtml({ place: 'my-form', name: 'model', label: 'Model',
 host.addEventListener('valuechange', (e) => keep(e.detail.value))
 ```
 
+To see every element and shared behavior at work in each theme and scheme the page is offered, run a sandbox
+(`npm run sandbox -- up`) and open `/r/playground/` on it: each scene is drawn from fixtures, and `window.playground`
+lets a script open one and act on it (`renderers/playground/playground.js` says how).
+
 - **The contract is the outer tag.** Each `tower-*` element with its attributes, properties, events and states is the
   contract. The `ui-*` elements it builds inside itself are implementation, which any SDK pin may change, styling them
   included: don't write them, select them or style them.

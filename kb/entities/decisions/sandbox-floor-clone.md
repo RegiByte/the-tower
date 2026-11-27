@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-07",
-  "reviewed": "2026-11-18",
+  "reviewed": "2026-11-27",
   "refs": ["hub/scripts/sandbox.ts#makeFloorClone", "hub/scripts/sandbox.ts#followCheckout", "hub/scripts/sandbox.ts#mendFloorClone", "hub/scripts/sandbox.ts#checkFloorClone", "hub/scripts/sandbox.ts#floorDamage", "hub/extensions/autotidy/server.ts#start", "hub/src/worktrees.ts#tidyable"]
 }
 ---
@@ -37,7 +37,8 @@ removes the whole class at once, every verb and every future one, with nothing i
   a failure to follow, such as a stale lock or `main` checked out in a cut, stops `up` with git's message: it costs
   a running sandbox nothing, and `down` and `up` are the way out when git's message isn't enough.
 - `up` refuses a root inside a git repository: a hub whose `.git` went would read as the repository around it.
-- `up` writes the `tower` floor's hub into an existing config, whose other keys it leaves alone
+- `up` writes the `tower` floor's hub into an existing config, and the playground's root (`renderers.playground`, this
+  checkout's `renderers/playground`), leaving its other keys alone
   ([`prepareConfig`](ref:hub/scripts/sandbox.ts#prepareConfig)), so an older root moves off the checkout at its next
   `up`. Until then it is as dangerous as it was: [`checkFloorClone`](ref:hub/scripts/sandbox.ts#checkFloorClone)
   has `sandbox run` and `env` refuse it, and refuse a damaged or missing clone, naming `up` as the fix.
