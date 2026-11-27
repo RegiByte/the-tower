@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-23",
-  "reviewed": "2026-11-25",
+  "reviewed": "2026-11-27",
   "refs": ["hub/src/renderers.ts#themesOf", "hub/src/renderers.ts#themeSheet", "hub/src/renderers.ts#themeUrls", "hub/src/renderers.ts#themeFile", "hub/src/renderers.ts#themesPicking", "hub/src/renderers.ts#pickedThemeUrls", "hub/src/shared/shelf-page.ts#ThemeApi", "hub/src/shared/design.ts#frameLook", "hub/src/views/themes.ts", "hub/renderers/page/theme-sample.js", "hub/renderers/page/sidebar.js#workerRowHtml", "hub/renderers/page/sidebar.js#floorPlateHtml", "hub/src/bridge/extensions.ts#offeredThemes", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/http.ts#preloaded", "hub/src/tower/http.ts#withThemes", "hub/test/server.test.ts", "hub/src/tower/http.ts#themesCss", "hub/src/tower/http.ts#themeServed", "hub/src/tower/publisher.ts", "hub/src/bridge/board.ts#Board", "hub/src/bridge/board.ts#BoardTheme", "hub/src/tower/tower.js", "hub/renderers/page/page.js#recolourTerminals", "hub/renderers/tower3d/src/term.ts", "hub/src/config-check.ts#themeProblems", "hub/examples/extensions/harbor/harbor.css", "hub/extensions/themes/extension.json"],
   "links": [
     { "to": "cascade-layers", "verb": "loads into", "carries": "each theme in a layer of its own inside theme" },

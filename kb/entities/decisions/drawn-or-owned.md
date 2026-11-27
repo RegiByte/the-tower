@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-11-18",
-  "reviewed": "2026-11-25",
+  "reviewed": "2026-11-27",
   "refs": [
     "hub/src/shared/morph.ts#morph",
     "hub/src/shared/press.ts#pressingAs",
