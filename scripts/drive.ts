@@ -13,7 +13,7 @@
  *     --wheel <dy>    turn the mouse wheel where the pointer is (after --hover), 100 a notch: --wheel=-100 scrolls up
  *     --down <b>      press a mouse button where the pointer is: left or right, with any of Meta+, Ctrl+, Alt+, Shift+
  *                     before it (Shift+left); a --hover while it is held drags
- *     --up <b>        let it go: a --down and an --up on the same spot click
+ *     --up <b>        let it go: a --down and an --up on the same spot click, twice within half a second a double-click
  *     --key <chord>   press a key on the focused element as a real keyboard would: a key name (a space for Space) with any of Meta+, Ctrl+,
  *                     Alt+, Shift+ before it (Meta+Backspace, Shift+Enter, Alt+ArrowLeft, Ctrl+c)
  *     --type <text>   type text into the focused element
@@ -211,6 +211,8 @@ export async function withPage<T>(url: string, { width = 1280, height = 800, sca
     await loaded
     let pointer = { x: 0, y: 0 }
     let buttons = 0
+    /** The last press, so a second on the same spot within half a second counts as a double-click, as a real mouse's does. */
+    let lastPress = { x: -1, y: -1, at: 0, count: 0 }
     const result = await use({
       errors,
       requests,
@@ -237,7 +239,11 @@ export async function withPage<T>(url: string, { width = 1280, height = 800, sca
       async press(chord, down) {
         const b = button(chord)
         buttons = down ? buttons | b.bit : buttons & ~b.bit
-        await cdp.send('Input.dispatchMouseEvent', { type: down ? 'mousePressed' : 'mouseReleased', ...pointer, button: b.button, buttons, modifiers: b.modifiers, clickCount: 1 })
+        if (down) {
+          const again = pointer.x === lastPress.x && pointer.y === lastPress.y && Date.now() - lastPress.at < 500
+          lastPress = { ...pointer, at: Date.now(), count: again ? lastPress.count + 1 : 1 }
+        }
+        await cdp.send('Input.dispatchMouseEvent', { type: down ? 'mousePressed' : 'mouseReleased', ...pointer, button: b.button, buttons, modifiers: b.modifiers, clickCount: lastPress.count })
       },
       async key(chord) {
         const down = keyDown(chord)
