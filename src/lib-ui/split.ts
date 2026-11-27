@@ -22,6 +22,7 @@ export const elements = {
       max: "Its greatest, a CSS length whose `%` is of the whole split: `calc(100% - 480px)` keeps 480px for the other pane.",
       step: 'Px an arrow key moves the grip, 24 when absent; Shift moves ten steps.',
       label: "The grip's accessible name (`sidebar width`).",
+      tip: "The grip's tip, written as its `data-tip` for a page whose tips read that (the tower page's do): how to use it, since the grip draws nothing until it is pointed at.",
       disabled: "The grip is gone: the sized pane takes its content's size, the other the rest, and `size` waits for the grip's return.",
     },
     properties: {},
@@ -50,7 +51,7 @@ const VIEWER_REASONS = new Set(['drag', 'step-key'])
 type Change = CustomEvent<{ value: number[]; reason: string }>
 
 class TowerSplit extends HTMLElement {
-  static observedAttributes = ['orientation', 'sized', 'size', 'default-size', 'min', 'max', 'step', 'label', 'disabled']
+  static observedAttributes = ['orientation', 'sized', 'size', 'default-size', 'min', 'max', 'step', 'label', 'tip', 'disabled']
   #internals = this.attachInternals()
   #group?: UiResizableElement
   #panels: HTMLElement[] = []
@@ -130,6 +131,9 @@ class TowerSplit extends HTMLElement {
     group.setAttribute('orientation', this.#vertical() ? 'vertical' : 'horizontal')
     group.toggleAttribute('disabled', this.hasAttribute('disabled'))
     this.#handle!.setAttribute('aria-label', this.getAttribute('label') ?? '')
+    const tip = this.getAttribute('tip')
+    if (tip === null) delete this.#handle!.dataset.tip
+    else this.#handle!.dataset.tip = tip
     this.#panels.forEach((panel, i) => (panel.dataset.towerSplit = i === this.#sizedIndex() ? 'sized' : 'rest'))
   }
 

@@ -62,7 +62,8 @@ menu to copy, and its `checkedchange`, which doesn't bubble, is fired again on t
   over the SDK's inline flex, for layouts that size it themselves. The SDK makes every frame pointer-transparent while
   a grip is dragged. Its separator's ARIA describes the panel before the grip, in percent, so the element writes over
   it, after the SDK has, for the sized pane: `aria-controls` names it and `aria-valuenow`, `-min` and `-max` are its px,
-  so a split sized `last` (the shells) reads as the shells, growing as they do. It has no string builder: the page
+  so a split sized `last` (the shells) reads as the shells, growing as they do. `tip` becomes the grip's `data-tip`;
+  the grip is an 8px box whose margins take its size back, so it takes no room and a pointer resting on it is over it. It has no string builder: the page
   writes it once in its html, and since the morph leaves an owned element's children, a view redraws each pane by its
   id. WebKit's check covers its keys only: the harness's synthetic mouse holds no button
   (`buttons` 0), and the SDK ends a drag on such a move.
