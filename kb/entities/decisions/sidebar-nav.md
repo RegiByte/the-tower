@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-25",
-  "reviewed": "2026-11-25",
+  "reviewed": "2026-11-27",
   "refs": [
     "hub/src/shared/regions.ts#Region",
     "hub/src/renderers.ts#DeclaredFile",
@@ -57,7 +57,9 @@ an extension to reach into ([[sidebar-regions]], [[renderer-is-disposable]]).
 - *Stats* is the core view [`tower/stats`](ref:hub/src/views/stats.ts#mount), on the board and on a floor ([[stats]]).
   From the row it opens on every floor; a floor's opens from that floor's menu or the palette. The sidebar mode and its
   machine are gone.
-- `board.sign`'s icons stay at the row's end; a sidebar too narrow for the entries in place wraps them.
+- `board.sign`'s icons stay at the row's end, on the entries' line while they fit beside them. A sidebar too narrow
+  for both puts the icons on a line of their own, at its end, so the entries keep one line; only entries too wide for
+  the whole row wrap among themselves.
 
 **Alternatives considered.**
 - *Every board pane view an entry, trimmed with `hidden`* (the first version): with thirty or forty extensions the

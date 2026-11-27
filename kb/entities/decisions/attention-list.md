@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-11-25",
+  "reviewed": "2026-11-27",
   "refs": ["hub/src/shared/waits.ts#nextAttended", 
     "hub/src/bridge/blocked.ts#blockedBy",
     "hub/src/bridge/status.ts#nextState",
