@@ -10,7 +10,6 @@ import { mountTermView } from '/lib/terminal.js'
 import { ICON, keyedTip, morphPanel, viewHost } from '/lib/view.js'
 import { ago, esc } from '/lib/words.js'
 import { actionsHtml, badgesHtml, drawnActions, iconActionsHtml } from './added.js'
-import { menu } from './menu.js'
 
 /**
  * @import { Board, Card, CardShown, Subject } from '/lib/board.js'
@@ -20,8 +19,11 @@ import { menu } from './menu.js'
  * @import { JobStream, ShellStream, TermFont, TermViewHandle } from '/lib/terminal.js'
  * @import { Bus, CommandKit, Hosted, Location, Pane, RegionHandle, Tab, TabWords, View } from '/lib/view.js'
  * @import { MenuPin } from '/lib/palette.js'
- * @import { MenuItem } from './menu.js'
+ * @import { MenuItem, TowerMenu } from './kit.js'
  */
+
+/** How many tab rows have drawn their "+n ▾" menu on this page: each one's menu gets an id of its own. */
+let tabMenus = 0
 
 /**
  * What a tabs region of the main pane's worker reads from the page's location and tells it: the tab the location names
@@ -481,8 +483,7 @@ export function regions(deps) {
     }
 
     /**
-     * The menu form: the tabs that fit on one row, the rest behind "+n ▾" after them, a menu of them
-     * (`/menu.js`). The tabs a pane chord opens and the open tab are always drawn, their labels cut short when even they
+     * The menu form: the tabs that fit on one row, the rest behind "+n ▾" after them, a `<tower-menu>` of them. The tabs a pane chord opens and the open tab are always drawn, their labels cut short when even they
      * don't fit; the tab last picked from the menu is drawn next while it fits, then the others fill what room is left
      * in the layout's order, each drawn where that order puts it. Each tab's width is read while every tab is drawn,
      * and remembered by what it draws until the row's width or the type changes.
@@ -498,16 +499,22 @@ export function regions(deps) {
       const list = document.createElement('span')
       list.className = 'tab-set tabs-menu'
       const more = document.createElement('button')
+      more.type = 'button'
       more.className = 'pane-tab tabs-more'
       more.hidden = true
+      const listed = /** @type {TowerMenu} */ (document.createElement('tower-menu'))
+      listed.id = `tabs-more-${++tabMenus}`
+      listed.dataset.owned = 'children'
+      const opens = document.createElement('tower-menu-button')
+      opens.setAttribute('for', listed.id)
+      opens.dataset.owned = 'children'
+      opens.append(more)
       const addsAt = document.createElement('span')
       addsAt.className = 'tabs-adds'
-      strip.append(owner, list, more, addsAt)
-      const listed = menu(more, {
-        run: (item) => {
-          const t = tabsOf().find((t) => itemKey(t) === item.key)
-          if (t) (swapped = t.key), pick(t)
-        },
+      strip.append(owner, list, opens, listed, addsAt)
+      listed.addEventListener('action', (e) => {
+        const t = tabsOf().find((t) => itemKey(t) === /** @type {CustomEvent<{ value: string }>} */ (e).detail.value)
+        if (t) (swapped = t.key), pick(t)
       })
       /** The tab last picked from the menu. @type {string | undefined} */
       let swapped
@@ -562,7 +569,7 @@ export function regions(deps) {
       /** @param {TabOf} t @returns {MenuItem} */
       const itemOf = (t) => {
         const words = wordsOf(t)
-        return { t: 'item', key: itemKey(t), label: t.showing ? shownTitle(t.showing) : t.view.words.label, ...(words.text && { hint: words.text }) }
+        return { value: itemKey(t), label: t.showing ? shownTitle(t.showing) : t.view.words.label, ...(words.text && { hint: words.text }) }
       }
 
       return {
@@ -580,12 +587,12 @@ export function regions(deps) {
           const said = `More tabs of ${card.callsign}: ${tucked.length}`
           more.setAttribute('aria-label', said)
           more.dataset.tip = said
-          listed.draw({ header: '', entries: tucked.map(itemOf) })
-          if (!tucked.length) listed.close()
+          listed.items = tucked.map(itemOf)
+          if (!tucked.length && listed.open) listed.api.close()
         },
         resized: () => strip.clientWidth !== room && draw(),
         remeasure: () => ((room = -1), draw()),
-        close: () => (listed.remove(), strip.replaceChildren()),
+        close: () => strip.replaceChildren(),
       }
     }
 
@@ -1051,10 +1058,10 @@ export function regions(deps) {
       placed: () => placedEntries({ board: board(), views: views(), regions: declared(), layout: layout(), kit: deps.kit, main: region() }, region()),
       /** `drawn` as entries, the one `current` names marked. @param {View[]} drawn @param {string | undefined} current */
       html: (drawn, current) => drawn.map((v) => entryHtml(v, v.id === current)).join(''),
-      /** `view` as its menu's item, keyed `key`, its tally as the hint. @param {View} view @param {string} key @returns {MenuItem} */
+      /** `view` as its menu's item, valued `key`, its tally as the hint. @param {View} view @param {string} key @returns {MenuItem} */
       item: (view, key) => {
         const text = wordsOf(view)?.text
-        return { t: 'item', key, label: view.words.label, ...(text && { hint: text }) }
+        return { value: key, label: view.words.label, ...(text && { hint: text }) }
       },
     }
   }
