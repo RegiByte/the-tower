@@ -52,7 +52,8 @@ socket appends only for sessions the host runs, and a stranded session is run by
 - The bridge folds it as `letGoAt` without counting it as Claude heard from. The card is off duty and frees its seat
   at that moment, reads "let go, resumable", and keeps `resume` in the archive. The `let-go` card verb
   ([[board-verbs]]) is offered while the card is stranded, on duty and not yet resumed; the CLI's
-  `tower let-go <CALLSIGN>` runs it.
+  `tower let-go <CALLSIGN>` runs it, and so does the keymap's `send-home` (⌥W) on a selected worker that offers no
+  Send home ([[keymap]]).
 - The live system stops tailing a log at its exit, its break or this fact. A broken session folds nothing past its
   break but this fact ([`afterBreak`](ref:hub/src/tail.ts#afterBreak)), so it can be let go too.
 - "Resume all" on a floor is composed in the renderer from the stranded cards' calls

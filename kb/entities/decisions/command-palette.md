@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-21",
   "reviewed": "2026-11-25",
-  "refs": ["hub/src/shared/palette.ts#paletteEntries", "hub/src/shared/palette.ts#addedEntries", "hub/src/shared/adds.ts#unboundCommands", "hub/src/shared/palette.ts#rankPalette", "hub/src/shared/palette.ts#spawnPickEntries", "hub/src/shared/palette.ts#rankSpawnPick", "hub/src/shared/palette.ts#WEIGHTS", "hub/src/shared/palette.ts#matchScore", "hub/src/shared/waits.ts#heededWaits", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/renderers/page/palette.js#palette", "hub/renderers/page/page.js#doPick", "hub/renderers/page/page.js#runAddedAt", "hub/test/palette.test.ts"]
+  "refs": ["hub/src/shared/duty.ts#offDutyVerb", "hub/src/shared/palette.ts#paletteEntries", "hub/src/shared/palette.ts#addedEntries", "hub/src/shared/adds.ts#unboundCommands", "hub/src/shared/palette.ts#rankPalette", "hub/src/shared/palette.ts#spawnPickEntries", "hub/src/shared/palette.ts#rankSpawnPick", "hub/src/shared/palette.ts#WEIGHTS", "hub/src/shared/palette.ts#matchScore", "hub/src/shared/waits.ts#heededWaits", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/renderers/page/palette.js#palette", "hub/renderers/page/page.js#doPick", "hub/renderers/page/page.js#runAddedAt", "hub/test/palette.test.ts"]
 }
 ---
 **Problem.** The tower's capabilities were reachable only by the mouse, by chords nobody had learned yet, or by tips
@@ -39,7 +39,8 @@ same palette, and only the drawing is a renderer's.
 - No arguments, no forms: an entry runs something ready or opens the UI that exists for it (the new-worker form, a
   draft, a confirm). A pick goes through the same handler as its button or key, so destructive verbs ask through the
   same confirm and the palette can't drift from the buttons. A verb a keymap command does runs as that command and
-  shows its chords, listed once; `submit` and `prompt`, `kill` and `cut` are left out (typed in the terminal, ended by
+  shows its chords, listed once (Let go only while `send-home` does it, by
+  [`offDutyVerb`](ref:hub/src/shared/duty.ts#offDutyVerb), else as itself); `submit` and `prompt`, `kill` and `cut` are left out (typed in the terminal, ended by
   `send-home` per [[crews]], chosen in the new-worker form).
 - No word soup: a capability that names a command is that command's hint, not a row; on a typed query Learn entries
   show only when it matches them, capped; patterns are one entry that opens a sheet of `GET /patterns`.

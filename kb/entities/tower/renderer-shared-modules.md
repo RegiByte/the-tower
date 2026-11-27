@@ -98,7 +98,7 @@ behavior ([[renderer-is-disposable]]):
 - `verb-words.ts`: the human facet of every verb the board offers ([`VERB_WORDS`](ref:hub/src/shared/verb-words.ts#VERB_WORDS)),
   keyed `<subject>/<verb>` (`card/send-home`, `worktree/recut`): the label a button says, a hint of what it does and
   when, whether it asks first, the API verb whose description and schema in `VERBS` are its agent facet, and the
-  keymap command that does the same; typed over every subject's verbs, so the table is complete ([[board-verbs]]).
+  keymap command that does the same (`send-home` for both Send home and Let go); typed over every subject's verbs, so the table is complete ([[board-verbs]]).
 - `palette.ts`: the command palette as data ([`paletteEntries`](ref:hub/src/shared/palette.ts#paletteEntries)): what a
   viewer can go to, do and learn from where they stand, each entry's `does` a tagged message the renderer runs through
   its own handlers, and [`rankPalette`](ref:hub/src/shared/palette.ts#rankPalette), which groups them for what was
