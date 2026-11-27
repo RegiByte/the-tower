@@ -1861,7 +1861,7 @@ document.addEventListener('click', async (e) => {
   if (shelved) return openShelf(/** @type {string} */ (shelved.dataset.shelf), Number(shelved.dataset.n))
   const newShell = target.closest('[data-shell-dir]')
   if (newShell) {
-    if ($('shell-pick').matches(':popover-open')) $('shell-pick').hidePopover()
+    $('shell-pick').open = false
     return spawnShell(newShell, /** @type {string} */ (newShell.dataset.shellProject), /** @type {string} */ (newShell.dataset.shellDir))
   }
   const killShell = target.closest('[data-kill-shell]')?.dataset.killShell
@@ -1953,10 +1953,10 @@ function sendHomeSelected() {
 }
 
 /**
- * An open popover the browser dismisses on Escape (any but a `manual` one, such as the shared tip): Escape is its own,
- * closing it, and runs no command.
+ * An open popover Escape dismisses (any but a `manual` one, such as the shared tip, or the UI SDK's, a part marked
+ * `data-slot`, which the SDK closes on Escape itself): Escape is its own, closing it, and runs no command.
  */
-const escapeDismisses = (/** @type {KeyboardEvent} */ e) => e.key === 'Escape' && Boolean(document.querySelector(':popover-open:not([popover=manual])'))
+const escapeDismisses = (/** @type {KeyboardEvent} */ e) => e.key === 'Escape' && Boolean(document.querySelector(':popover-open:is(:not([popover=manual]), [data-slot])'))
 
 /**
  * A terminal's own key handler already ran the keys typed into it; a field's listener, the field's. No shortcut runs

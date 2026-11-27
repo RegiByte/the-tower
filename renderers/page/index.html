@@ -38,7 +38,8 @@ dialog h2 { margin: 0 0 var(--sp-l); color: var(--heading); font: var(--display-
 .host-state.quiet { padding: 1px var(--sp-2xs); font-weight: 400; color: var(--faint); }
 .host-state.working, .host-state.broken { background: var(--c); color: var(--on); }
 .host-state.working .lamp, .host-state.broken .lamp { background: var(--on); }
-.brand .icon-btn:has(+ :popover-open) { color: var(--ink); }
+.brand tower-popover-button:state(open) .icon-btn { color: var(--ink); }
+#settings [data-tower-popover="body"] { width: min(18.75rem, calc(100vw - 16px)); padding: 0; white-space: normal; }
 .side-notes { margin-top: calc(-1 * var(--sp-xs)); padding: 0 var(--sp-xl) var(--sp-l); color: var(--muted); font-size: var(--fs-s); overflow-wrap: anywhere; }
 .side-notes:empty { display: none; }
 .side-strip { padding: 0 var(--sp-xl) var(--sp-l); }
@@ -49,7 +50,7 @@ dialog h2 { margin: 0 0 var(--sp-l); color: var(--heading); font: var(--display-
 .limits-bar { padding: 0 var(--sp-xl) var(--sp-l); border-bottom: 1px solid var(--line); }
 .limits-bar .chip { border: 0; cursor: pointer; }
 .limits-bar .chip.stale:not(.some) { color: var(--muted); }
-.limits:popover-open { display: grid; } .settings-pop.limits { gap: var(--sp-m); padding: var(--sp-l) var(--sp-xl) var(--sp-xl); font-size: var(--fs-s); color: var(--muted); }
+.limits [data-tower-popover="body"] { display: grid; gap: var(--sp-m); width: min(18.75rem, calc(100vw - 16px)); padding: var(--sp-l) var(--sp-xl) var(--sp-xl); white-space: normal; font-size: var(--fs-s); color: var(--muted); }
 .limits .row { display: flex; gap: var(--sp-s); align-items: baseline; margin-bottom: var(--sp-xs); }
 .limits .row b { color: var(--ink); font-variant-numeric: tabular-nums; }
 .limits .row small { margin-left: auto; color: var(--faint); font-size: var(--fs-s); }
@@ -470,8 +471,7 @@ dialog.palette[open] { display: flex; flex-direction: column; max-height: min(56
 .tab-add { flex: none; min-width: var(--control); min-height: var(--control); padding: 0; display: grid; place-items: center; color: var(--muted); background: var(--panel); }
 .tab-add .icon { width: var(--icon-m); height: var(--icon-m); }
 .tab-add:hover { color: var(--ink); }
-.shell-pick { position: fixed; inset: auto; margin: 0; padding: var(--sp-s); min-width: 200px; height: auto; max-height: calc(100vh - 16px); overflow: auto; border: 1px solid var(--line); border-radius: var(--radius-card);
-  background: var(--panel); color: var(--ink); box-shadow: var(--shadow-pop); font: var(--fs-m)/1.4 var(--ui); }
+.shell-pick [data-tower-popover="body"] { min-width: 200px; padding: var(--sp-s); font: var(--fs-m)/1.4 var(--ui); }
 .shell-pick .pick-floor { padding: var(--sp-s) var(--sp-m) var(--sp-2xs); box-shadow: inset 3px 0 0 var(--p, var(--ink)); }
 .shell-pick button { display: block; width: 100%; padding: var(--sp-xs) var(--sp-m) var(--sp-xs) var(--sp-xl); border: none; background: none; text-align: left; font-weight: 400; color: var(--ink); }
 .shell-pick button:hover, .shell-pick button:focus-visible { background: var(--hover); }
@@ -497,12 +497,12 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, [data-view="tow
 <body>
 <aside class="side" aria-label="sidebar">
   <div class="brand"><h1 id="home" data-tip="back to the skyline">The Tower</h1><button class="version" id="version" hidden></button><span class="host" id="host"></span>
-    <button class="icon-btn" id="settings-open" popovertarget="settings" aria-label="settings" data-tip="settings: alerts, sound and theme"></button><div id="settings" class="settings-pop" popover></div>
+    <tower-popover-button for="settings"><button class="icon-btn" id="settings-open" aria-label="settings" data-tip="settings: alerts, sound and theme"></button></tower-popover-button><tower-popover id="settings" label="settings" align="start" data-owned="children"></tower-popover>
     <button class="icon-btn" id="keys-open" data-keys aria-label="shortcuts"></button><button class="icon-btn side-toggle" id="side-hide" data-toggle-side aria-label="hide the sidebar"></button></div>
   <div class="side-strip" id="strip"></div>
   <div class="side-notes" id="notes"></div>
   <div class="tally" id="tally"></div>
-  <div class="limits-bar" id="limits-bar"><button class="chip" id="limits-open" popovertarget="limits"></button><div class="settings-pop limits" id="limits" popover></div></div>
+  <div class="limits-bar" id="limits-bar"><tower-popover-button for="limits"><button class="chip" id="limits-open"></button></tower-popover-button><tower-popover class="limits" id="limits" label="rate limits" align="start" data-owned="children"></tower-popover></div>
   <div class="side-sections" id="sections"></div>
   <div class="side-views"><nav class="side-nav" id="nav" aria-label="the sidebar's entries"><span class="nav-entries" id="nav-entries"></span><button class="eyebrow" data-nav-more hidden>More…</button></nav><span class="board-sign" id="board-sign"></span></div>
   <nav class="floors" id="floors" aria-label="floors"></nav>
@@ -515,7 +515,7 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, [data-view="tow
   <div class="view-host" id="view-host" data-region="board.main"></div>
   <div class="dock">
     <div class="grip" id="grip" role="separator" aria-orientation="horizontal" aria-controls="shell-pane" aria-label="shells height" aria-valuemin="120" tabindex="0" data-tip="drag, or ↑ and ↓, to resize the shells"></div>
-    <div class="strip"><div class="tabs" id="tabs"></div><div class="tip" id="tip"></div></div><div class="shell-pick" id="shell-pick" popover aria-label="new shell in"></div>
+    <div class="strip"><div class="tabs" id="tabs"></div><div class="tip" id="tip"></div></div><tower-popover class="shell-pick" id="shell-pick" label="new shell in" side="top" align="start" data-owned="children"></tower-popover>
     <div class="shell-pane" id="shell-pane"><div class="term" id="s-screen"></div><span id="s-mode"></span></div>
   </div>
 </main>

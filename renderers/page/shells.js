@@ -1,6 +1,5 @@
 import { offeredCall } from '/lib/board.js'
 import { shellWhere, whyNot } from '/lib/cards.js'
-import { placeOnOpen } from '/lib/chrome.js'
 import { shellPlaces } from '/lib/spawn.js'
 import { mountTermView } from '/lib/terminal.js'
 import { ICON, morphPanel, pressing } from '/lib/view.js'
@@ -40,7 +39,7 @@ export function shells(deps) {
   /** @param {Board['shells'][number]} sh */
   const shellFloor = (sh) => board().floors.find((f) => f.id === sh.project)
 
-  const shellAddHtml = () => shellPlaces(board().floors).length ? `<button class="tab-add" popovertarget="shell-pick" aria-label="new shell" data-tip="new shell: pick a directory">${ICON.plus}</button>` : ''
+  const shellAddHtml = () => shellPlaces(board().floors).length ? `<tower-popover-button for="shell-pick"><button class="tab-add" aria-label="new shell" data-tip="new shell: pick a directory">${ICON.plus}</button></tower-popover-button>` : ''
 
   /** The directories a new shell can start in, the floor in view first, each floor under its name. */
   function shellPickHtml() {
@@ -48,8 +47,7 @@ export function shells(deps) {
     return [...new Set(places.map((p) => p.project))].map((project) => `<div class="pick-floor eyebrow" style="${paint(project)}">${esc(/** @type {Floor} */ (floorOf(project)).name)}</div>` +
       places.filter((p) => p.project === project).map((p) => `<button data-shell-project="${esc(p.project)}" data-shell-dir="${esc(p.dir)}" data-tip="${esc(p.dir)}">${esc(p.name)}${p.worktree ? ` <small>${ICON.branch} ${esc(p.worktree)}</small>` : ''}</button>`).join('')).join('')
   }
-  $('shell-pick').addEventListener('toggle', (e) => e.newState === 'open' && ($('shell-pick').innerHTML = shellPickHtml()))
-  placeOnOpen($('shell-pick'), () => /** @type {HTMLElement} */ ($('tabs').querySelector('.tab-add')))
+  $('shell-pick').addEventListener('openchange', (e) => /** @type {CustomEvent<{ value: boolean }>} */ (e).detail.value && ($('shell-pick').body.innerHTML = shellPickHtml()))
 
   /** The dock's tabs, each shell's by its id. */
   function dockHtml() {
