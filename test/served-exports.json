@@ -1657,6 +1657,15 @@
         "comboboxHtml": {
           "since": "2.15"
         },
+        "menuHtml": {
+          "since": "2.41"
+        },
+        "popoverButtonHtml": {
+          "since": "2.41"
+        },
+        "popoverHtml": {
+          "since": "2.41"
+        },
         "subjectAreaHtml": {
           "since": "2.16"
         },
@@ -1676,6 +1685,9 @@
         },
         "ComboboxOption": {
           "since": "2.15"
+        },
+        "PopoverPlace": {
+          "since": "2.41"
         }
       }
     },
@@ -3019,6 +3031,55 @@
         "states": {
           "open": {
             "since": "2.15"
+          }
+        }
+      }
+    },
+    "/lib-ui/popover.js": {
+      "tower-popover": {
+        "attributes": {
+          "align": {
+            "since": "2.41"
+          },
+          "id": {
+            "since": "2.41"
+          },
+          "label": {
+            "since": "2.41"
+          },
+          "side": {
+            "since": "2.41"
+          }
+        },
+        "properties": {
+          "body": {
+            "since": "2.41"
+          },
+          "open": {
+            "since": "2.41"
+          },
+          "openFrom": {
+            "since": "2.41"
+          }
+        },
+        "events": {
+          "openchange": {
+            "since": "2.41"
+          }
+        },
+        "states": {}
+      },
+      "tower-popover-button": {
+        "attributes": {
+          "for": {
+            "since": "2.41"
+          }
+        },
+        "properties": {},
+        "events": {},
+        "states": {
+          "open": {
+            "since": "2.41"
           }
         }
       }
