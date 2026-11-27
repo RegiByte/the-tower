@@ -72,15 +72,15 @@ menu to copy, and its `checkedchange`, which doesn't bubble, is fired again on t
   id. WebKit's check covers its keys only: the harness's synthetic mouse holds no button
   (`buttons` 0), and the SDK ends a drag on such a move.
 - **A popover beside the page's own button.** `<tower-popover>` holds the SDK's non-modal popover, its content kept in
-  the page while closed so the page fills its `body` on every draw. `<tower-popover-button>` wraps a button the page
-  draws and redraws itself, so it is the one element that writes on what isn't its own: no SDK trigger binds the
-  button, since the SDK writes its marks and its CSS anchor on the element it binds, which a redraw rewrites. The element
-  opens the popover through the SDK's controller instead, anchored to a box that reads the button's place
-  ([`boxOf`](ref:hub/src/lib-ui/popover.ts#boxOf)), writes `aria-haspopup`, `aria-expanded` and `aria-controls` on the
-  button and again after each redraw, keeps it open for the press and the focus its own button takes (or the press's
-  click would reopen it), and gives focus back to the button itself, since the web part takes `final-focus` as a selector
-  only. Escape, a press outside, focus leaving and a press into a frame, one running no script too (the SDK's own
-  window-blur check, reported as `focus-out`), are the SDK's.
+  the page while closed so the page fills its `body` on every draw. `<tower-popover-button>` is the SDK's popover
+  trigger under the tower's tag, defined through the SDK's `createParts` with `<tower-popover>` among its owners, so
+  its `for` names the tower's element; `<tower-popover>` takes its button's registration and hands it to the SDK root
+  inside ([`register`](ref:hub/src/lib-ui/popover.ts#TowerPopover)). It binds the button the page draws and redraws
+  itself, which the SDK writes its ARIA, an id and its CSS anchor on: the button is marked `data-owned="attributes"`,
+  so the morph keeps them ([[drawn-or-owned]]), and a button without the mark is refused at registration. Placement,
+  the second press on its own button, Escape, a press outside, focus leaving, a press into a frame, one running no
+  script too (the SDK's own window-blur check, reported as `focus-out`), and focus back to the button are all the
+  SDK's.
 - **A combobox named from outside.** `labelledby` names a label the form draws itself (an eyebrow, an optional mark, a
   hint): the element then draws no label part and points its input's `aria-labelledby` at it. A `<label>` around it
   would take a press in its list for one on the box.

@@ -72,7 +72,10 @@ export type PopoverPlace = { side?: 'top' | 'right' | 'bottom' | 'left'; align?:
 export const popoverHtml = (id: string, label: string, place: PopoverPlace = {}, cls?: string): string =>
   `<tower-popover${attribute('id', id)}${attribute('class', cls)}${attribute('label', label)}${attribute('side', place.side)}${attribute('align', place.align)} data-owned="children"></tower-popover>`
 
-/** The page's own `button` html made the button that opens the `<tower-popover>` with the id `id`. */
+/**
+ * The page's own `button` html made the button that opens the `<tower-popover>` with the id `id`. Mark the button
+ * `data-owned="attributes"`, so a redraw keeps the ARIA and the anchor the popover writes on it.
+ */
 export const popoverButtonHtml = (id: string, button: string): string => `<tower-popover-button${attribute('for', id)}>${button}</tower-popover-button>`
 
 /** A `<tower-menu>` of its own, with the id `id`, which its owner fills and opens with `openAt`. */

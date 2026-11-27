@@ -164,7 +164,7 @@ export async function elementsOf(url: string): Promise<ElementsModule> {
     name: 'no-sdk',
     setup(b) {
       b.onResolve({ filter: /\/sdk\.ts$/ }, () => ({ path: 'sdk', namespace: 'no-sdk' }))
-      b.onLoad({ filter: /.*/, namespace: 'no-sdk' }, () => ({ contents: 'export const relay = () => {}', loader: 'js' }))
+      b.onLoad({ filter: /.*/, namespace: 'no-sdk' }, () => ({ contents: 'export const relay = () => {}; export const createParts = () => {}; export const wrappedButton = () => {}; export const popover = {}', loader: 'js' }))
     },
   }
   const { outputFiles } = await build({ entryPoints: [urlSource(url)!], bundle: true, format: 'iife', globalName: 'served', write: false, logLevel: 'silent', plugins: [sdk] })
